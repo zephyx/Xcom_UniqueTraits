@@ -1,0 +1,20 @@
+//---------------------------------------------------------------------------------------
+//  FILE:   X2Effect_UT_WeakExplosives.uc
+//  PURPOSE: Baseball player's own explosives (grenades, rockets, etc.) deal 2 less damage.
+//---------------------------------------------------------------------------------------
+class X2Effect_UT_WeakExplosives extends X2Effect_Persistent;
+
+var int DamageReduction;
+
+function int GetAttackingDamageModifier_CH(XComGameState_Effect EffectState, XComGameState_Unit Attacker, Damageable TargetDamageable, XComGameState_Ability AbilityState, const out EffectAppliedData AppliedData, const int CurrentDamage, X2Effect_ApplyWeaponDamage WeaponDamageEffect, optional XComGameState NewGameState)
+{
+	if (WeaponDamageEffect != none && WeaponDamageEffect.bExplosiveDamage)
+		return -DamageReduction;
+
+	return 0;
+}
+
+defaultproperties
+{
+	DuplicateResponse = eDupe_Ignore
+}

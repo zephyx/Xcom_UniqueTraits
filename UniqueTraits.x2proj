@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Default" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Guid>48647969-5e1b-493c-a191-61530c80fdbe</Guid>
+    <Name>UniqueTraits</Name>
+    <Description>Assign each rookie who is promoted naturally with XP (rather than as a result of a GTS, a mission, etc.) a unique trait that distinguishes them from every other soldier of the same class</Description>
+    <SteamPublishID>0</SteamPublishID>
+    <AssemblyName>UniqueTraits</AssemblyName>
+    <RootNamespace>UniqueTraits</RootNamespace>
+    <ProjectGuid>{aecb0f2b-b1bf-451e-b7ca-040146ddfe35}</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Config\" />
+    <Folder Include="Content\" />
+    <Folder Include="Localization\" />
+    <Folder Include="Src\" />
+    <Folder Include="Src\UniqueTraits\" />
+    <Folder Include="Src\UniqueTraits\Classes\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ReadMe.txt" />
+    <Content Include="ModPreview.jpg" />
+    <Content Include="Config\XComEditor.ini" />
+    <Content Include="Config\XComEngine.ini" />
+    <Content Include="Config\XComGame.ini" />
+    <Content Include="Config\XComUniqueTraits.ini" />
+    <Content Include="Config\XComLW_InfiltrationSettings.ini" />
+    <Content Include="Localization\XComGame.int" />
+    <Content Include="Localization\XComGame.fra" />
+    <Content Include="Localization\UniqueTraits.int" />
+    <Content Include="Localization\UniqueTraits.fra" />
+    <Content Include="Src\UniqueTraits\Classes\X2DownloadableContentInfo_UniqueTraits.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UniqueTraits_TraitConfig.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2EventListener_UniqueTraits.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Ability_UniqueTraits_Core.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Ability_UniqueTraits_Advanced.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Ability_UniqueTraits_Items.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2ItemSlot_UniqueTraits.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Ability_UniqueTraits_LWOTC.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_OrganicCombat.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakExplosives.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakHeavyWeapons.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_FlycatcherMalus.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_QuickHealing.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_TemporaryItem.uc" />
+    <Content Include="Src\UniqueTraits\Classes\XComGameState_Effect_UT_TemporaryItem.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2AbilityCost_UT_SmokeThrow.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Condition_UT_ExcludeAlreadyOverwatching.uc" />
+  </ItemGroup>
+  <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
+</Project>
