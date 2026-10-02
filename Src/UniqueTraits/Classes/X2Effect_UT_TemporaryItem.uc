@@ -4,7 +4,7 @@
 //           for free, bypassing normal slot capacity (UnitState.bIgnoreItemEquipRestrictions),
 //           for the duration of the tactical mission only. The item(s) and their ability are
 //           cleaned up at mission end or when the effect is removed. Used by Scout for its free
-//           Battle Scanner and by Smoker for its 2 free smoke grenades (Quantity=2).
+//           Battle Scanner and by Smoker for its 2 free smoke grenades (Quantity = 2).
 //---------------------------------------------------------------------------------------
 class X2Effect_UT_TemporaryItem extends X2Effect_Persistent;
 
@@ -13,6 +13,10 @@ var EInventorySlot ItemInventorySlot;
 var int Quantity;
 // If true, resolve ItemName through the unit's HQ's own item-upgrade chain first
 var bool bUseHighestAvailableUpgrade;
+// If true and the unit already carries an item of the same template, add to that item's ammo
+// (what the engine's own MergeAmmoAsNeeded does at mission start for bMergeAmmo items => one icon,
+// quantity N) instead of creating a separate item. Used by Maniac explosive's Jury-Rig.
+var bool bStackOnExisting;
 
 simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffectParameters, XComGameState_BaseObject kNewTargetState, XComGameState NewGameState, XComGameState_Effect NewEffectState)
 {
@@ -47,6 +51,9 @@ simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffe
 	GrantCount = Max(Quantity, 1);
 	for (i = 0; i < GrantCount; ++i)
 	{
+		if (bStackOnExisting && TryStackOnExistingItem(UnitState, EquipmentTemplate, NewGameState))
+			continue;
+
 		ItemState = EquipmentTemplate.CreateInstanceFromTemplate(NewGameState);
 		NewGameState.AddStateObject(ItemState);
 
@@ -72,6 +79,33 @@ simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffe
 	}
 
 	super.OnEffectAdded(ApplyEffectParameters, kNewTargetState, NewGameState, NewEffectState);
+}
+
+// Mirrors XComGameState_Unit.MergeAmmoAsNeeded for a mid-mission grant. Nothing to clean up
+// later: XComGameState_Item.OnEndTacticalPlay resets Ammo/MergedItemCount/bMergedOut.
+static function bool TryStackOnExistingItem(XComGameState_Unit UnitState, X2EquipmentTemplate EquipmentTemplate, XComGameState NewGameState)
+{
+	local X2WeaponTemplate WeaponTemplate;
+	local array<XComGameState_Item> Items;
+	local XComGameState_Item Item, MergeTarget;
+
+	WeaponTemplate = X2WeaponTemplate(EquipmentTemplate);
+	if (WeaponTemplate == none || !WeaponTemplate.bMergeAmmo)
+		return false;
+
+	Items = UnitState.GetAllInventoryItems(NewGameState);
+	foreach Items(Item)
+	{
+		if (Item.GetMyTemplate() == EquipmentTemplate && !Item.bMergedOut)
+		{
+			MergeTarget = XComGameState_Item(NewGameState.ModifyStateObject(Item.Class, Item.ObjectID));
+			MergeTarget.MergedItemCount = Max(MergeTarget.MergedItemCount, 1) + 1;
+			MergeTarget.Ammo += MergeTarget.GetClipSize();
+			return true;
+		}
+	}
+
+	return false;
 }
 
 simulated function OnEffectRemoved(const out EffectAppliedData ApplyEffectParameters, XComGameState NewGameState, bool bCleansed, XComGameState_Effect RemovedEffectState)

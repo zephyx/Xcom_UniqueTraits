@@ -1,9 +1,9 @@
 //---------------------------------------------------------------------------------------
-//  FILE:   X2Effect_UT_FlycatcherMalus.uc
-//  PURPOSE: Flycatcher's -10 aim / -10 crit chance when attacking a target below their own
+//  FILE:   X2Effect_UT_AcrobatMalus.uc
+//  PURPOSE: Acrobat's -10 aim / -10 crit chance when attacking a target below their own
 //           elevation (effectively cancelling their own height advantage bonus).
 //---------------------------------------------------------------------------------------
-class X2Effect_UT_FlycatcherMalus extends X2Effect_Persistent;
+class X2Effect_UT_AcrobatMalus extends X2Effect_Persistent;
 
 var int AimPenalty, CritPenalty;
 

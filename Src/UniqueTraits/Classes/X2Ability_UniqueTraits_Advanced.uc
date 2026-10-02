@@ -10,10 +10,14 @@ var config int BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION;
 var config int ALLINARMS_MOBILITY;
 var config float DISCREET_DETECTION_MULT;
 var config int DISCREET_HEAVY_WEAPON_DAMAGE_REDUCTION;
-var config int FLYCATCHER_AIM_PENALTY, FLYCATCHER_CRIT_PENALTY;
+var config int ACROBAT_AIM_PENALTY, ACROBAT_CRIT_PENALTY;
 var config float QUICKHEALING_DAMAGE_TAKEN_MULT;
 var config int SCOUT_SIGHT_RADIUS_PENALTY;
 var config name SCOUT_SCANNER_ITEM_NAME;
+var config int SCOUT_SCANNER_COOLDOWN;
+var config float HUNTER_DETECTION_MODIFIER;
+var config int LONGRANGE_FAR_RANGE_SHIFT;
+var config array<int> LONGRANGE_CLOSE_RANGE_AIM_PENALTY;
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -23,13 +27,16 @@ static function array<X2DataTemplate> CreateTemplates()
 	Templates.AddItem(BaseballPlayer());
 	Templates.AddItem(AllInArms());
 	Templates.AddItem(Discreet());
-	Templates.AddItem(Flycatcher());
+	Templates.AddItem(Acrobat());
 	Templates.AddItem(AlwaysReady());
 	Templates.AddItem(AlwaysReadyOverwatch());
 	Templates.AddItem(QuickHealing());
 	Templates.AddItem(Thief());
 	Templates.AddItem(JackOfAllTrades());
 	Templates.AddItem(Scout());
+	Templates.AddItem(ScoutScanner());
+	Templates.AddItem(Hunter());
+	Templates.AddItem(LongRange());
 
 	return Templates;
 }
@@ -47,7 +54,7 @@ static function X2AbilityTemplate Pacifist()
 	CombatEffect.AimMalus = default.PACIFIST_AIM;
 	CombatEffect.DefenseBonus = default.PACIFIST_ORGANIC_DEFENSE;
 	CombatEffect.BuildPersistentEffect(1, true, false);
-	CombatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	CombatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(CombatEffect);
 
 	return Template;
@@ -62,10 +69,10 @@ static function X2AbilityTemplate BaseballPlayer()
 	Template = PurePassive('UT_BaseballPlayer', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
 
 	WeakExplosivesEffect = new class'X2Effect_UT_WeakExplosives';
-	WeakExplosivesEffect.EffectName = 'UT_BaseballPlayer';
+	WeakExplosivesEffect.EffectName = 'UT_BaseballPlayer_WeakExplosives';
 	WeakExplosivesEffect.DamageReduction = default.BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION;
 	WeakExplosivesEffect.BuildPersistentEffect(1, true, false);
-	WeakExplosivesEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	WeakExplosivesEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(WeakExplosivesEffect);
 
 	return Template;
@@ -116,42 +123,43 @@ static function X2AbilityTemplate Discreet()
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Discreet';
 	StatEffect.BuildPersistentEffect(1, true, false);
-	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
-	StatEffect.AddPersistentStatChange(eStat_DetectionRadius, default.DISCREET_DETECTION_MULT, MODOP_Multiplication);
+	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
+	StatEffect.AddPersistentStatChange(eStat_DetectionModifier, 1.0 - default.DISCREET_DETECTION_MULT);
 	Template.AddTargetEffect(StatEffect);
 
 	WeakHeavyEffect = new class'X2Effect_UT_WeakHeavyWeapons';
 	WeakHeavyEffect.EffectName = 'UT_Discreet_WeakHeavyWeapons';
 	WeakHeavyEffect.DamageReduction = default.DISCREET_HEAVY_WEAPON_DAMAGE_REDUCTION;
 	WeakHeavyEffect.BuildPersistentEffect(1, true, false);
-	WeakHeavyEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	WeakHeavyEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(WeakHeavyEffect);
 
 	return Template;
 }
 
-// Flycatcher: grants Grapple (via ini); -10 aim/-10 crit attacking a target below their own elevation.
-static function X2AbilityTemplate Flycatcher()
+// Acrobat: grants Grapple (via ini); -10 aim/-10 crit attacking a target below their own elevation.
+static function X2AbilityTemplate Acrobat()
 {
 	local X2AbilityTemplate Template;
-	local X2Effect_UT_FlycatcherMalus MalusEffect;
+	local X2Effect_UT_AcrobatMalus MalusEffect;
 
-	Template = PurePassive('UT_Flycatcher', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Acrobat', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
 
-	MalusEffect = new class'X2Effect_UT_FlycatcherMalus';
-	MalusEffect.EffectName = 'UT_Flycatcher';
-	MalusEffect.AimPenalty = default.FLYCATCHER_AIM_PENALTY;
-	MalusEffect.CritPenalty = default.FLYCATCHER_CRIT_PENALTY;
+	MalusEffect = new class'X2Effect_UT_AcrobatMalus';
+	MalusEffect.EffectName = 'UT_Acrobat_Malus';
+	MalusEffect.AimPenalty = default.ACROBAT_AIM_PENALTY;
+	MalusEffect.CritPenalty = default.ACROBAT_CRIT_PENALTY;
 	MalusEffect.BuildPersistentEffect(1, true, false);
-	MalusEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	MalusEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(MalusEffect);
 
 	return Template;
 }
 
-// Always ready: this passive is just the icon holder. The malus (chance to auto-reload
-// after moving) is granted separately by reusing the base game's Trait_ObsessiveReloader
-// personality trait (see X2DownloadableContentInfo_UniqueTraits.AssignTraitOnNaturalPromotion).
+// Always ready: this passive is just the icon holder. The malus (chance to force a reload and
+// end the turn after acting with a weapon that isn't full) is handled separately by
+// X2EventListener_UniqueTraits.OnAbilityActivated_AlwaysReadyObsessiveReload, a reimplementation
+// of vanilla's Trait_ObsessiveReloader personality trait's own trigger gate.
 // The bonus is UT_AlwaysReadyOverwatch below.
 static function X2AbilityTemplate AlwaysReady()
 {
@@ -167,27 +175,23 @@ static function X2AbilityTemplate AlwaysReadyOverwatch()
 {
 	local X2AbilityTemplate Template;
 	local X2AbilityTrigger_EventListener Trigger;
-	local X2AbilityCost_Ammo AmmoCost;
 	local X2Effect_ReserveOverwatchPoints ReserveEffect;
 	local X2Effect_CoveringFire CoveringFireEffect;
 	local X2Condition_AbilityProperty CoveringFireCondition;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'UT_AlwaysReadyOverwatch');
 
+	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_standard";
 	Template.AbilitySourceName = 'eAbilitySource_Perk';
 	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
 	Template.Hostility = eHostility_Neutral;
 	Template.bCrossClassEligible = true;
+	Template.bDontDisplayInAbilitySummary = true;
 
 	Template.AbilityToHitCalc = default.DeadEye;
 	Template.AbilityTargetStyle = default.SelfTarget;
 	Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
 	Template.AbilityShooterConditions.AddItem(new class'X2Condition_UT_ExcludeAlreadyOverwatching');
-
-	AmmoCost = new class'X2AbilityCost_Ammo';
-	AmmoCost.iAmmo = 1;
-	AmmoCost.bFreeCost = true;
-	Template.AbilityCosts.AddItem(AmmoCost);
 
 	Trigger = new class'X2AbilityTrigger_EventListener';
 	Trigger.ListenerData.Deferral = ELD_OnStateSubmitted;
@@ -228,12 +232,12 @@ static function X2AbilityTemplate QuickHealing()
 	DamageTakenEffect.bModifyIncomingDamage = true;
 	DamageTakenEffect.DamageModifier = default.QUICKHEALING_DAMAGE_TAKEN_MULT;
 	DamageTakenEffect.BuildPersistentEffect(1, true, false);
-	DamageTakenEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	DamageTakenEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(DamageTakenEffect);
 
 	HealingEffect = new class'X2Effect_UT_QuickHealing';
 	HealingEffect.BuildPersistentEffect(1, true, false);
-	HealingEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	HealingEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(HealingEffect);
 
 	return Template;
@@ -253,7 +257,7 @@ static function X2AbilityTemplate Thief()
 }
 
 // Jack of all trades: this passive is just the icon holder. The +15 Ability Point bonus is
-// granted once, directly in X2DownloadableContentInfo_UniqueTraits.AssignTraitOnNaturalPromotion
+// granted once, directly in X2DownloadableContentInfo_UniqueTraits.GrantTraitToUnit
 // (keyed off TraitID == 'UT_JackOfAllTrades'), the same way Always ready's malus is special-
 // cased there. The purchase block on the class's top-cost ability row (~35 AP in LWOTC's
 // random-deck system) is X2EventListener_UniqueTraits.OnCPSOverrideCanPurchaseAbility, an
@@ -267,9 +271,8 @@ static function X2AbilityTemplate JackOfAllTrades()
 	return Template;
 }
 
-// Scout: free Battle Scanner (granted via X2Effect_UT_TemporaryItem, bypassing slot capacity,
-// tactical-only), -3 sight radius. The +25% throw range on that scanner specifically is handled by a global
-// 'OnGetItemRange' listener scoped to the Battle Scanner item template name.
+// Scout: -3 sight radius, plus a free, reusable scanning ability (not a consumable item => see
+// UT_ScoutScannerItem in X2Item_UniqueTraits.uc and ScoutScanner() below).
 static function X2AbilityTemplate Scout()
 {
 	local X2AbilityTemplate Template;
@@ -281,7 +284,7 @@ static function X2AbilityTemplate Scout()
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Scout';
 	StatEffect.BuildPersistentEffect(1, true, false);
-	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	StatEffect.AddPersistentStatChange(eStat_SightRadius, -default.SCOUT_SIGHT_RADIUS_PENALTY);
 	Template.AddTargetEffect(StatEffect);
 
@@ -290,8 +293,118 @@ static function X2AbilityTemplate Scout()
 	ScannerEffect.ItemName = default.SCOUT_SCANNER_ITEM_NAME;
 	ScannerEffect.ItemInventorySlot = eInvSlot_Utility;
 	ScannerEffect.BuildPersistentEffect(1, true, false);
-	ScannerEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	ScannerEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(ScannerEffect);
+
+	return Template;
+}
+
+// Scout's actual scanning ability.
+static function X2AbilityTemplate ScoutScanner()
+{
+	local X2AbilityTemplate              Template;
+	local X2AbilityCooldown              Cooldown;
+	local X2AbilityTarget_Cursor         CursorTarget;
+	local X2AbilityMultiTarget_Radius    RadiusMultiTarget;
+	local X2Effect_PersistentSquadViewer ViewerEffect;
+	local X2Effect_ScanningProtocol      ScanningEffect;
+	local X2Condition_UnitProperty       CivilianProperty;
+
+	`CREATE_X2ABILITY_TEMPLATE(Template, 'UT_ScoutScanner');
+
+	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_item_battlescanner";
+	Template.AbilitySourceName = 'eAbilitySource_Item';
+	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
+	Template.Hostility = eHostility_Neutral;
+	Template.bDisplayInUITacticalText = false;
+	Template.bHideWeaponDuringFire = true;
+
+	Cooldown = new class'X2AbilityCooldown';
+	Cooldown.iNumTurns = default.SCOUT_SCANNER_COOLDOWN;
+	Template.AbilityCooldown = Cooldown;
+
+	Template.ShotHUDPriority = class'UIUtilities_Tactical'.const.STANDARD_GRENADE_PRIORITY;
+	Template.AbilityCosts.AddItem(default.FreeActionCost);
+
+	Template.AbilityToHitCalc = default.DeadEye;
+	Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
+	Template.AddShooterEffectExclusions();
+
+	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
+
+	CursorTarget = new class'X2AbilityTarget_Cursor';
+	CursorTarget.bRestrictToWeaponRange = true;
+	Template.AbilityTargetStyle = CursorTarget;
+
+	RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
+	RadiusMultiTarget.bUseWeaponRadius = true;
+	RadiusMultiTarget.bIgnoreBlockingCover = true;
+	Template.AbilityMultiTargetStyle = RadiusMultiTarget;
+
+	Template.TargetingMethod = class'X2TargetingMethod_Grenade';
+
+	ScanningEffect = new class'X2Effect_ScanningProtocol';
+	ScanningEffect.BuildPersistentEffect(1, false, false, false, eGameRule_PlayerTurnEnd);
+	ScanningEffect.TargetConditions.AddItem(default.LivingHostileUnitOnlyProperty);
+	Template.AddMultiTargetEffect(ScanningEffect);
+
+	ScanningEffect = new class'X2Effect_ScanningProtocol';
+	ScanningEffect.BuildPersistentEffect(1, false, false, false, eGameRule_PlayerTurnEnd);
+	CivilianProperty = new class'X2Condition_UnitProperty';
+	CivilianProperty.ExcludeNonCivilian = true;
+	CivilianProperty.ExcludeHostileToSource = false;
+	CivilianProperty.ExcludeFriendlyToSource = false;
+	ScanningEffect.TargetConditions.AddItem(CivilianProperty);
+	Template.AddMultiTargetEffect(ScanningEffect);
+
+	ViewerEffect = new class'X2Effect_PersistentSquadViewer';
+	ViewerEffect.BuildPersistentEffect(class'X2Ability_ItemGrantedAbilitySet'.default.BATTLESCANNER_DURATION, false, false, false, eGameRule_PlayerTurnBegin);
+	Template.AddShooterEffect(ViewerEffect);
+
+	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
+
+	Template.ChosenActivationIncreasePerUse = class'X2AbilityTemplateManager'.default.NonAggressiveChosenActivationIncreasePerUse;
+
+	return Template;
+}
+
+// Hunter: enemy detection range grows (malus). The "hear the enemies" bonus is event-driven, see
+// X2EventListener_UniqueTraits.OnPlayerTurnEnded_Hunter.
+static function X2AbilityTemplate Hunter()
+{
+	local X2AbilityTemplate Template;
+	local X2Effect_PersistentStatChange StatEffect;
+
+	Template = PurePassive('UT_Hunter', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+
+	StatEffect = new class'X2Effect_PersistentStatChange';
+	StatEffect.EffectName = 'UT_Hunter_Detection';
+	StatEffect.BuildPersistentEffect(1, true, false);
+	StatEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
+	// eStat_DetectionModifier is what OTHER units apply against this one (their radius * (1 - modifier)),
+	// so a negative value widens the radius at which enemies spot this soldier.
+	StatEffect.AddPersistentStatChange(eStat_DetectionModifier, default.HUNTER_DETECTION_MODIFIER);
+	Template.AddTargetEffect(StatEffect);
+
+	return Template;
+}
+
+// Long Range: see X2Effect_UT_LongRange.
+static function X2AbilityTemplate LongRange()
+{
+	local X2AbilityTemplate Template;
+	local X2Effect_UT_LongRange RangeEffect;
+
+	Template = PurePassive('UT_LongRange', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+
+	RangeEffect = new class'X2Effect_UT_LongRange';
+	RangeEffect.EffectName = 'UT_LongRange_Effect';
+	RangeEffect.FarRangeShift = default.LONGRANGE_FAR_RANGE_SHIFT;
+	RangeEffect.CloseRangeAimPenalty = default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY;
+	RangeEffect.BuildPersistentEffect(1, true, false);
+	RangeEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
+	Template.AddTargetEffect(RangeEffect);
 
 	return Template;
 }

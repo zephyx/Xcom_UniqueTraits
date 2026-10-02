@@ -34,18 +34,24 @@
     <Content Include="Src\UniqueTraits\Classes\X2EventListener_UniqueTraits.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Ability_UniqueTraits_Core.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Ability_UniqueTraits_Advanced.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Swordsman.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_LongRange.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Ability_UniqueTraits_Items.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2ItemSlot_UniqueTraits.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Ability_UniqueTraits_LWOTC.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_OrganicCombat.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakExplosives.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakHeavyWeapons.uc" />
-    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_FlycatcherMalus.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_AcrobatMalus.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_QuickHealing.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_TemporaryItem.uc" />
     <Content Include="Src\UniqueTraits\Classes\XComGameState_Effect_UT_TemporaryItem.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2AbilityCost_UT_SmokeThrow.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Condition_UT_ExcludeAlreadyOverwatching.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Item_UniqueTraits.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_LootWindow.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_RookieTrait.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_ClassChoice.uc" />
   </ItemGroup>
   <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
 </Project>

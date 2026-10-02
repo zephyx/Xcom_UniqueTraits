@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   X2Ability_UniqueTraits_LWOTC.uc
 //  PURPOSE: Traits that only make sense with LongWarOfTheChosen active (RequiredMods in
-//           Config/XComUniqueTraits.ini) -- Bribe, Stay focus, Smoker, Born to be chief. Built
+//           Config/XComUniqueTraits.ini) -- Bribe, Stay focus, Smoker, Born to be chief, Swordsman. Built
 //           entirely from vanilla/CHL classes: this project has no compile-time visibility into
 //           LW_Overhaul's own package, so nothing here may reference an LW_Overhaul class
 //           directly, even though the traits themselves are gated to only be drawn when that mod
@@ -22,6 +22,8 @@ var config name SMOKER_GRENADE_ITEM_NAME;
 var config int SMOKER_GRENADE_COUNT;
 var config int BORNTOBECHIEF_AIM_DODGE_WILL_BASE;
 var config int BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK;
+var config array<int> SWORDSMAN_MELEE_BONUS_BY_TIER;
+var config int SWORDSMAN_FIREARM_DAMAGE_REDUCTION;
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -31,6 +33,7 @@ static function array<X2DataTemplate> CreateTemplates()
 	Templates.AddItem(StayFocus());
 	Templates.AddItem(Smoker());
 	Templates.AddItem(BornToBeChief());
+	Templates.AddItem(Swordsman());
 
 	return Templates;
 }
@@ -61,6 +64,7 @@ static function X2AbilityTemplate StayFocus()
 	local X2AbilityCooldown Cooldown;
 	local X2AbilityMultiTarget_Radius RadiusMultiTarget;
 	local X2Condition_UnitProperty AllyCondition;
+	local X2Condition_UnitStatCheck WillCheck;
 	local X2Effect_PersistentStatChange StatEffect;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'UT_StayFocus');
@@ -70,6 +74,11 @@ static function X2AbilityTemplate StayFocus()
 	Template.Hostility = eHostility_Defensive;
 	Template.AbilityToHitCalc = default.DeadEye;
 	Template.AbilityTargetStyle = default.SelfTarget;
+
+	// Unusable once the user can't pay its fixed Will cost (X2EventListener_UniqueTraits.STAYFOCUS_WILL_LOSS).
+	WillCheck = new class'X2Condition_UnitStatCheck';
+	WillCheck.AddCheckStat(eStat_Will, class'X2EventListener_UniqueTraits'.default.STAYFOCUS_WILL_LOSS, eCheck_GreaterThanOrEqual);
+	Template.AbilityShooterConditions.AddItem(WillCheck);
 
 	ActionPointCost = new class'X2AbilityCost_ActionPoints';
 	ActionPointCost.bFreeCost = true;
@@ -82,6 +91,9 @@ static function X2AbilityTemplate StayFocus()
 	RadiusMultiTarget = new class'X2AbilityMultiTarget_Radius';
 	RadiusMultiTarget.fTargetRadius = default.STAYFOCUS_RADIUS_TILES * class'XComWorldData'.const.WORLD_StepSize * class'XComWorldData'.const.WORLD_UNITS_TO_METERS_MULTIPLIER;
 	RadiusMultiTarget.bExcludeSelfAsTargetIfWithinRadius = true;
+	// The targeting UI can't conform to partial cover, and without this the zone (and its targets) is
+	// clipped by it like a smoke grenade's; vanilla does the same (X2Ability_DefaultAbilitySet.uc:2319).
+	RadiusMultiTarget.bIgnoreBlockingCover = true;
 	Template.AbilityMultiTargetStyle = RadiusMultiTarget;
 
 	AllyCondition = new class'X2Condition_UnitProperty';
@@ -108,10 +120,9 @@ static function X2AbilityTemplate StayFocus()
 
 // Smoker: 2 free smoke grenades. "Doesn't end turn when thrown" is
 // X2AbilityCost_UT_SmokeThrow, spliced into the shared ThrowGrenade template by
-// X2DownloadableContentInfo_UniqueTraits.OnPostTemplatesCreated (see that class). Will regen
-// while standing in smoke and the fatigue-doubling malus are both handled by
-// X2EventListener_UniqueTraits.OnPlayerTurnEnded_FatigueDoubling / OnPlayerTurnEnded_
-// SmokerWillRegen, since neither is naturally expressible as an effect on this ability.
+// X2DownloadableContentInfo_UniqueTraits.OnPostTemplatesCreated (see that class). Regain Will when
+// standing near the smoke grenade impact and the fatigue-doubling malus are both handled by
+// X2EventListener_UniqueTraits.OnPlayerTurnEnded_FatigueDoubling.
 static function X2AbilityTemplate Smoker()
 {
 	local X2AbilityTemplate Template;
@@ -124,41 +135,48 @@ static function X2AbilityTemplate Smoker()
 	GrenadeEffect.ItemName = default.SMOKER_GRENADE_ITEM_NAME;
 	GrenadeEffect.ItemInventorySlot = eInvSlot_Utility;
 	GrenadeEffect.Quantity = default.SMOKER_GRENADE_COUNT;
+	// One icon with a stack of N (added to any smoke grenade the holder already carries) instead of N separate icons.
+	GrenadeEffect.bStackOnExisting = true;
 	GrenadeEffect.BuildPersistentEffect(1, true, false);
-	GrenadeEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	GrenadeEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(GrenadeEffect);
 
 	return Template;
 }
 
-// Born to be chief: fixed -12 Aim/Dodge/Will baseline (this function), +4 to each per LWOTC
-// officer rank held (dynamic, not an effect on this ability at all. Officer rank changes over
-// the campaign, so it's applied/recomputed directly on the unit's stats via
-// X2DownloadableContentInfo_UniqueTraits.ApplyBornToBeChiefRankScaling, the same
-// precompute-then-Set pattern ApplyNerdRankScaling uses for its own per-rank scaling). Also
-// grants the LW ability 'QuickStudy'.
+// Born to be chief: fixed -12 Aim/Dodge/Will baseline, +4 to each per LWOTC officer rank held.
+// A plain X2Effect_PersistentStatChange is mission-scoped
+// (X2Effect_ModifyStats.UnitEndedTacticalPlay un-applies it at the end of every tactical mission,
+// since it's re-applied fresh each time via PurePassive's UnitPostBeginPlayTrigger), so the fixed
+// part would never actually lower the soldier's real Max Will/Aim/Dodge between missions.
+// Also grants the LW ability 'QuickStudy'.
 static function X2AbilityTemplate BornToBeChief()
 {
 	local X2AbilityTemplate Template;
-	local X2Effect_PersistentStatChange StatEffect;
 
 	Template = PurePassive('UT_BornToBeChief', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
 
-	StatEffect = new class'X2Effect_PersistentStatChange';
-	StatEffect.EffectName = 'UT_BornToBeChief';
-	StatEffect.BuildPersistentEffect(1, true, false);
-	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
-	StatEffect.AddPersistentStatChange(eStat_Offense, -default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE);
-	StatEffect.AddPersistentStatChange(eStat_Dodge, -default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE);
-	StatEffect.AddPersistentStatChange(eStat_Will, -default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE);
-	Template.AddTargetEffect(StatEffect);
+	return Template;
+}
 
-	// Base fixed part only -- the +4/rank scaling is applied directly to the unit's real stats by
-	// ApplyBornToBeChiefRankScaling (not through this ability), so it's already reflected in
-	// GetCurrentStat/GetMaxStat without needing a markup of its own.
-	Template.SetUIStatMarkup(class'XLocalizedData'.default.AimLabel, eStat_Offense, -default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE);
-	Template.SetUIStatMarkup(class'XLocalizedData'.default.DodgeLabel, eStat_Dodge, -default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE);
-	Template.SetUIStatMarkup(class'XLocalizedData'.default.WillLabel, eStat_Will, -default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE);
+// Swordsman: melee damage and armor pierce scale with the melee weapon's Tier; -1 damage on
+// firearms. LWOTC-only because the pistol restriction targets LWOTC's own pistol slot (the slot +
+// CPS pistol row block live in X2DownloadableContentInfo_UniqueTraits.CanAddItemToInventory_CH_Improved
+// / X2EventListener_UniqueTraits).
+static function X2AbilityTemplate Swordsman()
+{
+	local X2AbilityTemplate Template;
+	local X2Effect_UT_Swordsman SwordEffect;
+
+	Template = PurePassive('UT_Swordsman', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+
+	SwordEffect = new class'X2Effect_UT_Swordsman';
+	SwordEffect.EffectName = 'UT_Swordsman_Effect';
+	SwordEffect.MeleeBonusByTier = default.SWORDSMAN_MELEE_BONUS_BY_TIER;
+	SwordEffect.FirearmDamageReduction = default.SWORDSMAN_FIREARM_DAMAGE_REDUCTION;
+	SwordEffect.BuildPersistentEffect(1, true, false);
+	SwordEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
+	Template.AddTargetEffect(SwordEffect);
 
 	return Template;
 }

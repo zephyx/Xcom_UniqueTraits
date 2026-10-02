@@ -36,10 +36,10 @@ static final function bool IsTraitEligible(int Index)
 			return false;
 	}
 
-	// Defender's vest slot is only meaningful if some active content actually provides a genuine
+	// Support's vest slot is only meaningful if some active content actually provides a genuine
 	// vest-type item for it to hold : base XCOM 2 WOTC provides none, same as it never grants
 	// GTS options tied to absent content. See X2ItemSlot_UniqueTraits.AnyVestItemTemplateExists.
-	if (default.Traits[Index].TraitID == 'UT_Defender' && !class'X2ItemSlot_UniqueTraits'.static.AnyVestItemTemplateExists())
+	if (default.Traits[Index].TraitID == 'UT_Support' && !class'X2ItemSlot_UniqueTraits'.static.AnyVestItemTemplateExists())
 		return false;
 
 	return true;

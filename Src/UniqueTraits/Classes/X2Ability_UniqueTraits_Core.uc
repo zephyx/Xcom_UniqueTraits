@@ -1,8 +1,9 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   X2Ability_UniqueTraits_Core.uc
-//  PURPOSE: The simplest traits -- pure stat passives, built entirely from base-game
+//  PURPOSE: The simplest traits : pure stat passives, built entirely from base-game
 //           effect classes (X2Effect_PersistentStatChange, X2Effect_MeleeDamageAdjust,
-//           X2Effect_ModifyReactionFire). No custom effect classes needed.
+//           X2Effect_ModifyReactionFire). No custom effect classes needed. Athlete, Nerd, Guard,
+//           Tactician and False Hope (a bare icon holder, its stat changes are direct mutations).
 //---------------------------------------------------------------------------------------
 class X2Ability_UniqueTraits_Core extends X2Ability config(UniqueTraits);
 
@@ -21,6 +22,7 @@ static function array<X2DataTemplate> CreateTemplates()
 	Templates.AddItem(Nerd());
 	Templates.AddItem(Guard());
 	Templates.AddItem(Tactician());
+	Templates.AddItem(FalseHope());
 
 	return Templates;
 }
@@ -36,7 +38,7 @@ static function X2AbilityTemplate Athlete()
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Athlete';
 	StatEffect.BuildPersistentEffect(1, true, false);
-	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	StatEffect.AddPersistentStatChange(eStat_Mobility, default.ATHLETE_MOBILITY);
 	StatEffect.AddPersistentStatChange(eStat_Dodge, default.ATHLETE_DODGE);
 	StatEffect.AddPersistentStatChange(eStat_Offense, -default.ATHLETE_AIM);
@@ -59,27 +61,15 @@ static function X2AbilityTemplate Athlete()
 static function X2AbilityTemplate Nerd()
 {
 	local X2AbilityTemplate Template;
-	local X2Effect_PersistentStatChange StatEffect;
 	local X2Effect_MeleeDamageAdjust MeleeEffect;
 
 	Template = PurePassive('UT_Nerd', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
-
-	StatEffect = new class'X2Effect_PersistentStatChange';
-	StatEffect.EffectName = 'UT_Nerd';
-	StatEffect.BuildPersistentEffect(1, true, false);
-	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
-	StatEffect.AddPersistentStatChange(eStat_Hacking, default.NERD_HACKING_BASE);
-	StatEffect.AddPersistentStatChange(eStat_Will, -default.NERD_WILL_BASE);
-	Template.AddTargetEffect(StatEffect);
-
-	Template.SetUIStatMarkup(class'XLocalizedData'.default.TechLabel, eStat_Hacking, default.NERD_HACKING_BASE);
-	Template.SetUIStatMarkup(class'XLocalizedData'.default.WillLabel, eStat_Will, -default.NERD_WILL_BASE);
 
 	MeleeEffect = new class'X2Effect_MeleeDamageAdjust';
 	MeleeEffect.EffectName = 'UT_Nerd_MeleeVulnerability';
 	MeleeEffect.DamageMod = default.NERD_MELEE_DAMAGE_TAKEN;
 	MeleeEffect.BuildPersistentEffect(1, true, false);
-	MeleeEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	MeleeEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(MeleeEffect);
 
 	return Template;
@@ -97,7 +87,7 @@ static function X2AbilityTemplate Guard()
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Guard';
 	StatEffect.BuildPersistentEffect(1, true, false);
-	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	StatEffect.AddPersistentStatChange(eStat_Offense, -default.GUARD_AIM);
 	Template.AddTargetEffect(StatEffect);
 
@@ -108,7 +98,7 @@ static function X2AbilityTemplate Guard()
 	ReactionEffect.ReactionModifier = default.GUARD_OVERWATCH_AIM;
 	ReactionEffect.bAllowCrit = true;
 	ReactionEffect.BuildPersistentEffect(1, true, false);
-	ReactionEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	ReactionEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(ReactionEffect);
 
 	return Template;
@@ -127,11 +117,19 @@ static function X2AbilityTemplate Tactician()
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Tactician';
 	StatEffect.BuildPersistentEffect(1, true, false);
-	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	StatEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	StatEffect.AddPersistentStatChange(eStat_Offense, -default.TACTICIAN_AIM);
 	Template.AddTargetEffect(StatEffect);
 
 	Template.SetUIStatMarkup(class'XLocalizedData'.default.AimLabel, eStat_Offense, -default.TACTICIAN_AIM);
 
 	return Template;
+}
+
+// False Hope: bare icon holder. The stat changes (+12 aim/+3 HP, then -1.5 aim/-0.5 HP per rank)
+// are permanent direct mutations (GrantTraitToUnit / ApplyFalseHopeRankScaling), and the XP malus
+// is X2EventListener_UniqueTraits.OnDistributeTacticalGameEndXp_FalseHopeXp.
+static function X2AbilityTemplate FalseHope()
+{
+	return PurePassive('UT_FalseHope', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
 }

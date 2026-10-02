@@ -7,7 +7,7 @@
 //---------------------------------------------------------------------------------------
 class X2Ability_UniqueTraits_Items extends X2Ability config(UniqueTraits);
 
-var config name DEFENDER_MEDIKIT_ITEM_NAME;
+var config name SUPPORT_MEDIKIT_ITEM_NAME;
 var config name MANIAC_IMPROVISE_GRENADE_ITEM_NAME;
 var config int MANIAC_IMPROVISE_CHARGES;
 var config int MANIAC_IMPROVISE_COOLDOWN;
@@ -16,29 +16,29 @@ static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
 
-	Templates.AddItem(Defender());
+	Templates.AddItem(Support());
 	Templates.AddItem(ManiacExplosive());
 	Templates.AddItem(ManiacImproviseGrenade());
 
 	return Templates;
 }
 
-// Defender: the vest slot itself is implemented by the UT_DefenderVestSlot CHItemSlot template in
+// Support: the vest slot itself is implemented by the UT_SupportVestSlot CHItemSlot template in
 // X2ItemSlot_UniqueTraits.uc.
 // The free medikit is granted the same way LWOTC's own Corpsman/XMBEffect_AddUtilityItem grants its free medikit.
-static function X2AbilityTemplate Defender()
+static function X2AbilityTemplate Support()
 {
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_TemporaryItem MedikitEffect;
 
-	Template = PurePassive('UT_Defender', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Support', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
 
 	MedikitEffect = new class'X2Effect_UT_TemporaryItem';
-	MedikitEffect.EffectName = 'UT_Defender_FreeMedikit';
-	MedikitEffect.ItemName = default.DEFENDER_MEDIKIT_ITEM_NAME;
+	MedikitEffect.EffectName = 'UT_Support_FreeMedikit';
+	MedikitEffect.ItemName = default.SUPPORT_MEDIKIT_ITEM_NAME;
 	MedikitEffect.ItemInventorySlot = eInvSlot_Vest;
 	MedikitEffect.BuildPersistentEffect(1, true, false);
-	MedikitEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
+	MedikitEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(MedikitEffect);
 
 	return Template;
@@ -105,6 +105,10 @@ static function X2AbilityTemplate ManiacImproviseGrenade()
 	GrenadeEffect.ItemName = default.MANIAC_IMPROVISE_GRENADE_ITEM_NAME;
 	GrenadeEffect.ItemInventorySlot = eInvSlot_Utility;
 	GrenadeEffect.bUseHighestAvailableUpgrade = true;
+	GrenadeEffect.bStackOnExisting = true;
+	// Each use adds one more grenade: the default eDupe_Ignore would reject every use after the first
+	// (same EffectName already on the unit).
+	GrenadeEffect.DuplicateResponse = eDupe_Allow;
 	GrenadeEffect.BuildPersistentEffect(1, true, false);
 	GrenadeEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
 	Template.AddTargetEffect(GrenadeEffect);

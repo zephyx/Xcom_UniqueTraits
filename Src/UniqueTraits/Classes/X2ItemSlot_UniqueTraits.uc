@@ -1,43 +1,34 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   X2ItemSlot_UniqueTraits.uc
-//  PURPOSE: Custom CHItemSlot (Community Highlander issue #118) templates backing Defender
+//  PURPOSE: Custom CHItemSlot (Community Highlander issue #118) templates backing Support
 //           (a dedicated single-item "vest" slot, restricted to genuine vest-native items) and
-//           Maniac explosive (+3 multi-item grenade pockets). Defender's free medikit is NOT
-//           granted here (see X2Ability_UniqueTraits_Items.Defender(), which grants it the
-//           same tactical-only, bIgnoreItemEquipRestrictions way LWOTC's Corpsman does). Both reuse
-//           enum values the Highlander already reserves for exactly this purpose
-//           (eInvSlot_Vest / eInvSlot_ExtraGrenadePocket), so no new EInventorySlot entry is
-//           needed.
-//
-//           A CHItemSlotSet subclass needs no explicit registration: like X2Ability/
-//           X2StrategyElement classes, its static CreateTemplates() is picked up
-//           automatically as long as the class is compiled into an active mod package.
+//           Maniac explosive (+3 multi-item grenade pockets).
 //---------------------------------------------------------------------------------------
 class X2ItemSlot_UniqueTraits extends CHItemSlotSet config(UniqueTraits);
 
 var config int MANIAC_EXTRA_GRENADE_POCKETS;
 
-var localized string DefenderVestSlotName, DefenderVestSlotLetter;
+var localized string SupportVestSlotName, SupportVestSlotLetter;
 var localized string ManiacPocketsSlotName, ManiacPocketsSlotLetter;
 
 static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
 
-	Templates.AddItem(CreateDefenderVestSlot());
+	Templates.AddItem(CreateSupportVestSlot());
 	Templates.AddItem(CreateManiacExtraPocketsSlot());
 
 	return Templates;
 }
 
 //---------------------------------------------------------------------------------------
-// Defender: dedicated vest slot, one item, restricted to genuine vest-native items.
+// Support: dedicated vest slot, one item, restricted to genuine vest-native items.
 //---------------------------------------------------------------------------------------
-static function X2DataTemplate CreateDefenderVestSlot()
+static function X2DataTemplate CreateSupportVestSlot()
 {
 	local CHItemSlot Template;
 
-	`CREATE_X2TEMPLATE(class'CHItemSlot', Template, 'UT_DefenderVestSlot');
+	`CREATE_X2TEMPLATE(class'CHItemSlot', Template, 'UT_SupportVestSlot');
 
 	Template.InvSlot = eInvSlot_Vest;
 	Template.SlotCatMask = Template.SLOT_ITEM;
@@ -50,23 +41,23 @@ static function X2DataTemplate CreateDefenderVestSlot()
 	Template.NeedsPresEquip = false;
 	Template.ShowOnCinematicPawns = false;
 
-	Template.UnitHasSlotFn = DefenderUnitHasSlot;
-	Template.CanAddItemToSlotFn = DefenderCanAddItemToSlot;
-	Template.ShowItemInLockerListFn = DefenderShowItemInLockerList;
-	Template.ValidateLoadoutFn = DefenderValidateLoadout;
-	Template.GetPriorityFn = DefenderGetPriority;
-	Template.GetDisplayNameFn = DefenderGetDisplayName;
-	Template.GetDisplayLetterFn = DefenderGetDisplayLetter;
+	Template.UnitHasSlotFn = SupportUnitHasSlot;
+	Template.CanAddItemToSlotFn = SupportCanAddItemToSlot;
+	Template.ShowItemInLockerListFn = SupportShowItemInLockerList;
+	Template.ValidateLoadoutFn = SupportValidateLoadout;
+	Template.GetPriorityFn = SupportGetPriority;
+	Template.GetDisplayNameFn = SupportGetDisplayName;
+	Template.GetDisplayLetterFn = SupportGetDisplayLetter;
 
 	return Template;
 }
 
-static function bool DefenderUnitHasSlot(CHItemSlot Slot, XComGameState_Unit UnitState, out string LockedReason, optional XComGameState CheckGameState)
+static function bool SupportUnitHasSlot(CHItemSlot Slot, XComGameState_Unit UnitState, out string LockedReason, optional XComGameState CheckGameState)
 {
-	return class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(UnitState, 'UT_Defender');
+	return class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(UnitState, 'UT_Support');
 }
 
-static function bool DefenderCanAddItemToSlot(CHItemSlot Slot, XComGameState_Unit Unit, X2ItemTemplate Template, optional XComGameState CheckGameState, optional int Quantity = 1, optional XComGameState_Item ItemState)
+static function bool SupportCanAddItemToSlot(CHItemSlot Slot, XComGameState_Unit Unit, X2ItemTemplate Template, optional XComGameState CheckGameState, optional int Quantity = 1, optional XComGameState_Item ItemState)
 {
 	local string strDummy;
 
@@ -79,7 +70,7 @@ static function bool DefenderCanAddItemToSlot(CHItemSlot Slot, XComGameState_Uni
 	return IsEligibleForVestSlot(Template);
 }
 
-static function bool DefenderShowItemInLockerList(CHItemSlot Slot, XComGameState_Unit Unit, XComGameState_Item ItemState, X2ItemTemplate ItemTemplate, XComGameState CheckGameState)
+static function bool SupportShowItemInLockerList(CHItemSlot Slot, XComGameState_Unit Unit, XComGameState_Item ItemState, X2ItemTemplate ItemTemplate, XComGameState CheckGameState)
 {
 	return IsEligibleForVestSlot(ItemTemplate);
 }
@@ -96,11 +87,11 @@ static function bool IsEligibleForVestSlot(X2ItemTemplate ItemTemplate)
 	return EquipmentTemplate.InventorySlot == eInvSlot_Vest;
 }
 
-// Defender eligibility support: base XCOM 2 WOTC (and this mod's own trait pool) ships no item
+// Support eligibility support: base XCOM 2 WOTC (and this mod's own trait pool) ships no item
 // whose own template declares InventorySlot=eInvSlot_Vest, so without another mod adding one,
-// this slot would always sit empty and Defender's "restricted to genuine vest items" downside
+// this slot would always sit empty and Support's "restricted to genuine vest items" downside
 // would be entirely cosmetic.
-// Called from UniqueTraits_TraitConfig.IsTraitEligible to exclude Defender from the draw pool in
+// Called from UniqueTraits_TraitConfig.IsTraitEligible to exclude Support from the draw pool in
 // that case, the same way the base game withholds mechanics tied to content that isn't present.
 static function bool AnyVestItemTemplateExists()
 {
@@ -194,7 +185,7 @@ static function bool EffectListHasRealWeaponDamage(array<X2Effect> Effects, X2We
 // Defensive only: if the unit ever lost the slot (shouldn't happen, the trait is permanent),
 // don't strand whatever real vest item might be equipped in it. Never touches the tactical-only
 // free medikit (that item is never present at the strategy layer where ValidateLoadout runs).
-static function DefenderValidateLoadout(CHItemSlot Slot, XComGameState_Unit Unit, XComGameState_HeadquartersXCom XComHQ, XComGameState NewGameState)
+static function SupportValidateLoadout(CHItemSlot Slot, XComGameState_Unit Unit, XComGameState_HeadquartersXCom XComHQ, XComGameState NewGameState)
 {
 	local string strDummy;
 	local array<XComGameState_Item> ItemStates;
@@ -212,19 +203,19 @@ static function DefenderValidateLoadout(CHItemSlot Slot, XComGameState_Unit Unit
 	}
 }
 
-static function int DefenderGetPriority(CHItemSlot Slot, XComGameState_Unit UnitState, optional XComGameState CheckGameState)
+static function int SupportGetPriority(CHItemSlot Slot, XComGameState_Unit UnitState, optional XComGameState CheckGameState)
 {
 	return 115;
 }
 
-static function string DefenderGetDisplayName(CHItemSlot Slot)
+static function string SupportGetDisplayName(CHItemSlot Slot)
 {
-	return default.DefenderVestSlotName;
+	return default.SupportVestSlotName;
 }
 
-static function string DefenderGetDisplayLetter(CHItemSlot Slot)
+static function string SupportGetDisplayLetter(CHItemSlot Slot)
 {
-	return default.DefenderVestSlotLetter;
+	return default.SupportVestSlotLetter;
 }
 
 //---------------------------------------------------------------------------------------
@@ -243,7 +234,9 @@ static function X2DataTemplate CreateManiacExtraPocketsSlot()
 	Template.SlotCatMask = Template.SLOT_ITEM;
 	Template.IsUserEquipSlot = true;
 	Template.IsEquippedSlot = false;
-	Template.BypassesUniqueRule = false;
+	// Same as vanilla's Grenade Pocket: 'grenade' is a unique-equip category, so without this a
+	// frag already in another slot would block a second frag here (RespectsUniqueRule).
+	Template.BypassesUniqueRule = true;
 	Template.IsMultiItemSlot = true;
 	Template.MinimumEquipped = 0;
 	Template.IsSmallSlot = true;

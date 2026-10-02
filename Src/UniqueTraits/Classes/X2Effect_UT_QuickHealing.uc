@@ -26,6 +26,6 @@ function UnitEndedTacticalPlay(XComGameState_Effect EffectState, XComGameState_U
 
 defaultproperties
 {
-	EffectName = "UT_QuickHealing"
+	EffectName = "UT_QuickHealing_LowestHP"
 	DuplicateResponse = eDupe_Ignore
 }
