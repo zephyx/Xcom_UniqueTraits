@@ -16,12 +16,12 @@ function GetToHitModifiers(XComGameState_Effect EffectState, XComGameState_Unit 
 
 	Modifier.ModType = eHit_Success;
 	Modifier.Value = -AimPenalty;
-	Modifier.Reason = string(EffectName);
+	Modifier.Reason = class'UT_TraitBase'.static.GetShotModifierLabel(self);
 	ShotModifiers.AddItem(Modifier);
 
 	Modifier.ModType = eHit_Crit;
 	Modifier.Value = -CritPenalty;
-	Modifier.Reason = string(EffectName);
+	Modifier.Reason = class'UT_TraitBase'.static.GetShotModifierLabel(self);
 	ShotModifiers.AddItem(Modifier);
 }
 

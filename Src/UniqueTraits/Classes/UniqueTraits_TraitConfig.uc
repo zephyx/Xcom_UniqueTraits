@@ -18,11 +18,11 @@ struct UniqueTraitDefinition
 };
 
 var config array<UniqueTraitDefinition> Traits;
-var localized string JackOfAllTradesLockedReason;
 
 static final function bool IsTraitEligible(int Index)
 {
 	local name RequiredMod;
+	local class<UT_TraitBase> TraitClass;
 
 	if (Index < 0 || Index >= default.Traits.Length)
 		return false;
@@ -36,10 +36,9 @@ static final function bool IsTraitEligible(int Index)
 			return false;
 	}
 
-	// Support's vest slot is only meaningful if some active content actually provides a genuine
-	// vest-type item for it to hold : base XCOM 2 WOTC provides none, same as it never grants
-	// GTS options tied to absent content. See X2ItemSlot_UniqueTraits.AnyVestItemTemplateExists.
-	if (default.Traits[Index].TraitID == 'UT_Support' && !class'X2ItemSlot_UniqueTraits'.static.AnyVestItemTemplateExists())
+	// The trait's own extra condition (e.g. Support needs at least one item its vest slot accepts).
+	TraitClass = GetTraitClass(default.Traits[Index].TraitID);
+	if (TraitClass != none && !TraitClass.static.IsEligible())
 		return false;
 
 	return true;
@@ -56,6 +55,13 @@ static final function int FindTraitIndexByID(name TraitID)
 	}
 
 	return INDEX_NONE;
+}
+
+// The per-trait class holding a trait's grant/clear/rank-up hooks: "UT_Nerd" -> UT_Trait_Nerd. None for a
+// trait that has no class of its own (yet), callers must tolerate that.
+static final function class<UT_TraitBase> GetTraitClass(name TraitID)
+{
+	return class<UT_TraitBase>(DynamicLoadObject("UniqueTraits.UT_Trait_" $ Mid(string(TraitID), 3), class'Class', true));
 }
 
 // Checked against the list of currently loaded/active DLC packages rather than merely

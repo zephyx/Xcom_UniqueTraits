@@ -72,7 +72,7 @@ function GetToHitModifiers(XComGameState_Effect EffectState, XComGameState_Unit 
 	{
 		Modifier.ModType = eHit_Success;
 		Modifier.Value = Correction;
-		Modifier.Reason = string(EffectName);
+		Modifier.Reason = class'UT_TraitBase'.static.GetShotModifierLabel(self);
 		ShotModifiers.AddItem(Modifier);
 	}
 
@@ -80,7 +80,7 @@ function GetToHitModifiers(XComGameState_Effect EffectState, XComGameState_Unit 
 	{
 		Modifier.ModType = eHit_Success;
 		Modifier.Value = -CloseRangeAimPenalty[Tiles - 1];
-		Modifier.Reason = string(EffectName);
+		Modifier.Reason = class'UT_TraitBase'.static.GetShotModifierLabel(self);
 		ShotModifiers.AddItem(Modifier);
 	}
 }

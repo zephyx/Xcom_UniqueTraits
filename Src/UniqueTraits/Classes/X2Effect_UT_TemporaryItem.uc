@@ -18,6 +18,14 @@ var bool bUseHighestAvailableUpgrade;
 // quantity N) instead of creating a separate item. Used by Maniac explosive's Jury-Rig.
 var bool bStackOnExisting;
 
+// Checked BEFORE bUseHighestAvailableUpgrade, in order: the first entry whose research is done replaces the item. Needed because
+// the vanilla upgrade chain (BaseItem) is not reliable in a modded game: GetUpgradedItemTemplateFromBase returns the first
+// template of ANY mod declaring the same BaseItem, so with LWOTC the frag grenade never climbed to the plasma one.
+// Two parallel arrays (same length, index i = "when ResearchProjectNames[i] is researched, grant ResearchItemNames[i]"): no
+// shared struct type, so a trait class can fill them without depending on this class at compile time.
+var array<name> ResearchProjectNames;
+var array<name> ResearchItemNames;
+
 simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffectParameters, XComGameState_BaseObject kNewTargetState, XComGameState NewGameState, XComGameState_Effect NewEffectState)
 {
 	local XComGameState_Unit UnitState;
@@ -30,6 +38,7 @@ simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffe
 	local name AbilityName;
 	local bool bCachedIgnoreRestrictions;
 	local int i, GrantCount;
+	local X2ItemTemplate OptionTemplate;
 
 	UnitState = XComGameState_Unit(kNewTargetState);
 	EffectState = XComGameState_Effect_UT_TemporaryItem(NewEffectState);
@@ -39,6 +48,19 @@ simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffe
 	ItemTemplate = class'X2ItemTemplateManager'.static.GetItemTemplateManager().FindItemTemplate(ItemName);
 	if (ItemTemplate == none)
 		return;
+
+	for (i = 0; i < ResearchProjectNames.Length && i < ResearchItemNames.Length; ++i)
+	{
+		if (`XCOMHQ.IsTechResearched(ResearchProjectNames[i]))
+		{
+			OptionTemplate = class'X2ItemTemplateManager'.static.GetItemTemplateManager().FindItemTemplate(ResearchItemNames[i]);
+			if (OptionTemplate != none)
+			{
+				ItemTemplate = OptionTemplate;
+				break;
+			}
+		}
+	}
 
 	if (bUseHighestAvailableUpgrade)
 		`XCOMHQ.UpdateItemTemplateToHighestAvailableUpgrade(ItemTemplate);

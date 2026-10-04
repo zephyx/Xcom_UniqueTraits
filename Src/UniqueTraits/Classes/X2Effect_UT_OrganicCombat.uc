@@ -23,7 +23,7 @@ function GetToHitModifiers(XComGameState_Effect EffectState, XComGameState_Unit 
 
 	Modifier.ModType = eHit_Success;
 	Modifier.Value = -AimMalus;
-	Modifier.Reason = string(EffectName);
+	Modifier.Reason = class'UT_TraitBase'.static.GetShotModifierLabel(self);
 	ShotModifiers.AddItem(Modifier);
 }
 
@@ -37,7 +37,7 @@ function GetToHitAsTargetModifiers(XComGameState_Effect EffectState, XComGameSta
 
 	Modifier.ModType = eHit_Success;
 	Modifier.Value = -DefenseBonus;
-	Modifier.Reason = string(EffectName);
+	Modifier.Reason = class'UT_TraitBase'.static.GetShotModifierLabel(self);
 	ShotModifiers.AddItem(Modifier);
 }
 

@@ -30,7 +30,7 @@ event OnInit(UIScreen Screen)
 			continue;
 
 		Row = LootWindow.Spawn(class'UIInventoryTactical_LootingItem', LootWindow.m_kLootList.ItemContainer).InitLootItem(true);
-		Row.SetText(class'UIUtilities_Text'.static.GetColoredText(class'X2EventListener_UniqueTraits'.default.THIEF_STEAL_FLYOVER, eUIState_Bad));
+		Row.SetText(class'UIUtilities_Text'.static.GetColoredText(class'UT_Trait_Thief'.default.THIEF_STEAL_FLYOVER, eUIState_Bad));
 		Row.GameStateObjectID = LootItems[i].ObjectID;
 	}
 }
