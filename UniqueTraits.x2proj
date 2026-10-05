@@ -63,6 +63,7 @@
     <Content Include="Src\UniqueTraits\Classes\X2ItemSlot_UniqueTraits.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_OrganicCombat.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakExplosives.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_PrimaryWeaponMalus.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakHeavyWeapons.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_AcrobatMalus.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_TemporaryItem.uc" />

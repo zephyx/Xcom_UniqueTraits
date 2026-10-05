@@ -1,11 +1,11 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_Tactician.uc
-//  PURPOSE: Tactician: -10 aim; the bonus damage on missed shots is UT_Trait_Tactician.OnAbilityActivated_Tactician.
+//  PURPOSE: Tactician: -TACTICIAN_AIM aim, but a missed shot disorients its target (OnAbilityActivated_Tactician). The disoriented
+//           status is vanilla's own (X2StatusEffects.CreateDisorientedStatusEffect, so robots are immune as usual): the effect has
+//           to live in an ability template to be found again by its EffectRef, hence the hidden UT_TacticianDisorient, never
+//           granted to any unit.
 //---------------------------------------------------------------------------------------
 class UT_Trait_Tactician extends UT_TraitBase config(UniqueTraits);
-
-// Indexed by X2WeaponTemplate.Tier, clamped to the last entry.
-var config array<int> TACTICIAN_MISS_DAMAGE_BY_TIER;
 
 var config int TACTICIAN_AIM;
 
@@ -14,12 +14,12 @@ static function array<X2DataTemplate> CreateTemplates()
 	local array<X2DataTemplate> Templates;
 
 	Templates.AddItem(Tactician());
+	Templates.AddItem(TacticianDisorient());
 
 	return Templates;
 }
 
-// Tactician: -10 aim. The bonus damage on missed shots (scaling with weapon tier) is handled
-// by UT_Trait_Tactician.OnAbilityActivated_Tactician, since it needs to react to
+// Tactician: -10 aim. The disorient on a missed shot is OnAbilityActivated_Tactician, since it needs to react to
 // arbitrary attack abilities missing rather than something attachable to this passive itself.
 static function X2AbilityTemplate Tactician()
 {
@@ -40,24 +40,45 @@ static function X2AbilityTemplate Tactician()
 	return Template;
 }
 
-// Tactician: missed shots still land a little damage, scaling with the weapon's tier. There's
-// no clean way to attach a bonus "damage on miss" effect (like the base game's own
-// WeaponUpgradeMissDamage) to an arbitrary attack ability from outside without either mutating
-// the shared/singleton X2AbilityTemplate for everyone using that ability (dangerous) or deep-
-// copying every attack ability template per unit (heavy). Instead, this reacts to the fully
-// resolved miss after the fact and deals the bonus damage directly via TakeEffectDamage.
+// Holder of the disoriented effect applied by OnAbilityActivated_Tactician (an effect applied outside an ability must be found again
+// by its X2EffectTemplateRef: ability template name + index in its AbilityTargetEffects). Not granted to any unit.
+static function X2AbilityTemplate TacticianDisorient()
+{
+	local X2AbilityTemplate Template;
+
+	`CREATE_X2ABILITY_TEMPLATE(Template, 'UT_TacticianDisorient');
+
+	Template.AbilitySourceName = 'eAbilitySource_Perk';
+	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+	Template.Hostility = eHostility_Offensive;
+	Template.bDontDisplayInAbilitySummary = true;
+	Template.bDisplayInUITooltip = false;
+	Template.bDisplayInUITacticalText = false;
+
+	Template.AbilityToHitCalc = default.DeadEye;
+	Template.AbilityTargetStyle = default.SimpleSingleTarget;
+	Template.AddTargetEffect(class'X2StatusEffects'.static.CreateDisorientedStatusEffect(true));
+
+	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+	return Template;
+}
+
+// Tactician: a missed shot disorients its target. There's no clean way to attach an "on miss" effect to an arbitrary attack ability
+// from outside without either mutating the shared/singleton X2AbilityTemplate for everyone using that ability (dangerous) or deep-
+// copying every attack ability template per unit (heavy). Instead, this reacts to the fully resolved miss after the fact and applies
+// the effect of UT_TacticianDisorient to the target in a game state of its own.
 static function EventListenerReturn OnAbilityActivated_Tactician(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
 {
 	local XComGameState_Unit SourceUnit, TargetUnit;
 	local XComGameStateContext_Ability AbilityContext;
-	local XComGameState_Item SourceWeapon;
-	local X2WeaponTemplate WeaponTemplate;
-	local EffectAppliedData EmptyEffectData;
+	local X2AbilityTemplate DisorientTemplate;
+	local X2Effect DisorientEffect;
+	local EffectAppliedData EffectData;
 	local XComGameState NewGameState;
-	local int TierIndex, DamageAmount;
 
 	// 'AbilityActivated' fires once for the interrupt step and again on resume/final for the same
-	// shot (XComGameStateContext_Ability.uc:191/:414); react only once or the bonus damage doubles.
+	// shot (XComGameStateContext_Ability.uc:191/:414); react only once.
 	if (GameState.GetContext().InterruptionStatus == eInterruptionStatus_Interrupt)
 		return ELR_NoInterrupt;
 
@@ -76,25 +97,60 @@ static function EventListenerReturn OnAbilityActivated_Tactician(Object EventDat
 	if (TargetUnit == none || TargetUnit.IsDead())
 		return ELR_NoInterrupt;
 
-	SourceWeapon = XComGameState_Item(`XCOMHISTORY.GetGameStateForObjectID(AbilityContext.InputContext.ItemObject.ObjectID));
-	if (SourceWeapon == none)
+	DisorientTemplate = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager().FindAbilityTemplate('UT_TacticianDisorient');
+	if (DisorientTemplate == none || DisorientTemplate.AbilityTargetEffects.Length == 0)
 		return ELR_NoInterrupt;
+	DisorientEffect = DisorientTemplate.AbilityTargetEffects[0];
 
-	WeaponTemplate = X2WeaponTemplate(SourceWeapon.GetMyTemplate());
-	if (WeaponTemplate == none || default.TACTICIAN_MISS_DAMAGE_BY_TIER.Length == 0)
-		return ELR_NoInterrupt;
+	EffectData.PlayerStateObjectRef = SourceUnit.ControllingPlayer;
+	EffectData.SourceStateObjectRef = SourceUnit.GetReference();
+	EffectData.TargetStateObjectRef = TargetUnit.GetReference();
+	EffectData.ItemStateObjectRef = AbilityContext.InputContext.ItemObject;
+	EffectData.AbilityStateObjectRef = AbilityContext.InputContext.AbilityRef;
+	EffectData.AbilityInputContext = AbilityContext.InputContext;
+	EffectData.EffectRef.SourceTemplateName = 'UT_TacticianDisorient';
+	EffectData.EffectRef.LookupType = TELT_AbilityTargetEffects;
+	EffectData.EffectRef.TemplateEffectLookupArrayIndex = 0;
+	EffectData.EffectRef.ApplyOnTickIndex = INDEX_NONE;
 
-	TierIndex = Clamp(WeaponTemplate.Tier, 0, default.TACTICIAN_MISS_DAMAGE_BY_TIER.Length - 1);
-	DamageAmount = default.TACTICIAN_MISS_DAMAGE_BY_TIER[TierIndex];
-	if (DamageAmount <= 0)
-		return ELR_NoInterrupt;
-
-	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: Tactician miss damage");
+	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: Tactician disorient");
 	TargetUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', TargetUnit.ObjectID));
-	EmptyEffectData.SourceStateObjectRef = SourceUnit.GetReference();
-	EmptyEffectData.TargetStateObjectRef = TargetUnit.GetReference();
-	TargetUnit.TakeEffectDamage(none, DamageAmount, 0, 0, EmptyEffectData, NewGameState);
+
+	// ApplyEffect checks the effect's own conditions (robots are immune, no friendly fire...).
+	if (DisorientEffect.ApplyEffect(EffectData, TargetUnit, NewGameState) != 'AA_Success')
+	{
+		`XCOMHISTORY.CleanupPendingGameState(NewGameState);
+		return ELR_NoInterrupt;
+	}
+
+	XComGameStateContext_ChangeContainer(NewGameState.GetContext()).BuildVisualizationFn = BuildVisualization_TacticianDisorient;
 	`XCOMGAME.GameRuleset.SubmitGameState(NewGameState);
 
 	return ELR_NoInterrupt;
+}
+
+// The disoriented effect's own visualization (flyover, message, unit flag), on the target.
+static function BuildVisualization_TacticianDisorient(XComGameState VisualizeGameState)
+{
+	local XComGameStateHistory History;
+	local XComGameState_Unit UnitState;
+	local VisualizationActionMetadata ActionMetadata;
+	local X2AbilityTemplate DisorientTemplate;
+
+	History = `XCOMHISTORY;
+
+	foreach VisualizeGameState.IterateByClassType(class'XComGameState_Unit', UnitState)
+		break;
+	if (UnitState == none)
+		return;
+
+	DisorientTemplate = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager().FindAbilityTemplate('UT_TacticianDisorient');
+	if (DisorientTemplate == none || DisorientTemplate.AbilityTargetEffects.Length == 0)
+		return;
+
+	ActionMetadata.StateObject_OldState = History.GetGameStateForObjectID(UnitState.ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1);
+	ActionMetadata.StateObject_NewState = UnitState;
+	ActionMetadata.VisualizeActor = History.GetVisualizer(UnitState.ObjectID);
+
+	DisorientTemplate.AbilityTargetEffects[0].AddX2ActionsForVisualization(VisualizeGameState, ActionMetadata, 'AA_Success');
 }

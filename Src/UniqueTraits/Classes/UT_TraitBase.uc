@@ -55,12 +55,6 @@ static final function string GetShotModifierLabel(X2Effect_Persistent Effect)
 	return string(Effect.EffectName);
 }
 
-// Called by X2DownloadableContentInfo_UniqueTraits.UpdateAnimations (CHL #24) for the unit's own trait: add to CustomAnimSets the
-// animation sets the pawn should get on top of its own (the soldier's weapons provide the usual ones).
-static function UpdateAnimations(out array<AnimSet> CustomAnimSets, XComGameState_Unit UnitState, XComUnitPawn Pawn)
-{
-}
-
 // Called by X2DownloadableContentInfo_UniqueTraits.CanAddItemToInventory_CH_Improved for the unit's own trait: return true
 // (and set DisabledReason) to forbid equipping ItemTemplate in Slot. That hook only stops FUTURE equips, so a trait that
 // bans items strips the ones already carried in OnGrant.
@@ -88,7 +82,6 @@ static final function bool ParseItemRangeEvent(Object EventData, Object EventSou
 	AbilityState = XComGameState_Ability(Tuple.Data[2].o);
 	if (AbilityState == none)
 		return false;
-
 	OwnerUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(AbilityState.OwnerStateObject.ObjectID));
 	return OwnerUnit != none;
 }

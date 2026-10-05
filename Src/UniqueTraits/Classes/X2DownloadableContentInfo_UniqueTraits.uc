@@ -14,20 +14,6 @@ static event OnPostTemplatesCreated()
 	class'UT_Trait_Smoker'.static.OnPostTemplatesCreated();
 }
 
-// CHL #24: extra animation sets for a soldier's pawn, supplied by the unit's own trait (UT_TraitBase.UpdateAnimations).
-static function UpdateAnimations(out array<AnimSet> CustomAnimSets, XComGameState_Unit UnitState, XComUnitPawn Pawn)
-{
-	local int TraitIndex;
-	local class<UT_TraitBase> TraitClass;
-
-	if (UnitState == none || !GetAssignedTraitIndex(UnitState, TraitIndex))
-		return;
-
-	TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].TraitID);
-	if (TraitClass != none)
-		TraitClass.static.UpdateAnimations(CustomAnimSets, UnitState, Pawn);
-}
-
 // Dispatches to the unit's own trait (UT_TraitBase.IsItemBlocked): Maniac explosive's primary weapon block, Swordsman's
 // pistol block, Support's offensive-item / vest block.
 static function bool CanAddItemToInventory_CH_Improved(out int bCanAddItem, const EInventorySlot Slot, const X2ItemTemplate ItemTemplate, int Quantity, XComGameState_Unit UnitState, optional XComGameState CheckGameState, optional out string DisabledReason, optional XComGameState_Item ItemState)

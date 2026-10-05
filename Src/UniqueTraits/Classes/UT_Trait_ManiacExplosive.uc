@@ -1,25 +1,18 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_ManiacExplosive.uc
-//  PURPOSE: Maniac explosive. UT_ManiacExplosive is just the icon holder: the +3 grenade pockets are the
-//           UT_ManiacExtraPockets CHItemSlot template (CreateExtraPocketsSlot below, registered by
-//           X2ItemSlot_UniqueTraits.uc), and the primary weapon
-//           block is X2DownloadableContentInfo_UniqueTraits.CanAddItemToInventory_CH_Improved (it only stops
-//           FUTURE equips, so OnGrant strips the starting primary weapon). Its second ability,
-//           UT_ManiacImproviseGrenade, is a limited-use activated ability that conjures a free explosive grenade,
-//           frag or plasma (if researched), added permanently to the holder's inventory for the rest of the mission.
+//  PURPOSE: Maniac explosive. UT_ManiacExplosive carries the malus (the primary weapon deals MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT%
+//           less damage, X2Effect_UT_PrimaryWeaponMalus); the +3 grenade pockets are the UT_ManiacExtraPockets CHItemSlot template
+//           (CreateExtraPocketsSlot below, registered by X2ItemSlot_UniqueTraits.uc). Its second ability, UT_ManiacImproviseGrenade,
+//           is a limited-use activated ability that conjures a free explosive grenade, frag or plasma (if researched), added
+//           permanently to the holder's inventory for the rest of the mission.
 //---------------------------------------------------------------------------------------
 class UT_Trait_ManiacExplosive extends UT_TraitBase config(UniqueTraits);
 
 var config int MANIAC_EXTRA_GRENADE_POCKETS;
 var localized string ManiacPocketsSlotName, ManiacPocketsSlotLetter;
 
-var localized string ManiacExplosiveNoPrimaryReason;
-
-// Unarmed stance (experimental, can be switched off in the ini): with no primary weapon the soldier would keep the animations of a
-// rifle holder. When enabled, the animation sets of MANIAC_UNARMED_WEAPON_ARCHETYPE (default: the Templar's gauntlet, hands-free
-// stance) are added to the pawn while the unit carries no primary weapon.
-var config bool MANIAC_UNARMED_ANIMS_ENABLED;
-var config string MANIAC_UNARMED_WEAPON_ARCHETYPE;
+// Damage malus when the primary weapon is used (X2Effect_UT_PrimaryWeaponMalus).
+var config int MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT;
 var config name MANIAC_IMPROVISE_GRENADE_ITEM_NAME;
 // Better grenade once a research is done (first match wins): parallel lists, see X2Effect_UT_TemporaryItem.ResearchProjectNames.
 var config array<name> MANIAC_IMPROVISE_GRENADE_RESEARCH_PROJECTS;
@@ -40,8 +33,16 @@ static function array<X2DataTemplate> CreateTemplates()
 static function X2AbilityTemplate ManiacExplosive()
 {
 	local X2AbilityTemplate Template;
+	local X2Effect_UT_PrimaryWeaponMalus MalusEffect;
 
 	Template = PurePassive('UT_ManiacExplosive', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+
+	MalusEffect = new class'X2Effect_UT_PrimaryWeaponMalus';
+	MalusEffect.EffectName = 'UT_ManiacExplosive_PrimaryWeaponMalus';
+	MalusEffect.DamageReductionPct = default.MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT;
+	MalusEffect.BuildPersistentEffect(1, true, false);
+	MalusEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
+	Template.AddTargetEffect(MalusEffect);
 
 	return Template;
 }
@@ -107,38 +108,6 @@ static function X2AbilityTemplate ManiacImproviseGrenade()
 	Template.ChosenActivationIncreasePerUse = class'X2AbilityTemplateManager'.default.NonAggressiveChosenActivationIncreasePerUse;
 
 	return Template;
-}
-
-static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
-{
-	RemoveManiacPrimaryWeapon(MutableUnit, NewGameState);
-}
-
-// The primary weapon block only stops FUTURE equips => the rookie's already-equipped starting weapon is
-// stripped back to HQ inventory explicitly.
-static final function RemoveManiacPrimaryWeapon(XComGameState_Unit UnitState, XComGameState NewGameState)
-{
-	local XComGameState_HeadquartersXCom XComHQ;
-	local XComGameState_Item PrimaryWeapon;
-
-	PrimaryWeapon = UnitState.GetItemInSlot(eInvSlot_PrimaryWeapon, NewGameState);
-	if (PrimaryWeapon == none)
-		return;
-
-	XComHQ = XComGameState_HeadquartersXCom(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
-	PrimaryWeapon = XComGameState_Item(NewGameState.ModifyStateObject(class'XComGameState_Item', PrimaryWeapon.ObjectID));
-	if (UnitState.RemoveItemFromInventory(PrimaryWeapon, NewGameState) && XComHQ != none)
-		XComHQ.PutItemInInventory(NewGameState, PrimaryWeapon);
-}
-
-// No primary weapon (see UT_TraitBase.IsItemBlocked).
-static function bool IsItemBlocked(EInventorySlot Slot, X2ItemTemplate ItemTemplate, out string DisabledReason)
-{
-	if (Slot != eInvSlot_PrimaryWeapon)
-		return false;
-
-	DisabledReason = default.ManiacExplosiveNoPrimaryReason;
-	return true;
 }
 
 //---------------------------------------------------------------------------------------
@@ -253,33 +222,3 @@ static function string ManiacGetDisplayLetter(CHItemSlot Slot)
 	return default.ManiacPocketsSlotLetter;
 }
 
-// UT_TraitBase.UpdateAnimations (CHL #24). The sets are read from the weapon archetype itself (XComWeapon.CustomUnitPawnAnimsets,
-// the female list for a female soldier when it has one), so no AnimSet asset name is hard-coded.
-static function UpdateAnimations(out array<AnimSet> CustomAnimSets, XComGameState_Unit UnitState, XComUnitPawn Pawn)
-{
-	local XComWeapon Archetype;
-	local array<AnimSet> Sets;
-	local AnimSet Set;
-
-	if (!default.MANIAC_UNARMED_ANIMS_ENABLED || default.MANIAC_UNARMED_WEAPON_ARCHETYPE == "" || UnitState == none || !UnitState.IsSoldier())
-		return;
-
-	// Only while really unarmed (a Maniac cannot equip a primary weapon, but one can still be there before OnGrant strips it).
-	if (UnitState.GetPrimaryWeapon() != none)
-		return;
-
-	Archetype = XComWeapon(`CONTENT.RequestGameArchetype(default.MANIAC_UNARMED_WEAPON_ARCHETYPE));
-	if (Archetype == none)
-	{
-		`log("UniqueTraits [WARN] : Maniac unarmed stance -- archetype '" $ default.MANIAC_UNARMED_WEAPON_ARCHETYPE $ "' not found",, 'UniqueTraits');
-		return;
-	}
-
-	if (UnitState.kAppearance.iGender == eGender_Female && Archetype.CustomUnitPawnAnimsetsFemale.Length > 0)
-		Sets = Archetype.CustomUnitPawnAnimsetsFemale;
-	else
-		Sets = Archetype.CustomUnitPawnAnimsets;
-
-	foreach Sets(Set)
-		CustomAnimSets.AddItem(Set);
-}
