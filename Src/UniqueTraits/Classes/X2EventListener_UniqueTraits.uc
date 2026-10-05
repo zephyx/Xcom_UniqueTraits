@@ -85,8 +85,9 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	// Born to be chief: the sync point that actually *guarantees* the officer-rank bonus is correct in combat. Fires
 	// exactly ONCE, right as a mission's tactical state is built.
 	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_BornToBeChief'.static.OnTacticalBeginPlay, ELD_Immediate, 50);
-	// Bounty hunter: tally of the kills (supplies paid after the mission) and 20% of the kills without XP. Fired once per kill.
+	// Bounty hunter: 20% of the kills without XP (fired once per kill that gives XP) and the tally of ALL the kills (supplies paid after the mission).
 	Template.AddCHEvent('OverrideKillXp', class'UT_Trait_BountyHunter'.static.OnOverrideKillXp_BountyHunter, ELD_Immediate, 50);
+	Template.AddCHEvent('UnitDied', class'UT_Trait_BountyHunter'.static.OnUnitDied_BountyHunter, ELD_Immediate, 50);
 	Template.RegisterInTactical = true;
 
 	return Template;

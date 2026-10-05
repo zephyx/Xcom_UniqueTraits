@@ -2,8 +2,9 @@
 //  FILE:   UT_Trait_BountyHunter.uc
 //  PURPOSE: Bounty hunter: every kill earns BOUNTYHUNTER_SUPPLY_PER_KILL supplies, but BOUNTYHUNTER_NO_XP_CHANCE_PCT% of the kills grant
 //           no experience.
+//           - 'UnitDied': counts the kills of the regular enemy force (NOT the Lost, NOT summoned units) in the killer's UT_BountyHunter_Kills UnitValue.
 //           - 'OverrideKillXp' (CHL #562, fired once per kill of an enemy by a unit that can earn XP, with the kill's pending
-//             game state): counts the kill in the killer's UT_BountyHunter_Kills UnitValue and sometimes zeroes the kill XP
+//             game state): sometimes zeroes the kill XP
 //             (KillCount, which both vanilla and LWOTC use to rank up; bonus kill XP and Wet Work too; the assists of the
 //             team mates are untouched).
 //             It also queues a "Bounty" flyover on the killer (PostBuildVisualizationFn of the kill's own game state context).
@@ -33,7 +34,6 @@ static function EventListenerReturn OnOverrideKillXp_BountyHunter(Object EventDa
 {
 	local XComLWTuple Tuple;
 	local XComGameState_Unit Killer;
-	local UnitValue KillsValue;
 
 	Tuple = XComLWTuple(EventData);
 	if (Tuple == none || Tuple.Data.Length < 5)
@@ -43,13 +43,6 @@ static function EventListenerReturn OnOverrideKillXp_BountyHunter(Object EventDa
 	if (Killer == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(Killer, 'UT_BountyHunter'))
 		return ELR_NoInterrupt;
 
-	KillsValue.fValue = 0;
-	Killer.GetUnitValue('UT_BountyHunter_Kills', KillsValue);
-	Killer.SetUnitFloatValue('UT_BountyHunter_Kills', KillsValue.fValue + 1, eCleanup_BeginTactical);
-
-	// "Bounty" flyover on the killer, appended to the visualization of the kill's own game state.
-	GameState.GetContext().PostBuildVisualizationFn.AddItem(BuildVisualization_BountyFlyover);
-
 	if (`SYNC_RAND_STATIC(100) < default.BOUNTYHUNTER_NO_XP_CHANCE_PCT)
 	{
 		Tuple.Data[0].f = 0.0;
@@ -58,6 +51,61 @@ static function EventListenerReturn OnOverrideKillXp_BountyHunter(Object EventDa
 	}
 
 	return ELR_NoInterrupt;
+}
+
+// 'UnitDied' (EventSource = the dead unit): counts the kill for the supplies, ONLY for the regular enemy force (team Alien): the Lost and
+// summoned units (Chosen Warlock...) do NOT pay. The killer is the source of the ability that killed, else the last unit that damaged the dead one.
+static function EventListenerReturn OnUnitDied_BountyHunter(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
+{
+	local XComGameStateHistory History;
+	local XComGameState_Unit DeadUnit, Killer;
+	local XComGameStateContext_Ability AbilityContext;
+	local UnitValue KillsValue;
+	local int KillerID;
+
+	DeadUnit = XComGameState_Unit(EventSource);
+	if (DeadUnit == none)
+		return ELR_NoInterrupt;
+
+	History = `XCOMHISTORY;
+
+	AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
+	if (AbilityContext != none)
+		KillerID = AbilityContext.InputContext.SourceObject.ObjectID;
+	if (KillerID == 0)
+		KillerID = DeadUnit.LastDamagedByUnitID;
+
+	Killer = XComGameState_Unit(History.GetGameStateForObjectID(KillerID));
+	if (Killer == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(Killer, 'UT_BountyHunter'))
+		return ELR_NoInterrupt;
+
+	// Only the real enemy force pays: not the Lost, not a unit summoned by an effect (Chosen Warlock's spectral zombies...), not a ghost copy.
+	if (DeadUnit.GetTeam() != eTeam_Alien || DeadUnit.GhostSourceUnit.ObjectID > 0 || IsSummonedUnit(DeadUnit))
+		return ELR_NoInterrupt;
+
+	Killer = XComGameState_Unit(GameState.ModifyStateObject(class'XComGameState_Unit', KillerID));
+	KillsValue.fValue = 0;
+	Killer.GetUnitValue('UT_BountyHunter_Kills', KillsValue);
+	Killer.SetUnitFloatValue('UT_BountyHunter_Kills', KillsValue.fValue + 1, eCleanup_BeginTactical);
+
+	// "Bounty" flyover on the killer, appended to the visualization of the kill's own game state.
+	GameState.GetContext().PostBuildVisualizationFn.AddItem(BuildVisualization_BountyFlyover);
+
+	return ELR_NoInterrupt;
+}
+
+// A unit created by an X2Effect_SpawnUnit (the effect state remembers the created unit, like a claymore's in vanilla's OnUnitDied).
+static function bool IsSummonedUnit(XComGameState_Unit Unit)
+{
+	local XComGameState_Effect EffectState;
+
+	foreach `XCOMHISTORY.IterateByClassType(class'XComGameState_Effect', EffectState)
+	{
+		if (EffectState.CreatedObjectReference.ObjectID == Unit.ObjectID && X2Effect_SpawnUnit(EffectState.GetX2Effect()) != none)
+			return true;
+	}
+
+	return false;
 }
 
 // UT_TraitBase.OnPostMission: pays the supplies of the finished mission, for every soldier with a tally (also one who died).
