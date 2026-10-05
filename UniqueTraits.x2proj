@@ -41,6 +41,11 @@
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_FalseHope.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Nerd.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_BornToBeChief.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_QualityOverQuantity.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_BountyHunter.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_Cyborg.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_Recruiter.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_QualityCrit.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Athlete.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Guard.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Tactician.uc" />

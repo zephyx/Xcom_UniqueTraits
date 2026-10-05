@@ -1,0 +1,61 @@
+//---------------------------------------------------------------------------------------
+//  FILE:   UT_Trait_QualityOverQuantity.uc
+//  PURPOSE: Quality over quantity: the PRIMARY weapon gets a critical chance bonus by weapon tier (X2Effect_UT_QualityCrit,
+//           QUALITY_CRIT_BY_TIER) but loses QUALITY_CLIP_REDUCTION from its clip size when that clip is at least
+//           QUALITY_CLIP_MIN_FOR_REDUCTION ('OverrideClipSize' event, CHL #393, see OnOverrideClipSize_QualityOverQuantity).
+//---------------------------------------------------------------------------------------
+class UT_Trait_QualityOverQuantity extends UT_TraitBase config(UniqueTraits);
+
+// Indexed by X2WeaponTemplate.Tier (vanilla 0/2/4, LWOTC adds 1/3), clamped to the last entry.
+var config array<int> QUALITY_CRIT_BY_TIER;
+var config int QUALITY_CLIP_REDUCTION;
+var config int QUALITY_CLIP_MIN_FOR_REDUCTION;
+
+static function array<X2DataTemplate> CreateTemplates()
+{
+	local array<X2DataTemplate> Templates;
+
+	Templates.AddItem(QualityOverQuantity());
+
+	return Templates;
+}
+
+static function X2AbilityTemplate QualityOverQuantity()
+{
+	local X2AbilityTemplate Template;
+	local X2Effect_UT_QualityCrit CritEffect;
+
+	Template = PurePassive('UT_QualityOverQuantity', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+
+	CritEffect = new class'X2Effect_UT_QualityCrit';
+	CritEffect.EffectName = 'UT_QualityOverQuantity_Crit';
+	CritEffect.CritByTier = default.QUALITY_CRIT_BY_TIER;
+	CritEffect.BuildPersistentEffect(1, true, false);
+	CritEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
+	Template.AddTargetEffect(CritEffect);
+
+	return Template;
+}
+
+// 'OverrideClipSize' fires from XComGameState_Item.GetClipSize with the clip size after upgrades/ammo: this handler must never call
+// GetClipSize on the same item (infinite recursion). The primary weapon of a holder loses a clip when it has enough of them.
+static function EventListenerReturn OnOverrideClipSize_QualityOverQuantity(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
+{
+	local XComLWTuple Tuple;
+	local XComGameState_Item ItemState;
+	local XComGameState_Unit OwnerUnit;
+
+	Tuple = XComLWTuple(EventData);
+	ItemState = XComGameState_Item(EventSource);
+	if (Tuple == none || ItemState == none || ItemState.InventorySlot != eInvSlot_PrimaryWeapon
+		|| Tuple.Data[0].i < default.QUALITY_CLIP_MIN_FOR_REDUCTION)
+		return ELR_NoInterrupt;
+
+	OwnerUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(ItemState.OwnerStateObject.ObjectID));
+	if (OwnerUnit == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(OwnerUnit, 'UT_QualityOverQuantity'))
+		return ELR_NoInterrupt;
+
+	Tuple.Data[0].i = Max(1, Tuple.Data[0].i - default.QUALITY_CLIP_REDUCTION);
+
+	return ELR_NoInterrupt;
+}

@@ -12,6 +12,7 @@ static function array<X2DataTemplate> CreateTemplates()
 
 	Templates.AddItem(CreateStrategyListeners());
 	Templates.AddItem(CreateTacticalListeners());
+	Templates.AddItem(CreateSharedListeners());
 
 	return Templates;
 }
@@ -46,6 +47,16 @@ static function CHEventListenerTemplate CreateStrategyListeners()
 	// Support / Swordsman: hide (not just gray out) forbidden items from the Armory picker.
 	Template.AddCHEvent('OverrideShowItemInLockerList', class'UT_Trait_Support'.static.OnOverrideShowItemInLockerList_Support, ELD_Immediate, 50);
 	Template.AddCHEvent('OverrideShowItemInLockerList', class'UT_Trait_Swordsman'.static.OnOverrideShowItemInLockerList_Swordsman, ELD_Immediate, 50);
+	// Cyborg: only basic PCS can be equipped from the armory list, and a removed PCS is not lost.
+	// Priority 1 (runs AFTER every other listener, larger numbers run first): LWOTC's own listener for this event (X2EventListener_PCSFix_LW,
+	// priority 50) sets the result to true, which would undo our refusal.
+	Template.AddCHEvent('OverrideCanEquipImplant', class'UT_Trait_Cyborg'.static.OnOverrideCanEquipImplant_Cyborg, ELD_Immediate, 1);
+	Template.AddCHEvent('PCSApplied', class'UT_Trait_Cyborg'.static.OnPCSApplied_Cyborg, ELD_Immediate, 50);
+	Template.AddCHEvent('ItemRemovedFromSlot', class'UT_Trait_Cyborg'.static.OnItemRemovedFromSlot_Cyborg, ELD_Immediate, 50);
+	// Recruiter: at the end of the month, one more recruit in the recruitable pool (and sometimes a free rookie).
+	Template.AddCHEvent('PreEndOfMonth', class'UT_Trait_Recruiter'.static.OnPreEndOfMonth_Recruiter, ELD_Immediate, 50);
+	// Recruiter: tracks the time spent as haven adviser (a staff slot, incl. LWOTC's liaison slots, was filled or emptied).
+	Template.AddCHEvent('StaffUpdated', class'UT_Trait_Recruiter'.static.OnStaffUpdated_Recruiter, ELD_OnStateSubmitted, 50);
 	Template.RegisterInStrategy = true;
 
 	return Template;
@@ -74,6 +85,24 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	// Born to be chief: the sync point that actually *guarantees* the officer-rank bonus is correct in combat. Fires
 	// exactly ONCE, right as a mission's tactical state is built.
 	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_BornToBeChief'.static.OnTacticalBeginPlay, ELD_Immediate, 50);
+	// Bounty hunter: tally of the kills (supplies paid after the mission) and 20% of the kills without XP. Fired once per kill.
+	Template.AddCHEvent('OverrideKillXp', class'UT_Trait_BountyHunter'.static.OnOverrideKillXp_BountyHunter, ELD_Immediate, 50);
+	Template.RegisterInTactical = true;
+
+	return Template;
+}
+
+// Events needed in both layers (registered ONCE here: the same handler in the strategy and the tactical template would run twice
+// while both are active).
+static function CHEventListenerTemplate CreateSharedListeners()
+{
+	local CHEventListenerTemplate Template;
+
+	`CREATE_X2TEMPLATE(class'CHEventListenerTemplate', Template, 'UniqueTraits_SharedListeners');
+
+	// Quality over quantity: -1 clip on the primary weapon (the armory shows the clip size too).
+	Template.AddCHEvent('OverrideClipSize', class'UT_Trait_QualityOverQuantity'.static.OnOverrideClipSize_QualityOverQuantity, ELD_Immediate, 50);
+	Template.RegisterInStrategy = true;
 	Template.RegisterInTactical = true;
 
 	return Template;

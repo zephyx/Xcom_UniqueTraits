@@ -55,6 +55,12 @@ static final function string GetShotModifierLabel(X2Effect_Persistent Effect)
 	return string(Effect.EffectName);
 }
 
+// Called by X2DownloadableContentInfo_UniqueTraits.OnPostMission (CHL #212) on EVERY trait class once a mission is over and committed,
+// before the After Action screen: a trait that has something to do then checks for its own holders (supplies, upgrades...).
+static function OnPostMission()
+{
+}
+
 // Called by X2DownloadableContentInfo_UniqueTraits.CanAddItemToInventory_CH_Improved for the unit's own trait: return true
 // (and set DisabledReason) to forbid equipping ItemTemplate in Slot. That hook only stops FUTURE equips, so a trait that
 // bans items strips the ones already carried in OnGrant.

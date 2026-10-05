@@ -73,7 +73,18 @@ static final function bool UnitHasTrait(XComGameState_Unit UnitState, name Trait
 // After Action screen: every XP/kill source (vanilla, LWOTC's own mission XP) is already in history.
 static event OnPostMission()
 {
+	local int i;
+	local class<UT_TraitBase> TraitClass;
+
 	AssignTraitsToEligibleRookies();
+
+	// Every trait that has something to do once a mission is over (UT_TraitBase.OnPostMission).
+	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
+	{
+		TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[i].TraitID);
+		if (TraitClass != none)
+			TraitClass.static.OnPostMission();
+	}
 }
 
 // Gives a trait to every living rookie who can now choose a class and has none yet. Called after a
