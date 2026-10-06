@@ -57,6 +57,16 @@ static function CHEventListenerTemplate CreateStrategyListeners()
 	Template.AddCHEvent('PreEndOfMonth', class'UT_Trait_Recruiter'.static.OnPreEndOfMonth_Recruiter, ELD_Immediate, 50);
 	// Recruiter: tracks the time spent as haven adviser (a staff slot, incl. LWOTC's liaison slots, was filled or emptied).
 	Template.AddCHEvent('StaffUpdated', class'UT_Trait_Recruiter'.static.OnStaffUpdated_Recruiter, ELD_OnStateSubmitted, 50);
+	// Mind over matter: permanent stats that follow the max Will. No hook exists on a max Will change: every known cause resyncs (rank-up,
+	// PCS equipped/removed, Gene Mod operation, ability bought), plus month end and personnel lists as safety nets. The mission-start sync
+	// is in the tactical listeners.
+	Template.AddCHEvent('UnitRankUp', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('ItemAddedToSlot', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('ItemRemovedFromSlot', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('GeneModOperationCompleted', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('AbilityPointsChange', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('PreEndOfMonth', class'UT_Trait_MindOverMatter'.static.OnPreEndOfMonth_MindOverMatter, ELD_Immediate, 50);
+	Template.AddCHEvent('UIPersonnel_OnSortFinished', class'UT_Trait_MindOverMatter'.static.OnUIPersonnelSortFinished_MindOverMatter, ELD_Immediate, 50);
 	Template.RegisterInStrategy = true;
 
 	return Template;
@@ -74,6 +84,13 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	Template.AddCHEvent('UnitBleedingOut', class'UT_Trait_QuickHealing'.static.OnUnitBleedingOut, ELD_Immediate, 50);
 	// Fired by the tactical rules when the mission is cleaned up, with the state submitted before the end-of-mission health adjustment.
 	Template.AddCHEvent('CleanupTacticalMission', class'UT_Trait_QuickHealing'.static.OnCleanupTacticalMission_QuickHealing, ELD_Immediate, 50);
+	// Give me more: same moment, Field Surgeon's mechanism (and the bleeding-out mark that makes it skip a soldier who bled out).
+	Template.AddCHEvent('CleanupTacticalMission', class'UT_Trait_GiveMeMore'.static.OnCleanupTacticalMission_GiveMeMore, ELD_Immediate, 50);
+	Template.AddCHEvent('UnitBleedingOut', class'UT_Trait_GiveMeMore'.static.OnUnitBleedingOut_GiveMeMore, ELD_Immediate, 50);
+	// Mind over matter: mission-start sync of its permanent stats, and the same wound mechanism with a wound scaled by a percentage.
+	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_MindOverMatter'.static.OnTacticalBeginPlay_MindOverMatter, ELD_Immediate, 50);
+	Template.AddCHEvent('CleanupTacticalMission', class'UT_Trait_MindOverMatter'.static.OnCleanupTacticalMission_MindOverMatter, ELD_Immediate, 50);
+	Template.AddCHEvent('UnitBleedingOut', class'UT_Trait_MindOverMatter'.static.OnUnitBleedingOut_MindOverMatter, ELD_Immediate, 50);
 	// 'AbilityActivated' fires more than once per ability: each handler starts with the interrupt-step early return.
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_Tactician'.static.OnAbilityActivated_Tactician, ELD_OnStateSubmitted, 50);
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_Smoker'.static.OnAbilityActivated_Smoker, ELD_OnStateSubmitted, 50);
@@ -88,6 +105,9 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	// Bounty hunter: 20% of the kills without XP (fired once per kill that gives XP) and the tally of ALL the kills (supplies paid after the mission).
 	Template.AddCHEvent('OverrideKillXp', class'UT_Trait_BountyHunter'.static.OnOverrideKillXp_BountyHunter, ELD_Immediate, 50);
 	Template.AddCHEvent('UnitDied', class'UT_Trait_BountyHunter'.static.OnUnitDied_BountyHunter, ELD_Immediate, 50);
+	// Young doctor: reduces the heals of its holder and rewards the first treatment of each soldier. ELD_Immediate: it works on the ability's own
+	// pending state, so the visualization shows the reduced heal.
+	Template.AddCHEvent('AbilityActivated', class'UT_Trait_YoungDoctor'.static.OnAbilityActivated_YoungDoctor, ELD_Immediate, 50);
 	Template.RegisterInTactical = true;
 
 	return Template;

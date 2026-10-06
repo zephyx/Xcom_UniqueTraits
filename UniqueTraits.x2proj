@@ -45,6 +45,11 @@
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_BountyHunter.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Cyborg.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Recruiter.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_YoungDoctor.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_PsiAdept.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_GiveMeMore.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_MindOverMatter.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_PsiAdept.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_QualityCrit.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Athlete.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Guard.uc" />
