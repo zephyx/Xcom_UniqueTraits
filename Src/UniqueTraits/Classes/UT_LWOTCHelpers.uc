@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_LWOTCHelpers.uc
 //  PURPOSE: Reusable queries against LWOTC's public 'GetLWUnitInfo' blind-tuple event, without ever
-//           referencing an LW_Overhaul class (hard rule, see CLAUDE.md "LWOTC soft-dependency pattern").
+//           referencing an LW_Overhaul class ("LWOTC soft-dependency pattern").
 //           Every field is pre-filled with the event's documented "unanswered" defaults, so without LWOTC
 //           (or for a unit it does not know) the answers are simply "no" / 0 / none.
 //           Tuple layout (X2EventListener_LWModAPI.uc): Data[0]=has officer rank, Data[1]=officer rank,

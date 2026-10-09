@@ -91,3 +91,27 @@ static final function bool ParseItemRangeEvent(Object EventData, Object EventSou
 	OwnerUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(AbilityState.OwnerStateObject.ObjectID));
 	return OwnerUnit != none;
 }
+
+// A hidden ability template that only holds effects applied "by hand" (see UT_EffectHelpers): never granted to any unit, no input, no
+// visualization. The caller adds its effects with AddTargetEffect (their index is the one given to UT_EffectHelpers.ApplyAbilityEffect).
+static final function X2AbilityTemplate HiddenEffectHolder(name TemplateName)
+{
+	local X2AbilityTemplate Template;
+
+	`CREATE_X2ABILITY_TEMPLATE(Template, TemplateName);
+
+	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_standard";
+	Template.AbilitySourceName = 'eAbilitySource_Perk';
+	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+	Template.Hostility = eHostility_Neutral;
+	Template.bDontDisplayInAbilitySummary = true;
+	Template.bDisplayInUITooltip = false;
+	Template.bDisplayInUITacticalText = false;
+
+	Template.AbilityToHitCalc = default.DeadEye;
+	Template.AbilityTargetStyle = default.SimpleSingleTarget;
+	Template.AbilityTriggers.AddItem(new class'X2AbilityTrigger_Placeholder');   // validation wants a trigger ("is invalid: no Triggers"); never fires, never granted
+	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+
+	return Template;
+}

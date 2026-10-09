@@ -8,7 +8,7 @@
 //           UT_Recruiter_Mark = clock of the running interval or -1, UT_Recruiter_MonthStart): updated by SyncLiaisonTime when the staff
 //           changes ('StaffUpdated') and at the end of the month.
 //           Built with the vanilla recruit creation only (XComGameState_HeadquartersResistance.RefillRecruits / GiveRecruit): doubling
-//           the recruit RATE of an LWOTC haven would need LW_Overhaul's job classes (a companion mod, not done: see CLAUDE.md).
+//           the recruit RATE of an LWOTC haven would need LW_Overhaul's job classes.
 //---------------------------------------------------------------------------------------
 class UT_Trait_Recruiter extends UT_TraitBase config(UniqueTraits);
 

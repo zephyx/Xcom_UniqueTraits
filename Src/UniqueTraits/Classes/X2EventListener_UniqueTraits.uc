@@ -105,9 +105,23 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	// Bounty hunter: 20% of the kills without XP (fired once per kill that gives XP) and the tally of ALL the kills (supplies paid after the mission).
 	Template.AddCHEvent('OverrideKillXp', class'UT_Trait_BountyHunter'.static.OnOverrideKillXp_BountyHunter, ELD_Immediate, 50);
 	Template.AddCHEvent('UnitDied', class'UT_Trait_BountyHunter'.static.OnUnitDied_BountyHunter, ELD_Immediate, 50);
+	// Meat Tenderizer: the action point back, once the ability (and its cost) is over.
+	Template.AddCHEvent('AbilityActivated', class'UT_Trait_MeatTenderizer'.static.OnAbilityActivated_MeatTenderizer, ELD_OnStateSubmitted, 50);
+	// Nemesis: the permanent per-enemy-type kill tally (aim against, defense malus against).
+	Template.AddCHEvent('UnitDied', class'UT_Trait_Nemesis'.static.OnUnitDied_Nemesis, ELD_Immediate, 50);
 	// Young doctor: reduces the heals of its holder and rewards the first treatment of each soldier. ELD_Immediate: it works on the ability's own
 	// pending state, so the visualization shows the reduced heal.
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_YoungDoctor'.static.OnAbilityActivated_YoungDoctor, ELD_Immediate, 50);
+	// Chemist: the disease on the enemies a damage over time was just inflicted on. Laser designator: consumes the primed marker on the next primary
+	// shot / holotarget and marks the main target. Both react to a submitted ability state and apply their effect in a state of their own.
+	Template.AddCHEvent('AbilityActivated', class'UT_Trait_Chemist'.static.OnAbilityActivated_Chemist, ELD_OnStateSubmitted, 50);
+	Template.AddCHEvent('AbilityActivated', class'UT_Trait_LaserDesignator'.static.OnAbilityActivated_LaserDesignator, ELD_OnStateSubmitted, 50);
+	// Psychic Bond: the bondmate loses a share of the damage (once the damage is submitted, in a state of its own).
+	Template.AddCHEvent('UnitTakeEffectDamage', class'UT_Trait_PsychicBond'.static.OnUnitTakeEffectDamage_PsychicBond, ELD_OnStateSubmitted, 50);
+	// Security hacker: while the HOLDER hacks a security tower (from the ability that opens the hacking screen to the finalize / cancel ability), the
+	// tower offers the computers' rewards and a doubled lock (ELD_Immediate: inside the ability's pending state, before the screen reads them); If it succeeds, disables every security tower.
+	Template.AddCHEvent('AbilityActivated', class'UT_Trait_SecurityHacker'.static.OnAbilityActivated_SecurityHacker, ELD_Immediate, 50);
+	Template.AddCHEvent('AbilityActivated', class'UT_Trait_SecurityHacker'.static.OnAbilityActivated_SecurityHackerBacklash, ELD_OnStateSubmitted, 50);
 	Template.RegisterInTactical = true;
 
 	return Template;

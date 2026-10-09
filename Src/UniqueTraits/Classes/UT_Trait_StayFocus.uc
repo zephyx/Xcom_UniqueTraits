@@ -45,7 +45,10 @@ static function X2AbilityTemplate StayFocus()
 	WillCheck.AddCheckStat(eStat_Will, default.STAYFOCUS_WILL_LOSS, eCheck_GreaterThanOrEqual);
 	Template.AbilityShooterConditions.AddItem(WillCheck);
 
+	// Free, but only usable while the soldier still has an action point (iNumPoints = 1 with bFreeCost, like vanilla's FreeActionCost that
+	// LWOTC's Rapid Deployment uses): CanAfford checks the points even though none is taken. iNumPoints left at 0 made it usable after the turn ended.
 	ActionPointCost = new class'X2AbilityCost_ActionPoints';
+	ActionPointCost.iNumPoints = 1;
 	ActionPointCost.bFreeCost = true;
 	Template.AbilityCosts.AddItem(ActionPointCost);
 
