@@ -19,6 +19,10 @@ struct UniqueTraitDefinition
 
 var config array<UniqueTraitDefinition> Traits;
 
+// false (default): a rookie gets its trait when it can choose a class (mission / covert action, AssignTraitsToEligibleRookies). true: as soon as it
+// is a rookie of the roster (recruit, starting soldier...), see X2DownloadableContentInfo_UniqueTraits.IsRookieEligibleForTrait.
+var config bool ASSIGN_TRAIT_AT_RECRUITMENT;
+
 static final function bool IsTraitEligible(int Index)
 {
 	local name RequiredMod;

@@ -8,6 +8,14 @@
 //---------------------------------------------------------------------------------------
 class X2DownloadableContentInfo_UniqueTraits extends X2DownloadableContentInfo;
 
+// With ASSIGN_TRAIT_AT_RECRUITMENT: the rookies already in the roster of a loaded save (also those of a game started before the option was turned on).
+// Does nothing otherwise: the normal draw happens after a mission / covert action.
+static event OnLoadedSavedGameToStrategy()
+{
+	if (class'UniqueTraits_TraitConfig'.default.ASSIGN_TRAIT_AT_RECRUITMENT)
+		AssignTraitsToEligibleRookies();
+}
+
 // Smoker splices its "doesn't end the turn" cost into the shared ThrowGrenade template; Meat Tenderizer adds a twin of every stun / disorient effect; Shredder copies the acid damage of its reference grenade.
 static event OnPostTemplatesCreated()
 {
@@ -89,6 +97,13 @@ static event OnPostMission()
 	}
 }
 
+// True for a rookie who gets a trait now: one who can choose a class (the default, the trait is known before the class choice screen) or, with
+// ASSIGN_TRAIT_AT_RECRUITMENT, any rookie of the roster (not a Resistance hero).
+static final function bool IsRookieEligibleForTrait(XComGameState_Unit Soldier)
+{
+	return Soldier.CanRankUpSoldier() || (class'UniqueTraits_TraitConfig'.default.ASSIGN_TRAIT_AT_RECRUITMENT && !Soldier.IsResistanceHero());
+}
+
 // Gives a trait to every living rookie who can now choose a class and has none yet. Called after a
 // mission (OnPostMission) and after a covert action ('CovertActionCompleted', OnStateSubmitted), once the
 // XP/kills are committed, so the trait is known BEFORE the class choice screen. No before/after diff:
@@ -114,7 +129,7 @@ static final function AssignTraitsToEligibleRookies()
 	foreach Soldiers(Soldier)
 	{
 		if (Soldier.IsSoldier() && Soldier.IsAlive() && !Soldier.bCaptured && Soldier.GetRank() == 0
-			&& Soldier.CanRankUpSoldier() && !GetAssignedTraitIndex(Soldier, ExistingIndex))
+			&& IsRookieEligibleForTrait(Soldier) && !GetAssignedTraitIndex(Soldier, ExistingIndex))
 		{
 			EligibleIDs.AddItem(Soldier.ObjectID);
 		}

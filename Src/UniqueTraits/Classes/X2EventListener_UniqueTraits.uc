@@ -29,6 +29,9 @@ static function CHEventListenerTemplate CreateStrategyListeners()
 	// Trait draw, covert action path. OnStateSubmitted: the draw opens its own transaction, which must come after
 	// the covert action's state (with the kills) is committed.
 	Template.AddCHEvent('CovertActionCompleted', OnCovertActionCompleted_RookieTrait, ELD_OnStateSubmitted, 50);
+	// ASSIGN_TRAIT_AT_RECRUITMENT: a new crew member (recruit, rescued rookie, LWOTC haven recruit...) and the soldiers of a new campaign get their trait at once.
+	Template.AddCHEvent('NewCrewNotification', OnNewRookie_RookieTrait, ELD_OnStateSubmitted, 50);
+	Template.AddCHEvent('OnNewGame', OnNewRookie_RookieTrait, ELD_OnStateSubmitted, 50);
 	// Optional soft dependency: only fires if the "Community Promotion Screen" mod is loaded. Priority 1 = runs AFTER
 	// every other listener (larger number runs first): a block is only a block if no later listener of another mod
 	// flips bCanPurchaseAbility back to true.
@@ -199,6 +202,16 @@ static function EventListenerReturn OnUnitRankUp(Object EventData, Object EventS
 static function EventListenerReturn OnCovertActionCompleted_RookieTrait(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
 {
 	class'X2DownloadableContentInfo_UniqueTraits'.static.AssignTraitsToEligibleRookies();
+
+	return ELR_NoInterrupt;
+}
+
+// ASSIGN_TRAIT_AT_RECRUITMENT only ('NewCrewNotification' and 'OnNewGame', submitted: the new unit is in history): the sweep gives every rookie of the
+// roster without a trait one. A reward soldier is created ranked and is left alone, like in the default mode.
+static function EventListenerReturn OnNewRookie_RookieTrait(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
+{
+	if (class'UniqueTraits_TraitConfig'.default.ASSIGN_TRAIT_AT_RECRUITMENT)
+		class'X2DownloadableContentInfo_UniqueTraits'.static.AssignTraitsToEligibleRookies();
 
 	return ELR_NoInterrupt;
 }

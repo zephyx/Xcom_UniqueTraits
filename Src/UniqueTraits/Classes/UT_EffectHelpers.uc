@@ -117,7 +117,7 @@ static function bool ValueIncreased(XComGameState_Unit UnitState, name ValueName
 }
 
 // Appends a flyover with Message on UnitState to the visualization being built (PreviousState: the unit before this game state, may be none).
-static function AddUnitFlyover(XComGameState VisualizeGameState, XComGameState_Unit UnitState, XComGameState_Unit PreviousState, string Message, optional EWidgetColor Color = eColor_Good)
+static function AddUnitFlyover(XComGameState VisualizeGameState, XComGameState_Unit UnitState, XComGameState_Unit PreviousState, string Message, optional EWidgetColor FlyoverColor = eColor_Good)
 {
 	local VisualizationActionMetadata ActionMetadata;
 	local X2Action_PlaySoundAndFlyOver FlyOver;
@@ -127,5 +127,5 @@ static function AddUnitFlyover(XComGameState VisualizeGameState, XComGameState_U
 	ActionMetadata.VisualizeActor = `XCOMHISTORY.GetVisualizer(UnitState.ObjectID);
 
 	FlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
-	FlyOver.SetSoundAndFlyOverParameters(none, Message, '', Color);
+	FlyOver.SetSoundAndFlyOverParameters(none, Message, '', FlyoverColor);
 }
