@@ -31,7 +31,7 @@ static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 	// cleared, and is now getting it again (OnClear already resets it, this is just defensive).
 	MutableUnit.SetUnitFloatValue('UT_BornToBeChief_LastOfficerRank', 0, eCleanup_Never);
 
-	// An already-officer soldier (AddUniqueTrait) gets its +4/officer-rank right away instead of waiting for
+	// An already-officer soldier (AddUniqueTrait) gets its PER_RANK bonus per officer rank right away instead of waiting for
 	// the next mission start/month end/personnel sort sync. No-op for officer rank 0.
 	ApplyBornToBeChiefRankScaling(MutableUnit);
 }

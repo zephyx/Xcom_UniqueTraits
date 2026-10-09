@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_Acrobat.uc
-//  PURPOSE: Acrobat: -aim/-crit attacking a lower target (X2Effect_UT_AcrobatMalus); also grants the base ability Grapple (ini).
+//  PURPOSE: Acrobat: -aim/-crit attacking a lower target (X2Effect_UT_AcrobatMalus); also grants the Skirmisher's Grapple, SkirmisherGrapple (ini).
 //---------------------------------------------------------------------------------------
 class UT_Trait_Acrobat extends UT_TraitBase config(UniqueTraits);
 
@@ -15,7 +15,7 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
-// Acrobat: grants Grapple (via ini); -10 aim/-10 crit attacking a target below their own elevation.
+// Acrobat: grants SkirmisherGrapple (cd 3) -10 aim/-10 crit attacking a target below their own elevation.
 static function X2AbilityTemplate Acrobat()
 {
 	local X2AbilityTemplate Template;

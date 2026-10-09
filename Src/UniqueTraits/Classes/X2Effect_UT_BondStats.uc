@@ -3,6 +3,7 @@
 //  PURPOSE: Psychic Bond's stats: for the mission, the holder and his bondmate (the vanilla soldier bond) each get, for every base stat (HP,
 //           aim, mobility, will, dodge, psi offense, hacking), the best BASE value of the two (GetBaseStat: what items and armor bring is not
 //           counted). The effect is a mission-scoped stat change computed when it is applied (OnEffectAdded), from the bondmate's stats.
+//           The HP gain is NOT added to the HP: it is granted as the same amount of ablative protection (eStat_ShieldHP).
 //           bPartnerSide = false: the holder's own effect (also applies the partner's effect to the bondmate, which is not a trait holder);
 //           bPartnerSide = true: the bondmate's effect, applied by the holder's one (never recursive).
 //           Only applies if the bondmate is deployed in the same mission.
@@ -11,7 +12,8 @@ class X2Effect_UT_BondStats extends X2Effect_PersistentStatChange;
 
 var bool bPartnerSide;
 
-simulated protected function AddBestChange(XComGameState_Effect NewEffectState, ECharStatType StatType, XComGameState_Unit Unit, XComGameState_Unit Mate)
+// AppliedStatType: the stat that receives the gain when it is not StatType itself (HP -> ShieldHP).
+simulated protected function AddBestChange(XComGameState_Effect NewEffectState, ECharStatType StatType, XComGameState_Unit Unit, XComGameState_Unit Mate, optional ECharStatType AppliedStatType = eStat_Invalid)
 {
 	local StatChange Change;
 	local float Gain;
@@ -20,7 +22,10 @@ simulated protected function AddBestChange(XComGameState_Effect NewEffectState, 
 	if (Gain <= 0)
 		return;
 
-	Change.StatType = StatType;
+	if (AppliedStatType != eStat_Invalid)
+		Change.StatType = AppliedStatType;
+	else
+		Change.StatType = StatType;
 	Change.StatAmount = Gain;
 	Change.ModOp = MODOP_Addition;
 	NewEffectState.StatChanges.AddItem(Change);
@@ -74,7 +79,7 @@ simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffe
 	NewEffectState.StatChanges.Length = 0;
 	if (Mate != none)
 	{
-		AddBestChange(NewEffectState, eStat_HP, Unit, Mate);
+		AddBestChange(NewEffectState, eStat_HP, Unit, Mate, eStat_ShieldHP);
 		AddBestChange(NewEffectState, eStat_Offense, Unit, Mate);
 		AddBestChange(NewEffectState, eStat_Mobility, Unit, Mate);
 		AddBestChange(NewEffectState, eStat_Will, Unit, Mate);

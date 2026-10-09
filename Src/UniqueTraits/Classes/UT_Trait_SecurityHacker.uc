@@ -2,7 +2,7 @@
 //  FILE:   UT_Trait_SecurityHacker.uc
 //  PURPOSE: Security hacker: when the HOLDER hacks a security tower, the tower gives the same rewards as the computers (the mission's strategic
 //           deck) and its lock strength (the hack defense) is multiplied by SECURITYHACKER_DEFENSE_MULT. The price: a FAILED hack deals
-//           SECURITYHACKER_FAILURE_DAMAGE damage to the hacker (a real wound dealt by a hidden ability, going through armor and the ablative
+//           SECURITYHACKER_FAILURE_DAMAGE_PCT % of the hacker's MAX HP (rounded up) of damage to the hacker (a real wound dealt by a hidden ability, going through armor and the ablative
 //           protection, that LWOTC's Failsafe cannot cancel since it is not a hack reward), on top of the tower's normal failure penalty.
 //           And a SUCCESSFUL hack disables ALL the security towers of the mission, not only the one that was hacked.
 //           Another soldier hacking the same tower gets the normal tower.
@@ -27,7 +27,7 @@
 class UT_Trait_SecurityHacker extends UT_TraitBase config(UniqueTraits);
 
 var config int SECURITYHACKER_DEFENSE_MULT;
-var config int SECURITYHACKER_FAILURE_DAMAGE;
+var config int SECURITYHACKER_FAILURE_DAMAGE_PCT;
 var config array<string> SECURITYHACKER_TOWER_KEYWORDS;
 var config array<name> SECURITYHACKER_END_ABILITIES;
 var config array<name> SECURITYHACKER_FINALIZE_ABILITIES;
@@ -48,14 +48,14 @@ static function array<X2DataTemplate> CreateTemplates()
 
 // The damage of a failed hack: a hidden ability of the holder (granted with the passive through AdditionalAbilities), activated for real by
 // OnAbilityActivated_SecurityHackerBacklash right after the finalize ability. Its effect is an X2Effect_ApplyWeaponDamage with a flat damage like
-// the one SKULLMINEAbility applies on a miss, and it runs as an ordinary ability (its own game state and context, normal visualization), so it is a
+// the one SKULLMINEAbility applies on a miss but sized as a percentage of the max HP (X2Effect_UT_PercentHPDamage), and it runs as an ordinary ability (its own game state and context, normal visualization), so it is a
 // genuine wound that goes through the same logic as any other: hit animation and damage flyover, 'UnitTakeEffectDamage' (Psychic Bond), LowestHP
 // and the end-of-mission wound, the death if it kills. Armor and the ablative protection (eStat_ShieldHP) are bypassed (bIgnoreArmor,
 // bBypassShields); it is not a hack reward, so Failsafe cannot cancel it.
 static function X2AbilityTemplate SecurityHackerBacklash()
 {
 	local X2AbilityTemplate Template;
-	local X2Effect_ApplyWeaponDamage DamageEffect;
+	local X2Effect_UT_PercentHPDamage DamageEffect;
 
 	Template = HiddenEffectHolder('UT_SecurityHackerBacklash');
 	Template.AbilityTargetStyle = default.SelfTarget;
@@ -63,11 +63,11 @@ static function X2AbilityTemplate SecurityHackerBacklash()
 	Template.bSkipFireAction = true;
 	Template.BuildVisualizationFn = BuildVisualization_HackBacklash;
 
-	DamageEffect = new class'X2Effect_ApplyWeaponDamage';
+	DamageEffect = new class'X2Effect_UT_PercentHPDamage';
 	DamageEffect.bIgnoreBaseDamage = true;
 	DamageEffect.bIgnoreArmor = true;
 	DamageEffect.bBypassShields = true;
-	DamageEffect.EffectDamageValue.Damage = default.SECURITYHACKER_FAILURE_DAMAGE;
+	DamageEffect.PercentOfMaxHP = default.SECURITYHACKER_FAILURE_DAMAGE_PCT;
 	Template.AddTargetEffect(DamageEffect);
 
 	return Template;
@@ -256,7 +256,7 @@ static function EventListenerReturn OnAbilityActivated_SecurityHackerBacklash(Ob
 		return ELR_NoInterrupt;
 	}
 
-	`log("UniqueTraits : Security hacker -- failed hack:" @ Hacker.GetFullName() @ "takes" @ default.SECURITYHACKER_FAILURE_DAMAGE @ "damage through armor and ablative protection",, 'UniqueTraits');
+	`log("UniqueTraits : Security hacker -- failed hack:" @ Hacker.GetFullName() @ "takes" @ default.SECURITYHACKER_FAILURE_DAMAGE_PCT @ "% of the max HP (rounded up) through armor and ablative protection",, 'UniqueTraits');
 	return ELR_NoInterrupt;
 }
 

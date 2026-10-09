@@ -1,7 +1,8 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_PsychicBond.uc
 //  PURPOSE: Psychic Bond: the holder and his bondmate (the vanilla soldier bond; ignored when he has none or the bondmate is not deployed) get,
-//           at the start of every mission, the best BASE stats of the two (X2Effect_UT_BondStats), and when one of them loses health the other
+//           at the start of every mission, the best BASE stats of the two (X2Effect_UT_BondStats; the HP gain is granted as ablative protection,
+//           not as HP), and when one of them loses health the other
 //           loses PSYCHICBOND_SHARED_DAMAGE_PCT % of it too (two soldiers in the same 10-damage explosion each end with 15).
 //           - Stats: the holder's passive effect (UT_PsychicBond) also applies the partner's effect, the effect of the hidden ability
 //             UT_PsychicBondPartner (an effect applied by hand must come from an ability template), to the bondmate.

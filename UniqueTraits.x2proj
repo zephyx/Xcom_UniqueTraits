@@ -53,6 +53,7 @@
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Nemesis.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_MeatTenderizer.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Nemesis.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_PercentHPDamage.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Tenderized.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Condition_UT_TenderizerSource.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_EffectHelpers.uc" />
@@ -88,7 +89,7 @@
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_OrganicCombat.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakExplosives.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_PrimaryWeaponMalus.uc" />
-    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakHeavyWeapons.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakPrimaryWeapons.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_AcrobatMalus.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_TemporaryItem.uc" />
     <Content Include="Src\UniqueTraits\Classes\XComGameState_Effect_UT_TemporaryItem.uc" />
