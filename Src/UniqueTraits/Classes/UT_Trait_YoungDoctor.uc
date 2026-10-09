@@ -93,13 +93,11 @@ static function EventListenerReturn OnAbilityActivated_YoungDoctor(Object EventD
 	local UnitValue Value;
 	local int TargetID, Healed, Cut, Granted;
 
-	if (GameState.GetContext().InterruptionStatus == eInterruptionStatus_Interrupt)
+	if (!ParseAbilityActivation(GameState, EventSource, 'UT_YoungDoctor', AbilityContext, SourceUnit))
 		return ELR_NoInterrupt;
 
-	AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
 	AbilityState = XComGameState_Ability(EventData);
-	SourceUnit = XComGameState_Unit(EventSource);
-	if (AbilityContext == none || AbilityState == none || SourceUnit == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(SourceUnit, 'UT_YoungDoctor'))
+	if (AbilityState == none)
 		return ELR_NoInterrupt;
 
 	AbilityName = AbilityState.GetMyTemplateName();

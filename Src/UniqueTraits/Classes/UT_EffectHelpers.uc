@@ -4,7 +4,8 @@
 //           code), Chemist's disease, Laser designator's mark, Psychic Bond's partner stats. An effect applied by hand must come from an ability
 //           template: XComGameState_Effect finds its effect again through an X2EffectTemplateRef (ability template name + index in its
 //           AbilityTargetEffects), so each such effect lives in a hidden ability template that is never granted to any unit.
-//           Also home of the small queries on effects shared by several traits (IsDamageOverTime: Chemist).
+//           Also home of the small helpers shared by several traits: IsDamageOverTime (Chemist), IsPrimaryWeaponAbility (Psi adept, Quality over
+//           quantity, Maniac explosive), and the flyover on a counter that went up (ValueIncreased + AddUnitFlyover: Bounty hunter, Nemesis).
 //---------------------------------------------------------------------------------------
 class UT_EffectHelpers extends Object;
 
@@ -83,4 +84,40 @@ static final function bool IsDamageOverTime(X2Effect_Persistent Effect)
 	}
 
 	return false;
+}
+
+
+// True when the ability was fired with the holder's PRIMARY weapon.
+static function bool IsPrimaryWeaponAbility(XComGameState_Ability AbilityState)
+{
+	local XComGameState_Item SourceWeapon;
+
+	if (AbilityState == none)
+		return false;
+
+	SourceWeapon = AbilityState.GetSourceWeapon();
+	return SourceWeapon != none && SourceWeapon.InventorySlot == eInvSlot_PrimaryWeapon;
+}
+
+// True when the UnitValue ValueName of UnitState is higher than in its previous version, ie: a counter that went up in the game state being
+// visualized. PreviousState is that previous version (may be none).
+static function bool ValueIncreased(XComGameState_Unit UnitState, name ValueName, out XComGameState_Unit PreviousState)
+{
+	PreviousState = XComGameState_Unit(UnitState.GetPreviousVersion());
+
+	return class'UT_TraitBase'.static.GetUnitFloat(UnitState, ValueName) > class'UT_TraitBase'.static.GetUnitFloat(PreviousState, ValueName);
+}
+
+// Appends a flyover with Message on UnitState to the visualization being built (PreviousState: the unit before this game state, may be none).
+static function AddUnitFlyover(XComGameState VisualizeGameState, XComGameState_Unit UnitState, XComGameState_Unit PreviousState, string Message, optional EWidgetColor Color = eColor_Good)
+{
+	local VisualizationActionMetadata ActionMetadata;
+	local X2Action_PlaySoundAndFlyOver FlyOver;
+
+	ActionMetadata.StateObject_OldState = PreviousState;
+	ActionMetadata.StateObject_NewState = UnitState;
+	ActionMetadata.VisualizeActor = `XCOMHISTORY.GetVisualizer(UnitState.ObjectID);
+
+	FlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
+	FlyOver.SetSoundAndFlyOverParameters(none, Message, '', Color);
 }

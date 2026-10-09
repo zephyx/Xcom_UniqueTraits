@@ -144,15 +144,11 @@ static function EventListenerReturn OnAbilityActivated_LaserDesignator(Object Ev
 	local XComGameState NewGameState;
 	local bool bPrimaryShot, bHolotargeted;
 
-	if (GameState.GetContext().InterruptionStatus == eInterruptionStatus_Interrupt)
+	if (!ParseAbilityActivation(GameState, EventSource, 'UT_LaserDesignator', AbilityContext, SourceUnit))
 		return ELR_NoInterrupt;
 
-	SourceUnit = XComGameState_Unit(EventSource);
 	AbilityState = XComGameState_Ability(EventData);
-	AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
-	if (SourceUnit == none || AbilityState == none || AbilityContext == none || AbilityContext.InputContext.AbilityTemplateName == 'UT_LaserDesignator')
-		return ELR_NoInterrupt;
-	if (!class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(SourceUnit, 'UT_LaserDesignator'))
+	if (AbilityState == none || AbilityContext.InputContext.AbilityTemplateName == 'UT_LaserDesignator')
 		return ELR_NoInterrupt;
 
 	PrimedState = SourceUnit.GetUnitAffectedByEffectState('UT_LaserDesignator_Primed');

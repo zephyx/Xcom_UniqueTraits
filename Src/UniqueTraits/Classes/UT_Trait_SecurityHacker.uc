@@ -293,13 +293,11 @@ static function EventListenerReturn OnAbilityActivated_SecurityHacker(Object Eve
 	local bool bPrivateEmpty;
 	local int OldStrength;
 
-	if (GameState.GetContext().InterruptionStatus == eInterruptionStatus_Interrupt)
+	if (!ParseAbilityActivation(GameState, EventSource, 'UT_SecurityHacker', AbilityContext, Hacker))
 		return ELR_NoInterrupt;
 
-	Hacker = XComGameState_Unit(EventSource);
 	AbilityState = XComGameState_Ability(EventData);
-	AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
-	if (Hacker == none || AbilityState == none || AbilityContext == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(Hacker, 'UT_SecurityHacker'))
+	if (AbilityState == none)
 		return ELR_NoInterrupt;
 
 	// End of an attempt: the original rules of the tower come back (the rewards were awarded in this state already).

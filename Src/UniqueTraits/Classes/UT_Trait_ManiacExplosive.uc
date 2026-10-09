@@ -182,29 +182,14 @@ static function ManiacValidateLoadout(CHItemSlot Slot, XComGameState_Unit Unit, 
 {
 	local string strDummy;
 	local array<XComGameState_Item> ItemStates;
-	local XComGameState_Item ItemState;
-	local int i, MaxItems;
 
 	ItemStates = Unit.GetAllItemsInSlot(Slot.InvSlot, NewGameState);
 
+	// Without the slot nothing may stay in it; with it, only the first GetMaxItemCount items.
 	if (!Slot.UnitHasSlot(Unit, strDummy, NewGameState))
-	{
-		foreach ItemStates(ItemState)
-		{
-			ItemState = XComGameState_Item(NewGameState.ModifyStateObject(class'XComGameState_Item', ItemState.ObjectID));
-			if (Unit.RemoveItemFromInventory(ItemState, NewGameState))
-				XComHQ.PutItemInInventory(NewGameState, ItemState);
-		}
-		return;
-	}
-
-	MaxItems = Slot.GetMaxItemCount(Unit, NewGameState);
-	for (i = ItemStates.Length - 1; i >= MaxItems; i--)
-	{
-		ItemState = XComGameState_Item(NewGameState.ModifyStateObject(class'XComGameState_Item', ItemStates[i].ObjectID));
-		if (Unit.RemoveItemFromInventory(ItemState, NewGameState))
-			XComHQ.PutItemInInventory(NewGameState, ItemState);
-	}
+		MoveItemsBackToHQ(Unit, XComHQ, NewGameState, ItemStates);
+	else
+		MoveItemsBackToHQ(Unit, XComHQ, NewGameState, ItemStates, Slot.GetMaxItemCount(Unit, NewGameState));
 }
 
 static function int ManiacGetPriority(CHItemSlot Slot, XComGameState_Unit UnitState, optional XComGameState CheckGameState)

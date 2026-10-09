@@ -115,3 +115,44 @@ static final function X2AbilityTemplate HiddenEffectHolder(name TemplateName)
 
 	return Template;
 }
+
+
+// A float UnitValue of Unit; DefaultValue when the unit has none (or is none).
+static final function float GetUnitFloat(XComGameState_Unit Unit, name ValueName, optional float DefaultValue = 0.0)
+{
+	local UnitValue Value;
+
+	if (Unit != none && Unit.GetUnitValue(ValueName, Value))
+		return Value.fValue;
+
+	return DefaultValue;
+}
+
+// Shared prelude of the 'AbilityActivated' handlers: true only for a resolved activation (not the interrupt step) of an
+// ability (AbilityContext) whose source (SourceUnit = EventSource) holds TraitID. A handler that has to test something else first (Smoker, Always
+// ready, the Security hacker backlash) keeps its own prelude.
+static final function bool ParseAbilityActivation(XComGameState GameState, Object EventSource, name TraitID, out XComGameStateContext_Ability AbilityContext, out XComGameState_Unit SourceUnit)
+{
+	if (GameState.GetContext().InterruptionStatus == eInterruptionStatus_Interrupt)
+		return false;
+
+	AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
+	SourceUnit = XComGameState_Unit(EventSource);
+
+	return AbilityContext != none && SourceUnit != none && class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(SourceUnit, TraitID);
+}
+
+// Takes the items of ItemStates out of Unit's inventory and gives them back to the HQ, last first, keeping the first KeepCount (item-slot
+// validations: Maniac explosive's excess pockets, Support's vest slot). NewGameState is the validation's own pending state.
+static final function MoveItemsBackToHQ(XComGameState_Unit Unit, XComGameState_HeadquartersXCom XComHQ, XComGameState NewGameState, array<XComGameState_Item> ItemStates, optional int KeepCount = 0)
+{
+	local XComGameState_Item ItemState;
+	local int i;
+
+	for (i = ItemStates.Length - 1; i >= KeepCount; i--)
+	{
+		ItemState = XComGameState_Item(NewGameState.ModifyStateObject(class'XComGameState_Item', ItemStates[i].ObjectID));
+		if (Unit.RemoveItemFromInventory(ItemState, NewGameState))
+			XComHQ.PutItemInInventory(NewGameState, ItemState);
+	}
+}

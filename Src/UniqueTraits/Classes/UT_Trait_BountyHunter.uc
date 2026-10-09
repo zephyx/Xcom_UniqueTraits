@@ -60,7 +60,6 @@ static function EventListenerReturn OnUnitDied_BountyHunter(Object EventData, Ob
 	local XComGameStateHistory History;
 	local XComGameState_Unit DeadUnit, Killer;
 	local XComGameStateContext_Ability AbilityContext;
-	local UnitValue KillsValue;
 	local int KillerID;
 
 	DeadUnit = XComGameState_Unit(EventSource);
@@ -84,9 +83,7 @@ static function EventListenerReturn OnUnitDied_BountyHunter(Object EventData, Ob
 		return ELR_NoInterrupt;
 
 	Killer = XComGameState_Unit(GameState.ModifyStateObject(class'XComGameState_Unit', KillerID));
-	KillsValue.fValue = 0;
-	Killer.GetUnitValue('UT_BountyHunter_Kills', KillsValue);
-	Killer.SetUnitFloatValue('UT_BountyHunter_Kills', KillsValue.fValue + 1, eCleanup_BeginTactical);
+	Killer.SetUnitFloatValue('UT_BountyHunter_Kills', GetUnitFloat(Killer, 'UT_BountyHunter_Kills') + 1, eCleanup_BeginTactical);
 
 	// "Bounty" flyover on the killer, appended to the visualization of the kill's own game state.
 	GameState.GetContext().PostBuildVisualizationFn.AddItem(BuildVisualization_BountyFlyover);
@@ -165,32 +162,11 @@ static function OnPostMission()
 // PostBuildVisualizationFn of the kill's context: the killer(s) whose tally went up in that state get the flyover.
 static function BuildVisualization_BountyFlyover(XComGameState VisualizeGameState)
 {
-	local XComGameStateHistory History;
 	local XComGameState_Unit UnitState, PreviousState;
-	local VisualizationActionMetadata ActionMetadata, EmptyMetadata;
-	local X2Action_PlaySoundAndFlyOver FlyOver;
-	local UnitValue KillsValue, PreviousKillsValue;
-
-	History = `XCOMHISTORY;
 
 	foreach VisualizeGameState.IterateByClassType(class'XComGameState_Unit', UnitState)
 	{
-		if (!UnitState.GetUnitValue('UT_BountyHunter_Kills', KillsValue))
-			continue;
-
-		PreviousKillsValue.fValue = 0;
-		PreviousState = XComGameState_Unit(UnitState.GetPreviousVersion());
-		if (PreviousState != none)
-			PreviousState.GetUnitValue('UT_BountyHunter_Kills', PreviousKillsValue);
-		if (KillsValue.fValue <= PreviousKillsValue.fValue)
-			continue;
-
-		ActionMetadata = EmptyMetadata;
-		ActionMetadata.StateObject_OldState = PreviousState;
-		ActionMetadata.StateObject_NewState = UnitState;
-		ActionMetadata.VisualizeActor = History.GetVisualizer(UnitState.ObjectID);
-
-		FlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
-		FlyOver.SetSoundAndFlyOverParameters(none, default.BOUNTYHUNTER_FLYOVER, '', eColor_Good);
+		if (class'UT_EffectHelpers'.static.ValueIncreased(UnitState, 'UT_BountyHunter_Kills', PreviousState))
+			class'UT_EffectHelpers'.static.AddUnitFlyover(VisualizeGameState, UnitState, PreviousState, default.BOUNTYHUNTER_FLYOVER);
 	}
 }

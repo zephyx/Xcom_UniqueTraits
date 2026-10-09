@@ -12,23 +12,12 @@ var int PsiPerPierce;
 var int PsiPerDamage;
 var int RoboticDamageReductionPct;
 
-static function bool IsPrimaryWeaponAbility(XComGameState_Ability AbilityState)
-{
-	local XComGameState_Item SourceWeapon;
-
-	if (AbilityState == none)
-		return false;
-
-	SourceWeapon = AbilityState.GetSourceWeapon();
-	return SourceWeapon != none && SourceWeapon.InventorySlot == eInvSlot_PrimaryWeapon;
-}
-
 function int GetExtraArmorPiercing(XComGameState_Effect EffectState, XComGameState_Unit Attacker, Damageable TargetDamageable, XComGameState_Ability AbilityState, const out EffectAppliedData AppliedData)
 {
 	local XComGameState_Unit Target;
 
 	Target = XComGameState_Unit(TargetDamageable);
-	if (PsiPerPierce <= 0 || Attacker == none || (Target != none && Target.IsRobotic()) || !IsPrimaryWeaponAbility(AbilityState))
+	if (PsiPerPierce <= 0 || Attacker == none || (Target != none && Target.IsRobotic()) || !class'UT_EffectHelpers'.static.IsPrimaryWeaponAbility(AbilityState))
 		return 0;
 
 	return int(Attacker.GetCurrentStat(eStat_PsiOffense)) / PsiPerPierce;
@@ -40,7 +29,7 @@ function int GetAttackingDamageModifier_CH(XComGameState_Effect EffectState, XCo
 
 	Target = XComGameState_Unit(TargetDamageable);
 
-	if (CurrentDamage <= 0 || Attacker == none || WeaponDamageEffect == none || WeaponDamageEffect.bIgnoreBaseDamage || !IsPrimaryWeaponAbility(AbilityState))
+	if (CurrentDamage <= 0 || Attacker == none || WeaponDamageEffect == none || WeaponDamageEffect.bIgnoreBaseDamage || !class'UT_EffectHelpers'.static.IsPrimaryWeaponAbility(AbilityState))
 		return 0;
 	if (Target == none)
 		return 0;

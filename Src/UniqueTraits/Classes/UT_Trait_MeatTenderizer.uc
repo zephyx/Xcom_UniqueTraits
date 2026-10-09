@@ -276,12 +276,7 @@ static function EventListenerReturn OnAbilityActivated_MeatTenderizer(Object Eve
 	local bool bApplied;
 	local int i;
 
-	if (GameState.GetContext().InterruptionStatus == eInterruptionStatus_Interrupt)
-		return ELR_NoInterrupt;
-
-	AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
-	SourceUnit = XComGameState_Unit(EventSource);
-	if (SourceUnit == none || AbilityContext == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(SourceUnit, 'UT_MeatTenderizer'))
+	if (!ParseAbilityActivation(GameState, EventSource, 'UT_MeatTenderizer', AbilityContext, SourceUnit))
 		return ELR_NoInterrupt;
 
 	// Latest version of the holder: the guard is written in states of our own.

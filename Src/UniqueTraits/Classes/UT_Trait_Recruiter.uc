@@ -54,16 +54,6 @@ static final function int GetNowHours()
 	return class'X2StrategyGameRulesetDataStructures'.static.DifferenceInHours(`STRATEGYRULES.GameTime, Base);
 }
 
-static final function float GetFloatValue(XComGameState_Unit Unit, name ValueName, float DefaultValue)
-{
-	local UnitValue Value;
-
-	if (Unit.GetUnitValue(ValueName, Value))
-		return Value.fValue;
-
-	return DefaultValue;
-}
-
 // Closes the running interval (up to now) and opens a new one if the unit is a haven adviser NOW. Unit must be modifiable. Call it whenever
 // the adviser status may have changed (before the change is taken into account: the interval that ends now was spent in the old status).
 static final function SyncLiaisonTime(XComGameState_Unit Unit)
@@ -72,8 +62,8 @@ static final function SyncLiaisonTime(XComGameState_Unit Unit)
 	local int Now;
 
 	Now = GetNowHours();
-	Mark = GetFloatValue(Unit, 'UT_Recruiter_Mark', -1);
-	Hours = GetFloatValue(Unit, 'UT_Recruiter_Hours', 0);
+	Mark = GetUnitFloat(Unit, 'UT_Recruiter_Mark', -1);
+	Hours = GetUnitFloat(Unit, 'UT_Recruiter_Hours', 0);
 
 	if (Mark >= 0)
 		Hours += Now - Mark;
@@ -177,8 +167,8 @@ static function EventListenerReturn OnPreEndOfMonth_Recruiter(Object EventData, 
 		// Close the running interval, read this month's total and start a new month.
 		MutableUnit = XComGameState_Unit(GameState.ModifyStateObject(class'XComGameState_Unit', Soldier.ObjectID));
 		SyncLiaisonTime(MutableUnit);
-		Hours = GetFloatValue(MutableUnit, 'UT_Recruiter_Hours', 0);
-		MonthHours = Now - GetFloatValue(MutableUnit, 'UT_Recruiter_MonthStart', Now);
+		Hours = GetUnitFloat(MutableUnit, 'UT_Recruiter_Hours', 0);
+		MonthHours = Now - GetUnitFloat(MutableUnit, 'UT_Recruiter_MonthStart', Now);
 		MutableUnit.SetUnitFloatValue('UT_Recruiter_Hours', 0, eCleanup_Never);
 		MutableUnit.SetUnitFloatValue('UT_Recruiter_MonthStart', Now, eCleanup_Never);
 

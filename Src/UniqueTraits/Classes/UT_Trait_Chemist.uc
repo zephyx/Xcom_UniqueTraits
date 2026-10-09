@@ -71,12 +71,7 @@ static function EventListenerReturn OnAbilityActivated_Chemist(Object EventData,
 	local XComGameState NewGameState;
 	local int TargetID, Applied;
 
-	if (GameState.GetContext().InterruptionStatus == eInterruptionStatus_Interrupt)
-		return ELR_NoInterrupt;
-
-	SourceUnit = XComGameState_Unit(EventSource);
-	AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
-	if (SourceUnit == none || AbilityContext == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(SourceUnit, 'UT_Chemist'))
+	if (!ParseAbilityActivation(GameState, EventSource, 'UT_Chemist', AbilityContext, SourceUnit))
 		return ELR_NoInterrupt;
 
 	History = `XCOMHISTORY;

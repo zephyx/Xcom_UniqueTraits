@@ -10,13 +10,10 @@ var int DamageReductionPct;
 
 function int GetAttackingDamageModifier_CH(XComGameState_Effect EffectState, XComGameState_Unit Attacker, Damageable TargetDamageable, XComGameState_Ability AbilityState, const out EffectAppliedData AppliedData, const int CurrentDamage, X2Effect_ApplyWeaponDamage WeaponDamageEffect, optional XComGameState NewGameState)
 {
-	local XComGameState_Item SourceWeapon;
-
 	if (CurrentDamage <= 1 || AbilityState == none || WeaponDamageEffect == none || WeaponDamageEffect.bIgnoreBaseDamage)
 		return 0;
 
-	SourceWeapon = AbilityState.GetSourceWeapon();
-	if (SourceWeapon == none || SourceWeapon.InventorySlot != eInvSlot_PrimaryWeapon)
+	if (!class'UT_EffectHelpers'.static.IsPrimaryWeaponAbility(AbilityState))
 		return 0;
 
 	return -Max(0, Min(Round(CurrentDamage * DamageReductionPct / 100.0), CurrentDamage - 1));

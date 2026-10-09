@@ -27,7 +27,6 @@ static function array<X2DataTemplate> CreateTemplates()
 
 static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
-	local UnitValue ExperienceValue;
 	local int i;
 
 	ShiftFalseHopeStats(MutableUnit, default.FALSEHOPE_AIM_BASE, default.FALSEHOPE_HP_BASE);
@@ -35,9 +34,7 @@ static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 
 	// Baseline for the LWOTC part of the XP malus (OnDistributeTacticalGameEndXp_FalseHopeXp): the
 	// mission experience the soldier already has is NOT reduced, only what is added from now on.
-	ExperienceValue.fValue = 0;
-	MutableUnit.GetUnitValue('MissionExperience', ExperienceValue);
-	MutableUnit.SetUnitFloatValue('UT_FalseHope_MissionXpSeen', ExperienceValue.fValue, eCleanup_Never);
+	MutableUnit.SetUnitFloatValue('UT_FalseHope_MissionXpSeen', GetUnitFloat(MutableUnit, 'MissionExperience'), eCleanup_Never);
 
 	// A natural promotion grants the trait at rank 1 (nothing to catch up); AddUniqueTrait on an
 	// already-ranked soldier must apply every rank gained since, as if it had held the trait from rank 1.
@@ -48,12 +45,9 @@ static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 // Reverses the permanent mutation: base part plus the per-rank decay applied so far.
 static function OnClear(XComGameState_Unit MutableUnit)
 {
-	local UnitValue RanksScaledValue;
 	local int RanksScaled;
 
-	RanksScaled = 0;
-	if (MutableUnit.GetUnitValue('UT_FalseHope_RanksScaled', RanksScaledValue))
-		RanksScaled = int(RanksScaledValue.fValue);
+	RanksScaled = int(GetUnitFloat(MutableUnit, 'UT_FalseHope_RanksScaled'));
 
 	ShiftFalseHopeStats(MutableUnit,
 		-(default.FALSEHOPE_AIM_BASE - RanksScaled * default.FALSEHOPE_AIM_PER_RANK),
@@ -64,12 +58,9 @@ static function OnClear(XComGameState_Unit MutableUnit)
 
 static function OnRankUp(XComGameState_Unit UnitState)
 {
-	local UnitValue RanksScaledValue;
 	local int RanksScaled;
 
-	RanksScaled = 0;
-	if (UnitState.GetUnitValue('UT_FalseHope_RanksScaled', RanksScaledValue))
-		RanksScaled = int(RanksScaledValue.fValue);
+	RanksScaled = int(GetUnitFloat(UnitState, 'UT_FalseHope_RanksScaled'));
 
 	ShiftFalseHopeStats(UnitState, -default.FALSEHOPE_AIM_PER_RANK,
 		GetFalseHopeHPDelta(RanksScaled + 1) - GetFalseHopeHPDelta(RanksScaled));
@@ -118,12 +109,11 @@ static function EventListenerReturn OnDistributeTacticalGameEndXp(Object EventDa
 	local XComGameState_HeadquartersXCom XComHQ;
 	local array<XComGameState_Unit> Soldiers;
 	local XComGameState_Unit Soldier, XpStateUnit, PreviousUnitState, MutableUnit;
-	local UnitValue ExperienceValue, SeenValue;
 	local array<int> UnitIDs, XpReductions;
 	local array<float> ExperienceTotals, ExperienceReductions;
 	local XComGameState NewGameState;
 	local int XpGained, XpReduction, i;
-	local float ExperienceGained, ExperienceReduction;
+	local float ExperienceTotal, ExperienceGained, ExperienceReduction;
 
 	XComHQ = XComGameState_HeadquartersXCom(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
 	if (XComHQ == none)
@@ -149,11 +139,8 @@ static function EventListenerReturn OnDistributeTacticalGameEndXp(Object EventDa
 		}
 
 		// 2. LWOTC mission experience added since the last time it was accounted for.
-		ExperienceValue.fValue = 0;
-		Soldier.GetUnitValue('MissionExperience', ExperienceValue);
-		SeenValue.fValue = 0;
-		Soldier.GetUnitValue('UT_FalseHope_MissionXpSeen', SeenValue);
-		ExperienceGained = ExperienceValue.fValue - SeenValue.fValue;
+		ExperienceTotal = GetUnitFloat(Soldier, 'MissionExperience');
+		ExperienceGained = ExperienceTotal - GetUnitFloat(Soldier, 'UT_FalseHope_MissionXpSeen');
 		ExperienceReduction = 0;
 		if (ExperienceGained > 0)
 			ExperienceReduction = ExperienceGained * default.FALSEHOPE_XP_REDUCTION_PCT / 100.0;
@@ -162,7 +149,7 @@ static function EventListenerReturn OnDistributeTacticalGameEndXp(Object EventDa
 		{
 			UnitIDs.AddItem(Soldier.ObjectID);
 			XpReductions.AddItem(XpReduction);
-			ExperienceTotals.AddItem(ExperienceValue.fValue);
+			ExperienceTotals.AddItem(ExperienceTotal);
 			ExperienceReductions.AddItem(ExperienceReduction);
 			`log("UniqueTraits : False Hope XP malus for" @ Soldier.GetFullName()
 				@ "-- XP gained" @ XpGained @ "(removing" @ XpReduction $ "), LWOTC mission experience gained" @ ExperienceGained

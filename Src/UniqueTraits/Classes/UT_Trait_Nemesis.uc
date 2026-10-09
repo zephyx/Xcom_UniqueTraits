@@ -69,7 +69,6 @@ static function EventListenerReturn OnUnitDied_Nemesis(Object EventData, Object 
 	local XComGameState_Unit DeadUnit, Killer;
 	local XComGameState_Item Weapon;
 	local XComGameStateContext_Ability AbilityContext;
-	local UnitValue Tally, Serial;
 	local name GroupName, ValueName;
 	local int KillerID, Kills;
 
@@ -102,19 +101,16 @@ static function EventListenerReturn OnUnitDied_Nemesis(Object EventData, Object 
 		return ELR_NoInterrupt;
 
 	ValueName = Name(class'X2Effect_UT_Nemesis'.default.UVPrefix $ GroupName);
-	Tally.fValue = 0;
-	Killer.GetUnitValue(ValueName, Tally);
-	if (int(Tally.fValue) >= GetKillCap())
+	Kills = int(GetUnitFloat(Killer, ValueName));
+	if (Kills >= GetKillCap())
 		return ELR_NoInterrupt;
 
 	Killer = XComGameState_Unit(GameState.ModifyStateObject(class'XComGameState_Unit', KillerID));
-	Kills = int(Tally.fValue) + 1;
+	++Kills;
 	Killer.SetUnitFloatValue(ValueName, Kills, eCleanup_Never);
 
 	// Marks for the flyover: a counter that changes on every counted kill, and the bonuses of the type just killed.
-	Serial.fValue = 0;
-	Killer.GetUnitValue('UT_Nemesis_KillSerial', Serial);
-	Killer.SetUnitFloatValue('UT_Nemesis_KillSerial', Serial.fValue + 1, eCleanup_BeginTactical);
+	Killer.SetUnitFloatValue('UT_Nemesis_KillSerial', GetUnitFloat(Killer, 'UT_Nemesis_KillSerial') + 1, eCleanup_BeginTactical);
 	Killer.SetUnitFloatValue('UT_Nemesis_LastAim', Min(Kills * default.NEMESIS_AIM_PER_KILL, default.NEMESIS_MAX_AIM), eCleanup_BeginTactical);
 	Killer.SetUnitFloatValue('UT_Nemesis_LastDefense', Min(Kills * default.NEMESIS_DEFENSE_PER_KILL, default.NEMESIS_MAX_DEFENSE), eCleanup_BeginTactical);
 
@@ -152,38 +148,16 @@ static function OnClear(XComGameState_Unit MutableUnit)
 // PostBuildVisualizationFn of the kill's context: the killer whose UT_Nemesis_KillSerial went up in that state gets the flyover.
 static function BuildVisualization_NemesisFlyover(XComGameState VisualizeGameState)
 {
-	local XComGameStateHistory History;
 	local XComGameState_Unit UnitState, PreviousState;
-	local VisualizationActionMetadata ActionMetadata, EmptyMetadata;
-	local X2Action_PlaySoundAndFlyOver FlyOver;
-	local UnitValue Serial, PreviousSerial, LastAim, LastDefense;
 	local string Message;
-
-	History = `XCOMHISTORY;
 
 	foreach VisualizeGameState.IterateByClassType(class'XComGameState_Unit', UnitState)
 	{
-		if (!UnitState.GetUnitValue('UT_Nemesis_KillSerial', Serial))
+		if (!class'UT_EffectHelpers'.static.ValueIncreased(UnitState, 'UT_Nemesis_KillSerial', PreviousState))
 			continue;
 
-		PreviousSerial.fValue = 0;
-		PreviousState = XComGameState_Unit(UnitState.GetPreviousVersion());
-		if (PreviousState != none)
-			PreviousState.GetUnitValue('UT_Nemesis_KillSerial', PreviousSerial);
-		if (Serial.fValue <= PreviousSerial.fValue)
-			continue;
-
-		UnitState.GetUnitValue('UT_Nemesis_LastAim', LastAim);
-		UnitState.GetUnitValue('UT_Nemesis_LastDefense', LastDefense);
-		Message = Repl(default.NEMESIS_FLYOVER, "%AIM", string(int(LastAim.fValue)));
-		Message = Repl(Message, "%DEF", string(int(LastDefense.fValue)));
-
-		ActionMetadata = EmptyMetadata;
-		ActionMetadata.StateObject_OldState = PreviousState;
-		ActionMetadata.StateObject_NewState = UnitState;
-		ActionMetadata.VisualizeActor = History.GetVisualizer(UnitState.ObjectID);
-
-		FlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
-		FlyOver.SetSoundAndFlyOverParameters(none, Message, '', eColor_Good);
+		Message = Repl(default.NEMESIS_FLYOVER, "%AIM", string(int(GetUnitFloat(UnitState, 'UT_Nemesis_LastAim'))));
+		Message = Repl(Message, "%DEF", string(int(GetUnitFloat(UnitState, 'UT_Nemesis_LastDefense'))));
+		class'UT_EffectHelpers'.static.AddUnitFlyover(VisualizeGameState, UnitState, PreviousState, Message);
 	}
 }

@@ -14,13 +14,10 @@ function GetToHitModifiers(XComGameState_Effect EffectState, XComGameState_Unit 
 	local X2WeaponTemplate WeaponTemplate;
 	local int Bonus;
 
-	if (AbilityState == none || CritByTier.Length == 0)
+	if (AbilityState == none || CritByTier.Length == 0 || !class'UT_EffectHelpers'.static.IsPrimaryWeaponAbility(AbilityState))
 		return;
 
 	SourceWeapon = AbilityState.GetSourceWeapon();
-	if (SourceWeapon == none || SourceWeapon.InventorySlot != eInvSlot_PrimaryWeapon)
-		return;
-
 	WeaponTemplate = X2WeaponTemplate(SourceWeapon.GetMyTemplate());
 	if (WeaponTemplate == none)
 		return;

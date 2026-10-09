@@ -364,19 +364,11 @@ static function bool EffectListHasRealWeaponDamage(array<X2Effect> Effects, X2We
 static function SupportValidateLoadout(CHItemSlot Slot, XComGameState_Unit Unit, XComGameState_HeadquartersXCom XComHQ, XComGameState NewGameState)
 {
 	local string strDummy;
-	local array<XComGameState_Item> ItemStates;
-	local XComGameState_Item ItemState;
 
 	if (Slot.UnitHasSlot(Unit, strDummy, NewGameState))
 		return;
 
-	ItemStates = Unit.GetAllItemsInSlot(Slot.InvSlot, NewGameState);
-	foreach ItemStates(ItemState)
-	{
-		ItemState = XComGameState_Item(NewGameState.ModifyStateObject(class'XComGameState_Item', ItemState.ObjectID));
-		if (Unit.RemoveItemFromInventory(ItemState, NewGameState))
-			XComHQ.PutItemInInventory(NewGameState, ItemState);
-	}
+	MoveItemsBackToHQ(Unit, XComHQ, NewGameState, Unit.GetAllItemsInSlot(Slot.InvSlot, NewGameState));
 }
 
 static function int SupportGetPriority(CHItemSlot Slot, XComGameState_Unit UnitState, optional XComGameState CheckGameState)

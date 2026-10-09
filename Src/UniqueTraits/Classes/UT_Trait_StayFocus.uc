@@ -94,15 +94,10 @@ static function EventListenerReturn OnAbilityActivated_StayFocus(Object EventDat
 	local XComGameState NewGameState;
 	local int NewWill;
 
-	if (GameState.GetContext().InterruptionStatus == eInterruptionStatus_Interrupt)
+	if (!ParseAbilityActivation(GameState, EventSource, 'UT_StayFocus', AbilityContext, SourceUnit))
 		return ELR_NoInterrupt;
 
-	AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
-	if (AbilityContext == none || AbilityContext.InputContext.AbilityTemplateName != 'UT_StayFocus')
-		return ELR_NoInterrupt;
-
-	SourceUnit = XComGameState_Unit(EventSource);
-	if (SourceUnit == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(SourceUnit, 'UT_StayFocus'))
+	if (AbilityContext.InputContext.AbilityTemplateName != 'UT_StayFocus')
 		return ELR_NoInterrupt;
 
 	NewWill = Max(0, int(SourceUnit.GetCurrentStat(eStat_Will)) - default.STAYFOCUS_WILL_LOSS);
