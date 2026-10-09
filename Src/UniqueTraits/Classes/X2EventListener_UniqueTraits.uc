@@ -105,6 +105,8 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	// Bounty hunter: 20% of the kills without XP (fired once per kill that gives XP) and the tally of ALL the kills (supplies paid after the mission).
 	Template.AddCHEvent('OverrideKillXp', class'UT_Trait_BountyHunter'.static.OnOverrideKillXp_BountyHunter, ELD_Immediate, 50);
 	Template.AddCHEvent('UnitDied', class'UT_Trait_BountyHunter'.static.OnUnitDied_BountyHunter, ELD_Immediate, 50);
+	// Shredder: the acid on a target whose armor the holder's primary weapon just shredded.
+	Template.AddCHEvent('AbilityActivated', class'UT_Trait_Shredder'.static.OnAbilityActivated_Shredder, ELD_OnStateSubmitted, 50);
 	// Meat Tenderizer: the action point back, once the ability (and its cost) is over.
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_MeatTenderizer'.static.OnAbilityActivated_MeatTenderizer, ELD_OnStateSubmitted, 50);
 	// Nemesis: the permanent per-enemy-type kill tally (aim against, defense malus against).

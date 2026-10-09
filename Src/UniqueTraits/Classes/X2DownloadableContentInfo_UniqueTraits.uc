@@ -8,11 +8,12 @@
 //---------------------------------------------------------------------------------------
 class X2DownloadableContentInfo_UniqueTraits extends X2DownloadableContentInfo;
 
-// Smoker splices its "doesn't end the turn" cost into the shared ThrowGrenade template; Meat Tenderizer adds a twin of every stun / disorient effect.
+// Smoker splices its "doesn't end the turn" cost into the shared ThrowGrenade template; Meat Tenderizer adds a twin of every stun / disorient effect; Shredder copies the acid damage of its reference grenade.
 static event OnPostTemplatesCreated()
 {
 	class'UT_Trait_Smoker'.static.OnPostTemplatesCreated();
 	class'UT_Trait_MeatTenderizer'.static.OnPostTemplatesCreated();
+	class'UT_Trait_Shredder'.static.OnPostTemplatesCreated();
 }
 
 // Dispatches to the unit's own trait (UT_TraitBase.IsItemBlocked): Maniac explosive's primary weapon block, Swordsman's

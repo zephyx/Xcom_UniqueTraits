@@ -52,6 +52,8 @@
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_SecurityHacker.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Nemesis.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_MeatTenderizer.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_Shredder.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Shredder.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Nemesis.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_PercentHPDamage.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Tenderized.uc" />

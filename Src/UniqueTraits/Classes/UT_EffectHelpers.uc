@@ -12,16 +12,24 @@ class UT_EffectHelpers extends Object;
 // Applies effect EffectIndex of the AbilityTargetEffects of the hidden ability TemplateName to Target, as if Source had applied it.
 // Target must be a pending (modifiable) state object of NewGameState. AbilityContext may be none (effects applied outside an ability).
 // Returns the result of X2Effect.ApplyEffect ('AA_Success' when applied); 'AA_AbilityUnavailable' if the template/effect does not exist.
-static function name ApplyAbilityEffect(name TemplateName, int EffectIndex, XComGameState_Unit Source, XComGameState_BaseObject Target, XComGameState NewGameState, optional XComGameStateContext_Ability AbilityContext)
+// The effect is bound to a PLAYER (EffectData.PlayerStateObjectRef), which decides WHEN a persistent effect ticks on a 'PlayerTurnBegin' rule: by
+// default the SOURCE's player (the effect ticks at the start of the source's turns: what Chemist's disease, Laser designator's mark and
+// Tactician's disorient are validated with); with bTickOnTargetPlayerTurn the TARGET unit's player, which is what the game does for the effects
+// applied by an ability (X2Ability.ApplyEffectsToTarget): a damage over time then ticks at the start of its victim's turn (Shredder's acid).
+static function name ApplyAbilityEffect(name TemplateName, int EffectIndex, XComGameState_Unit Source, XComGameState_BaseObject Target, XComGameState NewGameState, optional XComGameStateContext_Ability AbilityContext, optional bool bTickOnTargetPlayerTurn = false)
 {
 	local X2AbilityTemplate Template;
 	local EffectAppliedData EffectData;
+	local XComGameState_Unit TargetUnit;
 
 	Template = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager().FindAbilityTemplate(TemplateName);
 	if (Template == none || EffectIndex < 0 || EffectIndex >= Template.AbilityTargetEffects.Length)
 		return 'AA_AbilityUnavailable';
 
 	EffectData.PlayerStateObjectRef = Source.ControllingPlayer;
+	TargetUnit = XComGameState_Unit(Target);
+	if (bTickOnTargetPlayerTurn && TargetUnit != none)
+		EffectData.PlayerStateObjectRef = TargetUnit.ControllingPlayer;
 	EffectData.SourceStateObjectRef = Source.GetReference();
 	EffectData.TargetStateObjectRef = Target.GetReference();
 	if (AbilityContext != none)
