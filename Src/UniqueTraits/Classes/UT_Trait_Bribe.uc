@@ -1,6 +1,8 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_Bribe.uc
-//  PURPOSE: Bribe [LWOTC ONLY]: icon holder; supplies are the 'OverrideSupplyDrop' listener + SyncBribeSupplyBonus, the infiltration penalty is read by LWOTC from XComLW_InfiltrationSettings.ini.
+//  PURPOSE: Bribe [LWOTC ONLY]: icon holder; supplies are the 'OverrideSupplyDrop' listener + SyncBribeSupplyBonus (all soldiers, on staff changes and at month end)
+//           and, for the unit whose trait changes, OnGrant / OnClear (same ApplyBribeRegion, inside the transaction of the change). The infiltration penalty is
+//           read by LWOTC from XComLW_InfiltrationSettings.ini.
 //---------------------------------------------------------------------------------------
 class UT_Trait_Bribe extends UT_TraitBase config(UniqueTraits);
 
@@ -28,6 +30,56 @@ static function X2AbilityTemplate Bribe()
 	Template = PurePassive('UT_Bribe', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
 
 	return Template;
+}
+
+// Mirrors into the regions what ONE unit should have now: DesiredID is the region it makes richer (0 = none). The region it made richer so far is the
+// UnitValue UT_Bribe_RegionID of the unit; both regions and the unit are modified in NewGameState. Does nothing when nothing changes.
+static final function ApplyBribeRegion(XComGameState_Unit Unit, int DesiredID, XComGameState NewGameState)
+{
+	local XComGameState_Unit MutableUnit;
+	local XComGameState_WorldRegion MutableRegion;
+	local UnitValue AppliedValue;
+	local int AppliedID;
+
+	if (Unit.GetUnitValue('UT_Bribe_RegionID', AppliedValue))
+		AppliedID = int(AppliedValue.fValue);
+
+	if (DesiredID == AppliedID)
+		return;
+
+	if (AppliedID != 0)
+	{
+		MutableRegion = XComGameState_WorldRegion(NewGameState.ModifyStateObject(class'XComGameState_WorldRegion', AppliedID));
+		MutableRegion.POISupplyBonusDelta -= default.BRIBE_SUPPLY_BONUS;
+	}
+	if (DesiredID != 0)
+	{
+		MutableRegion = XComGameState_WorldRegion(NewGameState.ModifyStateObject(class'XComGameState_WorldRegion', DesiredID));
+		MutableRegion.POISupplyBonusDelta += default.BRIBE_SUPPLY_BONUS;
+	}
+
+	MutableUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', Unit.ObjectID));
+	MutableUnit.SetUnitFloatValue('UT_Bribe_RegionID', DesiredID, eCleanup_Never);
+
+	`log("UniqueTraits : Bribe supply sync --" @ Unit.GetFullName() @ "region" @ AppliedID @ "->" @ DesiredID,, 'UniqueTraits');
+}
+
+// UT_TraitBase.OnGrant: a soldier who already is a haven adviser (AddUniqueTrait) brings the bonus to his region at once. A rookie is no adviser: no-op.
+static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+{
+	local XComGameState_WorldRegion Region;
+
+	if (!MutableUnit.IsDead())
+		Region = class'UT_LWOTCHelpers'.static.GetLiaisonRegion(MutableUnit);
+
+	if (Region != none)
+		ApplyBribeRegion(MutableUnit, Region.ObjectID, NewGameState);
+}
+
+// UT_TraitBase.OnClear: the soldier loses the trait (RemoveUniqueTrait, replaced by another trait...): his region loses the bonus in the same transaction.
+static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+{
+	ApplyBribeRegion(MutableUnit, 0, NewGameState);
 }
 
 static function EventListenerReturn OnStaffUpdated(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
@@ -92,8 +144,8 @@ static final function SyncBribeSupplyBonus(optional XComGameState ExternalGameSt
 	local XComGameStateHistory History;
 	local XComGameState_HeadquartersXCom XComHQ;
 	local array<XComGameState_Unit> Soldiers;
-	local XComGameState_Unit Unit, MutableUnit;
-	local XComGameState_WorldRegion Region, MutableRegion;
+	local XComGameState_Unit Unit;
+	local XComGameState_WorldRegion Region;
 	local XComGameState NewGameState;
 	local UnitValue AppliedValue;
 	local array<int> LivingSoldierIDs;
@@ -133,21 +185,7 @@ static final function SyncBribeSupplyBonus(optional XComGameState ExternalGameSt
 		if (NewGameState == none)
 			NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: Bribe supply sync");
 
-		if (AppliedID != 0)
-		{
-			MutableRegion = XComGameState_WorldRegion(NewGameState.ModifyStateObject(class'XComGameState_WorldRegion', AppliedID));
-			MutableRegion.POISupplyBonusDelta -= default.BRIBE_SUPPLY_BONUS;
-		}
-		if (DesiredID != 0)
-		{
-			MutableRegion = XComGameState_WorldRegion(NewGameState.ModifyStateObject(class'XComGameState_WorldRegion', DesiredID));
-			MutableRegion.POISupplyBonusDelta += default.BRIBE_SUPPLY_BONUS;
-		}
-
-		MutableUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', Unit.ObjectID));
-		MutableUnit.SetUnitFloatValue('UT_Bribe_RegionID', DesiredID, eCleanup_Never);
-
-		`log("UniqueTraits : Bribe supply sync --" @ Unit.GetFullName() @ "region" @ AppliedID @ "->" @ DesiredID,, 'UniqueTraits');
+		ApplyBribeRegion(Unit, DesiredID, NewGameState);
 	}
 
 	if (NewGameState != none && ExternalGameState == none)

@@ -132,7 +132,7 @@ static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 }
 
 // Takes back exactly what is applied (the trait is already out of AcquiredTraits here, so nothing may depend on UnitHasTrait).
-static function OnClear(XComGameState_Unit MutableUnit)
+static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	local int Applied;
 

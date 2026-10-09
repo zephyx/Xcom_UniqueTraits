@@ -120,7 +120,7 @@ static function EventListenerReturn OnUnitDied_Nemesis(Object EventData, Object 
 }
 
 // UT_TraitBase.OnClear: forgets every tally (one UnitValue per character group).
-static function OnClear(XComGameState_Unit MutableUnit)
+static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	local X2CharacterTemplateManager CharacterManager;
 	local X2DataTemplate DataTemplate;

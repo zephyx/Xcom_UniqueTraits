@@ -34,6 +34,7 @@
     <Content Include="Src\UniqueTraits\Classes\X2EventListener_UniqueTraits.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_TraitBase.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_LWOTCHelpers.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_MecConversion.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_JackOfAllTrades.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Support.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_ManiacExplosive.uc" />

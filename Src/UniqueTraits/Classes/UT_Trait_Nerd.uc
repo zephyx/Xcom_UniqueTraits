@@ -58,7 +58,7 @@ static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 		OnRankUp(MutableUnit);
 }
 
-static function OnClear(XComGameState_Unit MutableUnit)
+static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	local UnitValue RanksScaledValue;
 	local int RanksScaled;

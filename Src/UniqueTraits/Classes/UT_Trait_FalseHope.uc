@@ -43,7 +43,7 @@ static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 }
 
 // Reverses the permanent mutation: base part plus the per-rank decay applied so far.
-static function OnClear(XComGameState_Unit MutableUnit)
+static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	local int RanksScaled;
 

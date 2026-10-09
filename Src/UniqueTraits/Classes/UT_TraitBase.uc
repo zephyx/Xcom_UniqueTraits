@@ -4,7 +4,7 @@
 //           auto-discovered as an X2DataSet, so each trait class returns its own ability
 //           template(s) from CreateTemplates(); this base does not override it (X2DataSet's own is empty). The hooks below are all
 //           no-ops by default; a trait overrides only the ones it needs. They are dispatched from
-//           X2DownloadableContentInfo_UniqueTraits (GrantTraitToUnit / ClearAssignedTrait) and
+//           X2DownloadableContentInfo_UniqueTraits (GrantTraitToUnit / ClearAssignedTrait, or RemoveUnitTrait / SetUnitTrait as a transaction) and
 //           X2EventListener_UniqueTraits (OnUnitRankUp) through
 //           UniqueTraits_TraitConfig.GetTraitClass(TraitID).
 //---------------------------------------------------------------------------------------
@@ -22,8 +22,9 @@ static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 {
 }
 
-// Called by ClearAssignedTrait once the TraitID is out of AcquiredTraits, BEFORE the generic AWCAbilities sweep.
-static function OnClear(XComGameState_Unit MutableUnit)
+// Called by ClearAssignedTrait once the TraitID is out of AcquiredTraits, BEFORE the generic AWCAbilities sweep. NewGameState is the caller's pending
+// state (the one MutableUnit belongs to): anything else the trait must take back (Bribe's region bonus) goes into it, in the same transaction.
+static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 }
 

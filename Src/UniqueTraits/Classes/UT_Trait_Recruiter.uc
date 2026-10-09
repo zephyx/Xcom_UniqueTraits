@@ -81,7 +81,7 @@ static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 	MutableUnit.SetUnitFloatValue('UT_Recruiter_MonthStart', GetNowHours(), eCleanup_Never);
 }
 
-static function OnClear(XComGameState_Unit MutableUnit)
+static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	MutableUnit.SetUnitFloatValue('UT_Recruiter_Hours', 0, eCleanup_Never);
 	MutableUnit.SetUnitFloatValue('UT_Recruiter_Mark', -1, eCleanup_Never);

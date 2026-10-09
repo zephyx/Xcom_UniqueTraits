@@ -241,13 +241,68 @@ static final function GrantTraitToUnit(XComGameState_Unit MutableUnit, XComGameS
 	}
 }
 
-// Remove a trait added by this mod.
+// ---- Changing the trait of an EXISTING unit: the two entry points below are the ONLY way to do it outside the draw. Each one is a complete
+// transaction (a change container of its own, submitted), so every caller gets the same result: the RemoveUniqueTrait / AddUniqueTrait console
+// commands and the MEC conversion (UT_MecConversion). Whatever a trait has to do outside the unit (Bribe's region bonus) is done by its own
+// OnGrant / OnClear inside that transaction. The draw of a rookie (AssignTraitsToEligibleRookies) batches several rookies in ONE transaction and
+// so calls GrantTraitToUnit itself.
+
+// Takes the trait (ClearAssignedTrait: OnClear, AcquiredTraits, AWCAbilities) off the unit. False if the unit had none.
+static final function bool RemoveUnitTrait(StateObjectReference UnitRef, string Reason)
+{
+	return ChangeUnitTrait(UnitRef, '', Reason);
+}
+
+// Gives the unit the trait TraitID, replacing the one it has (if any). False if TraitID is unknown or the unit cannot be modified.
+static final function bool SetUnitTrait(StateObjectReference UnitRef, name TraitID, string Reason)
+{
+	if (class'UniqueTraits_TraitConfig'.static.FindTraitIndexByID(TraitID) == INDEX_NONE)
+	{
+		`log("UniqueTraits [WARN] : SetUnitTrait -- unknown TraitID '" $ TraitID $ "', nothing changed",, 'UniqueTraits');
+		return false;
+	}
+
+	return ChangeUnitTrait(UnitRef, TraitID, Reason);
+}
+
+// NewTraitID = '' only removes.
+static final function bool ChangeUnitTrait(StateObjectReference UnitRef, name NewTraitID, string Reason)
+{
+	local XComGameState NewGameState;
+	local XComGameState_Unit MutableUnit;
+	local bool bChanged;
+
+	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: " $ Reason);
+	MutableUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitRef.ObjectID));
+	if (MutableUnit == none)
+	{
+		`XCOMHISTORY.CleanupPendingGameState(NewGameState);
+		return false;
+	}
+
+	bChanged = ClearAssignedTrait(MutableUnit, NewGameState);
+	if (NewTraitID != '')
+	{
+		GrantTraitToUnit(MutableUnit, NewGameState, NewTraitID);
+		bChanged = true;
+	}
+
+	if (!bChanged)
+	{
+		`XCOMHISTORY.CleanupPendingGameState(NewGameState);
+		return false;
+	}
+
+	`GAMERULES.SubmitGameState(NewGameState);
+
+	return true;
+}
+
+// Console command: removes the trait of the soldier shown in the Armory.
 exec function RemoveUniqueTrait()
 {
 	local UIArmory Armory;
-	local StateObjectReference UnitRef;
-	local XComGameState_Unit UnitState, MutableUnit;
-	local XComGameState NewGameState;
+	local XComGameState_Unit UnitState;
 
 	Armory = UIArmory(`SCREENSTACK.GetFirstInstanceOf(class'UIArmory'));
 	if (Armory == none)
@@ -256,33 +311,26 @@ exec function RemoveUniqueTrait()
 		return;
 	}
 
-	UnitRef = Armory.GetUnitRef();
-	UnitState = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(UnitRef.ObjectID));
+	UnitState = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(Armory.GetUnitRef().ObjectID));
 	if (UnitState == none)
 	{
 		`log("UniqueTraits : RemoveUniqueTrait -- no unit selected",, 'UniqueTraits');
 		return;
 	}
 
-	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: RemoveUniqueTrait");
-	MutableUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitState.ObjectID));
-
-	if (ClearAssignedTrait(MutableUnit))
+	if (RemoveUnitTrait(UnitState.GetReference(), "RemoveUniqueTrait"))
 	{
-		`GAMERULES.SubmitGameState(NewGameState);
-		class'UT_Trait_Bribe'.static.SyncBribeSupplyBonus();
 		Armory.PopulateData();
 		`log("UniqueTraits : RemoveUniqueTrait -- cleared trait from" @ UnitState.GetFullName(),, 'UniqueTraits');
 	}
 	else
 	{
-		`XCOMHISTORY.CleanupPendingGameState(NewGameState);
 		`log("UniqueTraits : RemoveUniqueTrait --" @ UnitState.GetFullName() @ "has no trait assigned",, 'UniqueTraits');
 	}
 }
 
-// Strips a unit's assigned trait (called by RemoveUniqueTrait above).
-static final function bool ClearAssignedTrait(XComGameState_Unit MutableUnit)
+// Strips a unit's assigned trait, inside the caller's pending state (use RemoveUnitTrait / SetUnitTrait to do it as a transaction).
+static final function bool ClearAssignedTrait(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	local int TraitIndex, i, AWCIdx;
 	local name TraitID, AbilityName;
@@ -298,7 +346,7 @@ static final function bool ClearAssignedTrait(XComGameState_Unit MutableUnit)
 		// Reverses the trait's own one-time side effects (see GrantTraitToUnit).
 		TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(TraitID);
 		if (TraitClass != none)
-			TraitClass.static.OnClear(MutableUnit);
+			TraitClass.static.OnClear(MutableUnit, NewGameState);
 
 		bClearedAnything = true;
 		`log("UniqueTraits : cleared trait" @ TraitID @ "from" @ MutableUnit.GetFullName(),, 'UniqueTraits');
@@ -323,13 +371,11 @@ static final function bool ClearAssignedTrait(XComGameState_Unit MutableUnit)
 	return bClearedAnything;
 }
 
-// A console command for granting a specific trait on purpose.
+// Console command, the way to test a trait: gives the soldier shown in the Armory the trait TraitID, replacing the one they have.
 exec function AddUniqueTrait(name TraitID)
 {
 	local UIArmory Armory;
-	local StateObjectReference UnitRef;
-	local XComGameState_Unit UnitState, MutableUnit;
-	local XComGameState NewGameState;
+	local XComGameState_Unit UnitState;
 
 	if (class'UniqueTraits_TraitConfig'.static.FindTraitIndexByID(TraitID) == INDEX_NONE)
 	{
@@ -344,23 +390,16 @@ exec function AddUniqueTrait(name TraitID)
 		return;
 	}
 
-	UnitRef = Armory.GetUnitRef();
-	UnitState = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(UnitRef.ObjectID));
+	UnitState = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(Armory.GetUnitRef().ObjectID));
 	if (UnitState == none)
 	{
 		`log("UniqueTraits : AddUniqueTrait -- no unit selected",, 'UniqueTraits');
 		return;
 	}
 
-	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: AddUniqueTrait");
-	MutableUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitState.ObjectID));
-
-	ClearAssignedTrait(MutableUnit);
-	GrantTraitToUnit(MutableUnit, NewGameState, TraitID);
-
-	`GAMERULES.SubmitGameState(NewGameState);
-	class'UT_Trait_Bribe'.static.SyncBribeSupplyBonus();
-	Armory.PopulateData();
-
-	`log("UniqueTraits : AddUniqueTrait -- force-assigned" @ TraitID @ "to" @ UnitState.GetFullName(),, 'UniqueTraits');
+	if (SetUnitTrait(UnitState.GetReference(), TraitID, "AddUniqueTrait"))
+	{
+		Armory.PopulateData();
+		`log("UniqueTraits : AddUniqueTrait -- force-assigned" @ TraitID @ "to" @ UnitState.GetFullName(),, 'UniqueTraits');
+	}
 }

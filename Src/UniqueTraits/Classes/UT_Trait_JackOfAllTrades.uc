@@ -26,7 +26,7 @@ static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 	MutableUnit.AbilityPoints += default.JACKOFALLTRADES_AP_BONUS;
 }
 
-static function OnClear(XComGameState_Unit MutableUnit)
+static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	MutableUnit.AbilityPoints -= default.JACKOFALLTRADES_AP_BONUS;
 }
