@@ -14,14 +14,40 @@ struct UniqueTraitDefinition
 	                                    // used for any mod this trait needs to work as designed (LWOTC,
 	                                    // Community Promotion Screen, etc.) -- not just LWOTC specifically.
 	                                    // Leave empty for traits with no dependency.
-	var bool bEnabled;                 // set to false in ini to disable this trait without deleting it
+	var int Probability;               // optional: the weight of this trait in the draw (relative to the others). Omitted = DEFAULT_TRAIT_PROBABILITY.
+	                                    // Probability=0 disables the trait without deleting it. An omitted field reads -1 (structdefaultproperties below, which
+	                                    // an ini line inherits), so "omitted" and "0" differ.
+
+	structdefaultproperties
+	{
+		Probability=-1
+	}
 };
 
 var config array<UniqueTraitDefinition> Traits;
 
+// The weight of a trait that gives no Probability of its own. A trait is drawn with a chance proportional to its weight among the traits still
+// available (not carried by a living soldier, mods present, IsEligible): weight 10 against 2 = 5 times more likely.
+var config int DEFAULT_TRAIT_PROBABILITY;
+
 // false (default): a rookie gets its trait when it can choose a class (mission / covert action, AssignTraitsToEligibleRookies). true: as soon as it
 // is a rookie of the roster (recruit, starting soldier...), see X2DownloadableContentInfo_UniqueTraits.IsRookieEligibleForTrait.
 var config bool ASSIGN_TRAIT_AT_RECRUITMENT;
+
+// The weight of the trait at Index in the draw: its own Probability (0 = disabled), DEFAULT_TRAIT_PROBABILITY when the ini line gives none (negative).
+static final function int GetTraitProbability(int Index)
+{
+	local int Value;
+
+	if (Index < 0 || Index >= default.Traits.Length)
+		return 0;
+
+	Value = default.Traits[Index].Probability;
+	if (Value < 0)
+		return Max(0, default.DEFAULT_TRAIT_PROBABILITY);
+
+	return Value;
+}
 
 static final function bool IsTraitEligible(int Index)
 {
@@ -31,8 +57,8 @@ static final function bool IsTraitEligible(int Index)
 	if (Index < 0 || Index >= default.Traits.Length)
 		return false;
 
-	if (!default.Traits[Index].bEnabled)
-		return false;
+	if (GetTraitProbability(Index) <= 0)
+		return false;   // disabled (Probability=0)
 
 	foreach default.Traits[Index].RequiredMods(RequiredMod)
 	{

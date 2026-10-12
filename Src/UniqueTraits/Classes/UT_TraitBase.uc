@@ -10,7 +10,7 @@
 //---------------------------------------------------------------------------------------
 class UT_TraitBase extends X2Ability config(UniqueTraits);
 
-// Extra eligibility condition for the draw (besides bEnabled/RequiredMods in the ini): a trait whose mechanic could not
+// Extra eligibility condition for the draw (besides Probability/RequiredMods in the ini): a trait whose mechanic could not
 // apply in the current game returns false (policy: exclude, don't degrade). See UniqueTraits_TraitConfig.IsTraitEligible.
 static function bool IsEligible()
 {

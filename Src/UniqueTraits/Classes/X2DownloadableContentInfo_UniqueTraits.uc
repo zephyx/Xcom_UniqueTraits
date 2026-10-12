@@ -156,8 +156,8 @@ static final function AssignTraitToEligibleRookie(XComGameState_Unit MutableUnit
 	local array<XComGameState_Unit> Soldiers;
 	local XComGameState_Unit Soldier, PendingSoldier;
 	local array<bool> IndexUsed;
-	local array<int> AvailableIndices;
-	local int ExistingIndex, i, PickedIndex;
+	local array<int> AvailableIndices, Weights;
+	local int ExistingIndex, i, PickedIndex, TotalWeight, Roll;
 	local name TraitID;
 	local XComGameState_Unit UnitState;
 
@@ -205,15 +205,29 @@ static final function AssignTraitToEligibleRookie(XComGameState_Unit MutableUnit
 			continue;
 
 		AvailableIndices.AddItem(i);
+		Weights.AddItem(class'UniqueTraits_TraitConfig'.static.GetTraitProbability(i));
+		TotalWeight += Weights[Weights.Length - 1];
 	}
 
-	if (AvailableIndices.Length == 0)
+	if (AvailableIndices.Length == 0 || TotalWeight <= 0)
 	{
 		`log("UniqueTraits [WARN] : trait pool exhausted, no trait assigned to" @ UnitState.GetFullName(),, 'UniqueTraits');
 		return;
 	}
 
-	PickedIndex = AvailableIndices[`SYNC_RAND_STATIC(AvailableIndices.Length)];
+	// Weighted draw: each available trait covers a stretch of the roll as long as its probability.
+	`log("UniqueTraits : draw --" @ AvailableIndices.Length @ "available trait(s), total weight" @ TotalWeight @ "(default weight" @ class'UniqueTraits_TraitConfig'.default.DEFAULT_TRAIT_PROBABILITY $ ")",, 'UniqueTraits');
+	Roll = `SYNC_RAND_STATIC(TotalWeight);
+	PickedIndex = AvailableIndices[AvailableIndices.Length - 1];
+	for (i = 0; i < AvailableIndices.Length; ++i)
+	{
+		Roll -= Weights[i];
+		if (Roll < 0)
+		{
+			PickedIndex = AvailableIndices[i];
+			break;
+		}
+	}
 	TraitID = class'UniqueTraits_TraitConfig'.default.Traits[PickedIndex].TraitID;
 
 	GrantTraitToUnit(MutableUnit, NewGameState, TraitID);
