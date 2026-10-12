@@ -72,6 +72,10 @@ static function CHEventListenerTemplate CreateStrategyListeners()
 	Template.AddCHEvent('AbilityPointsChange', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
 	Template.AddCHEvent('PreEndOfMonth', class'UT_Trait_MindOverMatter'.static.OnPreEndOfMonth_MindOverMatter, ELD_Immediate, 50);
 	Template.AddCHEvent('UIPersonnel_OnSortFinished', class'UT_Trait_MindOverMatter'.static.OnUIPersonnelSortFinished_MindOverMatter, ELD_Immediate, 50);
+	// Someone different: its stats follow the rank and the number of evolutions bought. Rank-up and a respec made at the Training Center are synced here; the
+	// promotion screen closing (UIScreenListener_UT_PromotionMarks.OnRemoved: no event reports a purchase) and the mission start (tactical listeners) are the other points.
+	Template.AddCHEvent('UnitRankUp', class'UT_Trait_SomeoneDifferent'.static.OnStatsMayHaveChanged_SomeoneDifferent, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('CompleteRespecSoldier', class'UT_Trait_SomeoneDifferent'.static.OnStatsMayHaveChanged_SomeoneDifferent, ELD_OnStateSubmitted, 40);
 	Template.RegisterInStrategy = true;
 
 	return Template;
@@ -129,6 +133,9 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	// tower offers the computers' rewards and a doubled lock (ELD_Immediate: inside the ability's pending state, before the screen reads them); If it succeeds, disables every security tower.
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_SecurityHacker'.static.OnAbilityActivated_SecurityHacker, ELD_Immediate, 50);
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_SecurityHacker'.static.OnAbilityActivated_SecurityHackerBacklash, ELD_OnStateSubmitted, 50);
+	// Someone different: mission-start sync of its permanent stats, and the collapse (unconscious) at the start of the Nth XCOM turn.
+	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_SomeoneDifferent'.static.OnTacticalBeginPlay_SomeoneDifferent, ELD_Immediate, 50);
+	Template.AddCHEvent('PlayerTurnBegun', class'UT_Trait_SomeoneDifferent'.static.OnPlayerTurnBegun_SomeoneDifferent, ELD_OnStateSubmitted, 50);
 	Template.RegisterInTactical = true;
 
 	return Template;

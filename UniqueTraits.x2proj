@@ -35,6 +35,8 @@
     <Content Include="Src\UniqueTraits\Classes\UT_TraitBase.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_LWOTCHelpers.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_MecConversion.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_PromotionMarks.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_PromotionMarks.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_JackOfAllTrades.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Support.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_ManiacExplosive.uc" />
@@ -54,6 +56,8 @@
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Nemesis.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_MeatTenderizer.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Shredder.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_SomeoneDifferent.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Mutant.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Shredder.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Nemesis.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_PercentHPDamage.uc" />
