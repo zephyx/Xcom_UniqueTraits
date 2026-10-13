@@ -133,6 +133,81 @@ static final function bool GetStageForRank(int Rank, out SDStage Stage)
 	return bFound;
 }
 
+// For the Mod Config Menu options (UniqueTraits_MCMOptions): a field (0 will, 1 aim, 2 mobility, 3 health) of a stage of the sickness tables. The struct type SDStage is
+// not used outside this class (a struct of one of our classes cannot be used from another), hence these helpers.
+static final function int GetStageField(bool bLWOTC, int Stage, int Field)
+{
+	local array<SDStage> Stages;
+
+	if (bLWOTC)
+		Stages = default.SOMEONEDIFFERENT_STAGES_LWOTC;
+	else
+		Stages = default.SOMEONEDIFFERENT_STAGES_BASEGAME;
+
+	if (Stage < 0 || Stage >= Stages.Length)
+		return 0;
+
+	switch (Field)
+	{
+		case 0:
+			return Stages[Stage].WillMalus;
+		case 1:
+			return Stages[Stage].AimMalus;
+		case 2:
+			return Stages[Stage].MobilityMalus;
+		case 3:
+			return Stages[Stage].HPMalus;
+	}
+
+	return 0;
+}
+
+static final function SetStageField(bool bLWOTC, int Stage, int Field, int Value)
+{
+	if (bLWOTC)
+	{
+		if (Stage < 0 || Stage >= default.SOMEONEDIFFERENT_STAGES_LWOTC.Length)
+			return;
+
+		switch (Field)
+		{
+			case 0:
+				default.SOMEONEDIFFERENT_STAGES_LWOTC[Stage].WillMalus = Value;
+				break;
+			case 1:
+				default.SOMEONEDIFFERENT_STAGES_LWOTC[Stage].AimMalus = Value;
+				break;
+			case 2:
+				default.SOMEONEDIFFERENT_STAGES_LWOTC[Stage].MobilityMalus = Value;
+				break;
+			case 3:
+				default.SOMEONEDIFFERENT_STAGES_LWOTC[Stage].HPMalus = Value;
+				break;
+		}
+	}
+	else
+	{
+		if (Stage < 0 || Stage >= default.SOMEONEDIFFERENT_STAGES_BASEGAME.Length)
+			return;
+
+		switch (Field)
+		{
+			case 0:
+				default.SOMEONEDIFFERENT_STAGES_BASEGAME[Stage].WillMalus = Value;
+				break;
+			case 1:
+				default.SOMEONEDIFFERENT_STAGES_BASEGAME[Stage].AimMalus = Value;
+				break;
+			case 2:
+				default.SOMEONEDIFFERENT_STAGES_BASEGAME[Stage].MobilityMalus = Value;
+				break;
+			case 3:
+				default.SOMEONEDIFFERENT_STAGES_BASEGAME[Stage].HPMalus = Value;
+				break;
+		}
+	}
+}
+
 // Number of promotion columns that carry an evolution: all of them but the squaddie one (7 with LWOTC, 6 in the base game).
 static final function int GetEvolutionColumns(XComGameState_Unit Unit)
 {

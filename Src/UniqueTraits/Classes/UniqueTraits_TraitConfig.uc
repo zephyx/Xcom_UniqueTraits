@@ -34,8 +34,51 @@ var config int DEFAULT_TRAIT_PROBABILITY;
 // is a rookie of the roster (recruit, starting soldier...), see X2DownloadableContentInfo_UniqueTraits.IsRookieEligibleForTrait.
 var config bool ASSIGN_TRAIT_AT_RECRUITMENT;
 
-// The weight of the trait at Index in the draw: its own Probability (0 = disabled), DEFAULT_TRAIT_PROBABILITY when the ini line gives none (negative).
-static final function int GetTraitProbability(int Index)
+// ---- The settings the player may have changed in the Mod Config Menu (UniqueTraits_MCMSettings, only the changed ones). Without Mod Config Menu there is none
+// and these accessors give the mod's ini values.
+
+// The key of a trait's probability in UniqueTraits_MCMSettings.
+static final function name GetTraitProbabilityKey(int Index)
+{
+	return name("P_" $ default.Traits[Index].TraitID);
+}
+
+// DEFAULT_TRAIT_PROBABILITY in the ini, ignoring the player's choice.
+static final function int GetIniDefaultTraitProbability()
+{
+	return Max(0, default.DEFAULT_TRAIT_PROBABILITY);
+}
+
+// The weight of a trait that gives no Probability of its own: the player's, else the ini's.
+static final function int GetDefaultTraitProbability()
+{
+	local int Value;
+
+	if (class'UniqueTraits_MCMSettings'.static.GetOverride('DefaultProbability', Value))
+		return Max(0, Value);
+
+	return GetIniDefaultTraitProbability();
+}
+
+// ASSIGN_TRAIT_AT_RECRUITMENT: the player's choice, else the ini's.
+static final function bool ShouldAssignAtRecruitment()
+{
+	local int Value;
+
+	if (class'UniqueTraits_MCMSettings'.static.GetOverride('AssignAtRecruitment', Value))
+		return Value != 0;
+
+	return default.ASSIGN_TRAIT_AT_RECRUITMENT;
+}
+
+// True when the trait's ini line gives a Probability of its own (so its weight does not follow the default weight).
+static final function bool HasOwnProbability(int Index)
+{
+	return Index >= 0 && Index < default.Traits.Length && default.Traits[Index].Probability >= 0;
+}
+
+// The weight of the trait at Index as the mod's ini gives it (its own Probability, else the ini's default weight), ignoring the player's choices.
+static final function int GetIniTraitProbability(int Index)
 {
 	local int Value;
 
@@ -44,14 +87,55 @@ static final function int GetTraitProbability(int Index)
 
 	Value = default.Traits[Index].Probability;
 	if (Value < 0)
-		return Max(0, default.DEFAULT_TRAIT_PROBABILITY);
+		return GetIniDefaultTraitProbability();
 
 	return Value;
 }
 
-static final function bool IsTraitEligible(int Index)
+// The weight of the trait at Index in the draw: the player's value for this trait, else its own Probability in the ini (0 = disabled), else the default
+// weight (the player's, else the ini's) when the ini line gives none (negative).
+static final function int GetTraitProbability(int Index)
+{
+	local int Value;
+
+	if (Index < 0 || Index >= default.Traits.Length)
+		return 0;
+
+	if (class'UniqueTraits_MCMSettings'.static.GetOverride(GetTraitProbabilityKey(Index), Value))
+	{
+		// The player's value; a NEGATIVE one (-1) is his choice "Default": the default weight, whatever the mod's ini gives that trait (Someone different has 2).
+		if (Value < 0)
+			return GetDefaultTraitProbability();
+
+		return Max(0, Value);
+	}
+
+	Value = default.Traits[Index].Probability;
+	if (Value < 0)
+		return GetDefaultTraitProbability();
+
+	return Value;
+}
+
+// All the mods the trait needs are loaded (a trait without RequiredMods always is).
+static final function bool AreRequiredModsActive(int Index)
 {
 	local name RequiredMod;
+
+	if (Index < 0 || Index >= default.Traits.Length)
+		return false;
+
+	foreach default.Traits[Index].RequiredMods(RequiredMod)
+	{
+		if (!IsModActive(RequiredMod))
+			return false;
+	}
+
+	return true;
+}
+
+static final function bool IsTraitEligible(int Index)
+{
 	local class<UT_TraitBase> TraitClass;
 
 	if (Index < 0 || Index >= default.Traits.Length)
@@ -60,11 +144,8 @@ static final function bool IsTraitEligible(int Index)
 	if (GetTraitProbability(Index) <= 0)
 		return false;   // disabled (Probability=0)
 
-	foreach default.Traits[Index].RequiredMods(RequiredMod)
-	{
-		if (!IsModActive(RequiredMod))
-			return false;
-	}
+	if (!AreRequiredModsActive(Index))
+		return false;
 
 	// The trait's own extra condition (e.g. Support needs at least one item its vest slot accepts).
 	TraitClass = GetTraitClass(default.Traits[Index].TraitID);

@@ -1,0 +1,506 @@
+//---------------------------------------------------------------------------------------
+//  FILE:   UniqueTraits_MCMOptions.uc
+//  PURPOSE: The tunables of the traits that the "Advanced options" page of the Mod Config Menu can change.
+//           A tunable is a `var config` number of a UT_Trait_<Name> class (or an element of one of its arrays), read through
+//           `class'UT_Trait_<Name>'.default.<VAR>`; the player's value (UniqueTraits_MCMSettings, only what he changed) is written into that default.
+//           - GetRows: one line per option, "KEY|TRAIT|min|max|step|scale|flags" (values in scaled units: a float is stored x100, scale 100). flags: R = the value is
+//             baked into the ability templates when the game starts, so it applies at the next launch; P = a permanent change made when the trait is given, soldiers
+//             who already have the trait keep the old value.
+//           - GetCurrent / SetCurrent: the value now in the class default, scaled to an int.
+//           - ApplyOverrides: puts into every default the player's value, or the mod's ini value (cached the first time, before anything is applied) when he has none.
+//             Called by OnPreCreateTemplates (CHL #412, before any X2DataSet is built, so even the values baked into the templates are the player's) and when the page is saved.
+//           The labels and tooltips are in UniqueTraits.int/.fra, section [UT_MCM_Options], keys <KEY>_Label and <KEY>_Tip.
+//---------------------------------------------------------------------------------------
+class UniqueTraits_MCMOptions extends Object;
+
+// "KEY|TRAIT|min|max|step|scale|flags"
+static final function array<string> GetRows()
+{
+	local array<string> Rows;
+
+	Rows.AddItem("ATHLETE_MOBILITY|UT_Athlete|0|10|1|1|R");
+	Rows.AddItem("ATHLETE_DODGE|UT_Athlete|0|50|1|1|R");
+	Rows.AddItem("ATHLETE_AIM|UT_Athlete|0|30|1|1|R");
+	Rows.AddItem("ATHLETE_CRIT|UT_Athlete|0|30|1|1|R");
+	Rows.AddItem("NERD_HACKING_BASE|UT_Nerd|0|30|1|1|P");
+	Rows.AddItem("NERD_HACKING_PER_RANK|UT_Nerd|0|10|1|1|P");
+	Rows.AddItem("NERD_WILL_BASE|UT_Nerd|0|20|1|1|P");
+	Rows.AddItem("NERD_WILL_PER_RANK|UT_Nerd|0|10|1|1|P");
+	Rows.AddItem("NERD_MELEE_DAMAGE_TAKEN|UT_Nerd|0|6|1|1|R");
+	Rows.AddItem("GUARD_AIM|UT_Guard|0|40|1|1|R");
+	Rows.AddItem("GUARD_OVERWATCH_AIM|UT_Guard|0|60|1|1|R");
+	Rows.AddItem("PACIFIST_AIM|UT_Pacifist|0|50|1|1|R");
+	Rows.AddItem("PACIFIST_ORGANIC_DEFENSE|UT_Pacifist|0|60|1|1|R");
+	Rows.AddItem("BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION|UT_BaseballPlayer|0|10|1|1|R");
+	Rows.AddItem("ALLINARMS_THROW_RANGE|UT_AllInArms|0|15|1|1|-");
+	Rows.AddItem("ALLINARMS_MOBILITY|UT_AllInArms|0|8|1|1|R");
+	Rows.AddItem("DISCREET_DETECTION_MULT|UT_Discreet|0|100|5|100|R");
+	Rows.AddItem("DISCREET_PRIMARY_WEAPON_DAMAGE_REDUCTION|UT_Discreet|0|5|1|1|R");
+	Rows.AddItem("ACROBAT_AIM_PENALTY|UT_Acrobat|0|30|1|1|R");
+	Rows.AddItem("ACROBAT_CRIT_PENALTY|UT_Acrobat|0|30|1|1|R");
+	Rows.AddItem("ALWAYSREADY_RELOAD_BASE_CHANCE_PCT|UT_AlwaysReady|0|100|1|1|-");
+	Rows.AddItem("ALWAYSREADY_RELOAD_WILL_FACTOR|UT_AlwaysReady|0|100|5|100|-");
+	Rows.AddItem("ALWAYSREADY_RELOAD_AMMO_FACTOR|UT_AlwaysReady|0|100|5|100|-");
+	Rows.AddItem("QUICKHEALING_DAMAGE_TAKEN_MULT|UT_QuickHealing|100|300|5|100|R");
+	Rows.AddItem("THIEF_STEAL_CHANCE_PCT|UT_Thief|0|100|1|1|-");
+	Rows.AddItem("BRIBE_SUPPLY_BONUS|UT_Bribe|0|100|1|1|P");
+	Rows.AddItem("SCOUT_SIGHT_RADIUS_PENALTY|UT_Scout|0|8|1|1|R");
+	Rows.AddItem("SCOUT_SCANNER_RANGE_MULT|UT_Scout|100|300|5|100|-");
+	Rows.AddItem("SCOUT_SCANNER_COOLDOWN|UT_Scout|0|10|1|1|R");
+	Rows.AddItem("TACTICIAN_AIM|UT_Tactician|0|40|1|1|R");
+	Rows.AddItem("STAYFOCUS_WILL_LOSS|UT_StayFocus|0|10|1|1|R");
+	Rows.AddItem("STAYFOCUS_AIM_BONUS|UT_StayFocus|0|30|1|1|R");
+	Rows.AddItem("STAYFOCUS_CRIT_BONUS|UT_StayFocus|0|30|1|1|R");
+	Rows.AddItem("STAYFOCUS_RADIUS_TILES|UT_StayFocus|1|10|1|1|R");
+	Rows.AddItem("STAYFOCUS_COOLDOWN|UT_StayFocus|0|6|1|1|R");
+	Rows.AddItem("SMOKER_WILL_REGEN|UT_Smoker|0|30|1|1|-");
+	Rows.AddItem("SMOKER_FATIGUE_INTERVAL_NORMAL|UT_Smoker|1|8|1|1|-");
+	Rows.AddItem("SMOKER_FATIGUE_INTERVAL_TIRED|UT_Smoker|1|8|1|1|-");
+	Rows.AddItem("SMOKER_GRENADE_COUNT|UT_Smoker|0|6|1|1|R");
+	Rows.AddItem("BORNTOBECHIEF_AIM_DODGE_WILL_BASE|UT_BornToBeChief|0|30|1|1|P");
+	Rows.AddItem("BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK|UT_BornToBeChief|0|10|1|1|P");
+	Rows.AddItem("MANIAC_EXTRA_GRENADE_POCKETS|UT_ManiacExplosive|0|6|1|1|-");
+	Rows.AddItem("MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT|UT_ManiacExplosive|0|100|1|1|R");
+	Rows.AddItem("MANIAC_IMPROVISE_CHARGES|UT_ManiacExplosive|1|6|1|1|R");
+	Rows.AddItem("MANIAC_IMPROVISE_COOLDOWN|UT_ManiacExplosive|0|8|1|1|R");
+	Rows.AddItem("SWORDSMAN_MELEE_BONUS_BY_TIER_0|UT_Swordsman|0|6|1|1|R");
+	Rows.AddItem("SWORDSMAN_MELEE_BONUS_BY_TIER_1|UT_Swordsman|0|6|1|1|R");
+	Rows.AddItem("SWORDSMAN_MELEE_BONUS_BY_TIER_2|UT_Swordsman|0|6|1|1|R");
+	Rows.AddItem("SWORDSMAN_MELEE_BONUS_BY_TIER_3|UT_Swordsman|0|6|1|1|R");
+	Rows.AddItem("SWORDSMAN_MELEE_BONUS_BY_TIER_4|UT_Swordsman|0|6|1|1|R");
+	Rows.AddItem("SWORDSMAN_FIREARM_DAMAGE_REDUCTION|UT_Swordsman|0|5|1|1|R");
+	Rows.AddItem("HUNTER_HEARING_INTERVAL|UT_Hunter|1|6|1|1|-");
+	Rows.AddItem("HUNTER_DETECTION_MODIFIER|UT_Hunter|-100|0|5|100|R");
+	Rows.AddItem("FALSEHOPE_XP_REDUCTION_PCT|UT_FalseHope|0|100|1|1|-");
+	Rows.AddItem("FALSEHOPE_AIM_BASE|UT_FalseHope|0|30|1|1|P");
+	Rows.AddItem("FALSEHOPE_HP_BASE|UT_FalseHope|0|1000|50|100|P");
+	Rows.AddItem("FALSEHOPE_AIM_PER_RANK|UT_FalseHope|0|500|50|100|P");
+	Rows.AddItem("FALSEHOPE_HP_PER_RANK|UT_FalseHope|0|300|50|100|P");
+	Rows.AddItem("FALSEHOPE_HP_FLOOR|UT_FalseHope|0|500|50|100|P");
+	Rows.AddItem("LONGRANGE_FAR_RANGE_SHIFT|UT_LongRange|0|8|1|1|R");
+	Rows.AddItem("LONGRANGE_CLOSE_RANGE_AIM_PENALTY_0|UT_LongRange|0|40|1|1|R");
+	Rows.AddItem("LONGRANGE_CLOSE_RANGE_AIM_PENALTY_1|UT_LongRange|0|40|1|1|R");
+	Rows.AddItem("LONGRANGE_CLOSE_RANGE_AIM_PENALTY_2|UT_LongRange|0|40|1|1|R");
+	Rows.AddItem("LONGRANGE_CLOSE_RANGE_AIM_PENALTY_3|UT_LongRange|0|40|1|1|R");
+	Rows.AddItem("QUALITY_CRIT_BY_TIER_0|UT_QualityOverQuantity|0|30|1|1|R");
+	Rows.AddItem("QUALITY_CRIT_BY_TIER_1|UT_QualityOverQuantity|0|30|1|1|R");
+	Rows.AddItem("QUALITY_CRIT_BY_TIER_2|UT_QualityOverQuantity|0|30|1|1|R");
+	Rows.AddItem("QUALITY_CRIT_BY_TIER_3|UT_QualityOverQuantity|0|30|1|1|R");
+	Rows.AddItem("QUALITY_CRIT_BY_TIER_4|UT_QualityOverQuantity|0|30|1|1|R");
+	Rows.AddItem("QUALITY_CLIP_REDUCTION|UT_QualityOverQuantity|0|3|1|1|-");
+	Rows.AddItem("QUALITY_CLIP_MIN_FOR_REDUCTION|UT_QualityOverQuantity|1|8|1|1|-");
+	Rows.AddItem("BOUNTYHUNTER_SUPPLY_PER_KILL|UT_BountyHunter|0|20|1|1|-");
+	Rows.AddItem("BOUNTYHUNTER_NO_XP_CHANCE_PCT|UT_BountyHunter|0|100|1|1|-");
+	Rows.AddItem("CYBORG_UPGRADE_CHANCE_PCT|UT_Cyborg|0|100|1|1|-");
+	Rows.AddItem("RECRUITER_DODGE_MALUS|UT_Recruiter|0|50|1|1|R");
+	Rows.AddItem("RECRUITER_RECRUIT_CHANCE_FACTOR|UT_Recruiter|0|100|5|100|-");
+	Rows.AddItem("RECRUITER_ROOKIE_CHANCE_FACTOR|UT_Recruiter|0|100|5|100|-");
+	Rows.AddItem("YOUNGDOCTOR_HEAL_REDUCTION_PCT|UT_YoungDoctor|0|100|1|1|-");
+	Rows.AddItem("YOUNGDOCTOR_XP_PER_TREATMENT|UT_YoungDoctor|0|500|25|100|-");
+	Rows.AddItem("YOUNGDOCTOR_STABILIZE_XP_MULT|UT_YoungDoctor|0|500|25|100|-");
+	Rows.AddItem("YOUNGDOCTOR_RANK_FOR_TWO_XP|UT_YoungDoctor|1|8|1|1|-");
+	Rows.AddItem("YOUNGDOCTOR_RANK_FOR_THREE_XP|UT_YoungDoctor|1|8|1|1|-");
+	Rows.AddItem("PSIADEPT_PSI_PER_PIERCE|UT_PsiAdept|1|30|1|1|R");
+	Rows.AddItem("PSIADEPT_PSI_PER_DAMAGE|UT_PsiAdept|1|40|1|1|R");
+	Rows.AddItem("PSIADEPT_ROBOTIC_DAMAGE_REDUCTION_PCT|UT_PsiAdept|0|100|1|1|R");
+	Rows.AddItem("GIVEMEMORE_DEFENSE_MALUS|UT_GiveMeMore|0|30|1|1|R");
+	Rows.AddItem("GIVEMEMORE_DODGE_BONUS|UT_GiveMeMore|0|30|1|1|R");
+	Rows.AddItem("GIVEMEMORE_WOUND_HP_REDUCTION|UT_GiveMeMore|0|10|1|1|-");
+	Rows.AddItem("MINDOVERMATTER_HP_MALUS|UT_MindOverMatter|0|10|1|1|-");
+	Rows.AddItem("MINDOVERMATTER_MOBILITY_MALUS|UT_MindOverMatter|0|6|1|1|-");
+	Rows.AddItem("MINDOVERMATTER_AIM_MALUS|UT_MindOverMatter|0|20|1|1|-");
+	Rows.AddItem("MINDOVERMATTER_RECOVERY_MALUS_PCT|UT_MindOverMatter|0|100|1|1|-");
+	Rows.AddItem("MINDOVERMATTER_HP_PCT_OF_WILL|UT_MindOverMatter|0|2000|50|100|-");
+	Rows.AddItem("MINDOVERMATTER_MOBILITY_PCT_OF_WILL|UT_MindOverMatter|0|1000|50|100|-");
+	Rows.AddItem("MINDOVERMATTER_AIM_PCT_OF_WILL|UT_MindOverMatter|0|4000|50|100|-");
+	Rows.AddItem("MINDOVERMATTER_RECOVERY_PCT_OF_WILL|UT_MindOverMatter|0|30000|500|100|-");
+	Rows.AddItem("CHEMIST_AIM_MALUS|UT_Chemist|0|30|1|1|R");
+	Rows.AddItem("CHEMIST_DAMAGE_MALUS|UT_Chemist|0|5|1|1|R");
+	Rows.AddItem("CHEMIST_DISEASE_TURNS|UT_Chemist|1|5|1|1|R");
+	Rows.AddItem("CHEMIST_DOT_DAMAGE_BONUS|UT_Chemist|0|5|1|1|R");
+	Rows.AddItem("PSYCHICBOND_SHARED_DAMAGE_PCT|UT_PsychicBond|0|100|1|1|-");
+	Rows.AddItem("LASERDESIGNATOR_COOLDOWN|UT_LaserDesignator|0|8|1|1|R");
+	Rows.AddItem("LASERDESIGNATOR_MARK_TURNS|UT_LaserDesignator|1|4|1|1|R");
+	Rows.AddItem("LASERDESIGNATOR_DODGE_BONUS|UT_LaserDesignator|0|40|1|1|R");
+	Rows.AddItem("LASERDESIGNATOR_HOLOTARGET_COOLDOWN_REDUCTION|UT_LaserDesignator|0|4|1|1|-");
+	Rows.AddItem("SECURITYHACKER_DEFENSE_MULT|UT_SecurityHacker|100|300|10|100|-");
+	Rows.AddItem("SECURITYHACKER_FAILURE_DAMAGE_PCT|UT_SecurityHacker|0|100|1|1|R");
+	Rows.AddItem("NEMESIS_AIM_PER_KILL|UT_Nemesis|0|10|1|1|R");
+	Rows.AddItem("NEMESIS_MAX_AIM|UT_Nemesis|0|50|1|1|R");
+	Rows.AddItem("NEMESIS_DEFENSE_PER_KILL|UT_Nemesis|0|10|1|1|R");
+	Rows.AddItem("NEMESIS_MAX_DEFENSE|UT_Nemesis|0|50|1|1|R");
+	Rows.AddItem("MEATTENDERIZER_STUN_ACTIONS_PER_TURN|UT_MeatTenderizer|1|4|1|1|-");
+	Rows.AddItem("MEATTENDERIZER_DEFENSE_MALUS|UT_MeatTenderizer|0|60|1|1|R");
+	Rows.AddItem("MEATTENDERIZER_DODGE_MALUS|UT_MeatTenderizer|0|60|1|1|R");
+	Rows.AddItem("MEATTENDERIZER_MOBILITY_MALUS|UT_MeatTenderizer|0|16|1|1|R");
+	Rows.AddItem("MEATTENDERIZER_SLIGHT_DEFENSE_MALUS|UT_MeatTenderizer|0|60|1|1|R");
+	Rows.AddItem("MEATTENDERIZER_SLIGHT_DODGE_MALUS|UT_MeatTenderizer|0|60|1|1|R");
+	Rows.AddItem("MEATTENDERIZER_SLIGHT_MOBILITY_MALUS|UT_MeatTenderizer|0|16|1|1|R");
+	Rows.AddItem("SHREDDER_ACID_TICK_BONUS|UT_Shredder|0|8|1|1|R");
+	Rows.AddItem("SHREDDER_UNARMORED_DAMAGE_MALUS_PCT|UT_Shredder|0|50|1|1|R");
+	Rows.AddItem("JACKOFALLTRADES_AP_BONUS|UT_JackOfAllTrades|0|60|1|1|P");
+	Rows.AddItem("SOMEONEDIFFERENT_KNOCKOUT_TURN|UT_SomeoneDifferent|1|12|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_PCT_LOW_0|UT_SomeoneDifferent|-100|0|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_PCT_LOW_1|UT_SomeoneDifferent|-100|0|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_PCT_LOW_2|UT_SomeoneDifferent|-100|0|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_PCT_HIGH_1|UT_SomeoneDifferent|0|100|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_PCT_HIGH_0|UT_SomeoneDifferent|0|100|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_0_WillMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_0_AimMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_0_MobilityMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_0_HPMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_1_WillMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_1_AimMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_1_MobilityMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_1_HPMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_2_WillMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_2_AimMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_2_MobilityMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_2_HPMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_BASEGAME_0_WillMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_BASEGAME_0_AimMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_BASEGAME_0_MobilityMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_BASEGAME_0_HPMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_BASEGAME_1_WillMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_BASEGAME_1_AimMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_BASEGAME_1_MobilityMalus|UT_SomeoneDifferent|0|30|1|1|-");
+	Rows.AddItem("SOMEONEDIFFERENT_STAGES_BASEGAME_1_HPMalus|UT_SomeoneDifferent|0|30|1|1|-");
+
+	return Rows;
+}
+
+// The value now in the class default, scaled to an int (a float x100). 0 for an element that does not exist.
+static final function int GetCurrent(name Key)
+{
+	switch (Key)
+	{
+		case 'ATHLETE_MOBILITY': return class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY;
+		case 'ATHLETE_DODGE': return class'UT_Trait_Athlete'.default.ATHLETE_DODGE;
+		case 'ATHLETE_AIM': return class'UT_Trait_Athlete'.default.ATHLETE_AIM;
+		case 'ATHLETE_CRIT': return class'UT_Trait_Athlete'.default.ATHLETE_CRIT;
+		case 'NERD_HACKING_BASE': return class'UT_Trait_Nerd'.default.NERD_HACKING_BASE;
+		case 'NERD_HACKING_PER_RANK': return class'UT_Trait_Nerd'.default.NERD_HACKING_PER_RANK;
+		case 'NERD_WILL_BASE': return class'UT_Trait_Nerd'.default.NERD_WILL_BASE;
+		case 'NERD_WILL_PER_RANK': return class'UT_Trait_Nerd'.default.NERD_WILL_PER_RANK;
+		case 'NERD_MELEE_DAMAGE_TAKEN': return class'UT_Trait_Nerd'.default.NERD_MELEE_DAMAGE_TAKEN;
+		case 'GUARD_AIM': return class'UT_Trait_Guard'.default.GUARD_AIM;
+		case 'GUARD_OVERWATCH_AIM': return class'UT_Trait_Guard'.default.GUARD_OVERWATCH_AIM;
+		case 'PACIFIST_AIM': return class'UT_Trait_Pacifist'.default.PACIFIST_AIM;
+		case 'PACIFIST_ORGANIC_DEFENSE': return class'UT_Trait_Pacifist'.default.PACIFIST_ORGANIC_DEFENSE;
+		case 'BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION': return class'UT_Trait_BaseballPlayer'.default.BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION;
+		case 'ALLINARMS_THROW_RANGE': return class'UT_Trait_AllInArms'.default.ALLINARMS_THROW_RANGE;
+		case 'ALLINARMS_MOBILITY': return class'UT_Trait_AllInArms'.default.ALLINARMS_MOBILITY;
+		case 'DISCREET_DETECTION_MULT': return Round(class'UT_Trait_Discreet'.default.DISCREET_DETECTION_MULT * 100.0);
+		case 'DISCREET_PRIMARY_WEAPON_DAMAGE_REDUCTION': return class'UT_Trait_Discreet'.default.DISCREET_PRIMARY_WEAPON_DAMAGE_REDUCTION;
+		case 'ACROBAT_AIM_PENALTY': return class'UT_Trait_Acrobat'.default.ACROBAT_AIM_PENALTY;
+		case 'ACROBAT_CRIT_PENALTY': return class'UT_Trait_Acrobat'.default.ACROBAT_CRIT_PENALTY;
+		case 'ALWAYSREADY_RELOAD_BASE_CHANCE_PCT': return class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_BASE_CHANCE_PCT;
+		case 'ALWAYSREADY_RELOAD_WILL_FACTOR': return Round(class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_WILL_FACTOR * 100.0);
+		case 'ALWAYSREADY_RELOAD_AMMO_FACTOR': return Round(class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_AMMO_FACTOR * 100.0);
+		case 'QUICKHEALING_DAMAGE_TAKEN_MULT': return Round(class'UT_Trait_QuickHealing'.default.QUICKHEALING_DAMAGE_TAKEN_MULT * 100.0);
+		case 'THIEF_STEAL_CHANCE_PCT': return class'UT_Trait_Thief'.default.THIEF_STEAL_CHANCE_PCT;
+		case 'BRIBE_SUPPLY_BONUS': return class'UT_Trait_Bribe'.default.BRIBE_SUPPLY_BONUS;
+		case 'SCOUT_SIGHT_RADIUS_PENALTY': return class'UT_Trait_Scout'.default.SCOUT_SIGHT_RADIUS_PENALTY;
+		case 'SCOUT_SCANNER_RANGE_MULT': return Round(class'UT_Trait_Scout'.default.SCOUT_SCANNER_RANGE_MULT * 100.0);
+		case 'SCOUT_SCANNER_COOLDOWN': return class'UT_Trait_Scout'.default.SCOUT_SCANNER_COOLDOWN;
+		case 'TACTICIAN_AIM': return class'UT_Trait_Tactician'.default.TACTICIAN_AIM;
+		case 'STAYFOCUS_WILL_LOSS': return class'UT_Trait_StayFocus'.default.STAYFOCUS_WILL_LOSS;
+		case 'STAYFOCUS_AIM_BONUS': return class'UT_Trait_StayFocus'.default.STAYFOCUS_AIM_BONUS;
+		case 'STAYFOCUS_CRIT_BONUS': return class'UT_Trait_StayFocus'.default.STAYFOCUS_CRIT_BONUS;
+		case 'STAYFOCUS_RADIUS_TILES': return class'UT_Trait_StayFocus'.default.STAYFOCUS_RADIUS_TILES;
+		case 'STAYFOCUS_COOLDOWN': return class'UT_Trait_StayFocus'.default.STAYFOCUS_COOLDOWN;
+		case 'SMOKER_WILL_REGEN': return class'UT_Trait_Smoker'.default.SMOKER_WILL_REGEN;
+		case 'SMOKER_FATIGUE_INTERVAL_NORMAL': return class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_NORMAL;
+		case 'SMOKER_FATIGUE_INTERVAL_TIRED': return class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_TIRED;
+		case 'SMOKER_GRENADE_COUNT': return class'UT_Trait_Smoker'.default.SMOKER_GRENADE_COUNT;
+		case 'BORNTOBECHIEF_AIM_DODGE_WILL_BASE': return class'UT_Trait_BornToBeChief'.default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE;
+		case 'BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK': return class'UT_Trait_BornToBeChief'.default.BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK;
+		case 'MANIAC_EXTRA_GRENADE_POCKETS': return class'UT_Trait_ManiacExplosive'.default.MANIAC_EXTRA_GRENADE_POCKETS;
+		case 'MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT': return class'UT_Trait_ManiacExplosive'.default.MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT;
+		case 'MANIAC_IMPROVISE_CHARGES': return class'UT_Trait_ManiacExplosive'.default.MANIAC_IMPROVISE_CHARGES;
+		case 'MANIAC_IMPROVISE_COOLDOWN': return class'UT_Trait_ManiacExplosive'.default.MANIAC_IMPROVISE_COOLDOWN;
+		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_0': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 0) return 0; return class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[0];
+		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_1': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 1) return 0; return class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[1];
+		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_2': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 2) return 0; return class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[2];
+		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_3': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 3) return 0; return class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[3];
+		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_4': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 4) return 0; return class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[4];
+		case 'SWORDSMAN_FIREARM_DAMAGE_REDUCTION': return class'UT_Trait_Swordsman'.default.SWORDSMAN_FIREARM_DAMAGE_REDUCTION;
+		case 'HUNTER_HEARING_INTERVAL': return class'UT_Trait_Hunter'.default.HUNTER_HEARING_INTERVAL;
+		case 'HUNTER_DETECTION_MODIFIER': return Round(class'UT_Trait_Hunter'.default.HUNTER_DETECTION_MODIFIER * 100.0);
+		case 'FALSEHOPE_XP_REDUCTION_PCT': return class'UT_Trait_FalseHope'.default.FALSEHOPE_XP_REDUCTION_PCT;
+		case 'FALSEHOPE_AIM_BASE': return class'UT_Trait_FalseHope'.default.FALSEHOPE_AIM_BASE;
+		case 'FALSEHOPE_HP_BASE': return Round(class'UT_Trait_FalseHope'.default.FALSEHOPE_HP_BASE * 100.0);
+		case 'FALSEHOPE_AIM_PER_RANK': return Round(class'UT_Trait_FalseHope'.default.FALSEHOPE_AIM_PER_RANK * 100.0);
+		case 'FALSEHOPE_HP_PER_RANK': return Round(class'UT_Trait_FalseHope'.default.FALSEHOPE_HP_PER_RANK * 100.0);
+		case 'FALSEHOPE_HP_FLOOR': return Round(class'UT_Trait_FalseHope'.default.FALSEHOPE_HP_FLOOR * 100.0);
+		case 'LONGRANGE_FAR_RANGE_SHIFT': return class'UT_Trait_LongRange'.default.LONGRANGE_FAR_RANGE_SHIFT;
+		case 'LONGRANGE_CLOSE_RANGE_AIM_PENALTY_0': if (class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY.Length <= 0) return 0; return class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY[0];
+		case 'LONGRANGE_CLOSE_RANGE_AIM_PENALTY_1': if (class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY.Length <= 1) return 0; return class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY[1];
+		case 'LONGRANGE_CLOSE_RANGE_AIM_PENALTY_2': if (class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY.Length <= 2) return 0; return class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY[2];
+		case 'LONGRANGE_CLOSE_RANGE_AIM_PENALTY_3': if (class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY.Length <= 3) return 0; return class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY[3];
+		case 'QUALITY_CRIT_BY_TIER_0': if (class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER.Length <= 0) return 0; return class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER[0];
+		case 'QUALITY_CRIT_BY_TIER_1': if (class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER.Length <= 1) return 0; return class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER[1];
+		case 'QUALITY_CRIT_BY_TIER_2': if (class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER.Length <= 2) return 0; return class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER[2];
+		case 'QUALITY_CRIT_BY_TIER_3': if (class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER.Length <= 3) return 0; return class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER[3];
+		case 'QUALITY_CRIT_BY_TIER_4': if (class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER.Length <= 4) return 0; return class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER[4];
+		case 'QUALITY_CLIP_REDUCTION': return class'UT_Trait_QualityOverQuantity'.default.QUALITY_CLIP_REDUCTION;
+		case 'QUALITY_CLIP_MIN_FOR_REDUCTION': return class'UT_Trait_QualityOverQuantity'.default.QUALITY_CLIP_MIN_FOR_REDUCTION;
+		case 'BOUNTYHUNTER_SUPPLY_PER_KILL': return class'UT_Trait_BountyHunter'.default.BOUNTYHUNTER_SUPPLY_PER_KILL;
+		case 'BOUNTYHUNTER_NO_XP_CHANCE_PCT': return class'UT_Trait_BountyHunter'.default.BOUNTYHUNTER_NO_XP_CHANCE_PCT;
+		case 'CYBORG_UPGRADE_CHANCE_PCT': return class'UT_Trait_Cyborg'.default.CYBORG_UPGRADE_CHANCE_PCT;
+		case 'RECRUITER_DODGE_MALUS': return class'UT_Trait_Recruiter'.default.RECRUITER_DODGE_MALUS;
+		case 'RECRUITER_RECRUIT_CHANCE_FACTOR': return Round(class'UT_Trait_Recruiter'.default.RECRUITER_RECRUIT_CHANCE_FACTOR * 100.0);
+		case 'RECRUITER_ROOKIE_CHANCE_FACTOR': return Round(class'UT_Trait_Recruiter'.default.RECRUITER_ROOKIE_CHANCE_FACTOR * 100.0);
+		case 'YOUNGDOCTOR_HEAL_REDUCTION_PCT': return class'UT_Trait_YoungDoctor'.default.YOUNGDOCTOR_HEAL_REDUCTION_PCT;
+		case 'YOUNGDOCTOR_XP_PER_TREATMENT': return Round(class'UT_Trait_YoungDoctor'.default.YOUNGDOCTOR_XP_PER_TREATMENT * 100.0);
+		case 'YOUNGDOCTOR_STABILIZE_XP_MULT': return Round(class'UT_Trait_YoungDoctor'.default.YOUNGDOCTOR_STABILIZE_XP_MULT * 100.0);
+		case 'YOUNGDOCTOR_RANK_FOR_TWO_XP': return class'UT_Trait_YoungDoctor'.default.YOUNGDOCTOR_RANK_FOR_TWO_XP;
+		case 'YOUNGDOCTOR_RANK_FOR_THREE_XP': return class'UT_Trait_YoungDoctor'.default.YOUNGDOCTOR_RANK_FOR_THREE_XP;
+		case 'PSIADEPT_PSI_PER_PIERCE': return class'UT_Trait_PsiAdept'.default.PSIADEPT_PSI_PER_PIERCE;
+		case 'PSIADEPT_PSI_PER_DAMAGE': return class'UT_Trait_PsiAdept'.default.PSIADEPT_PSI_PER_DAMAGE;
+		case 'PSIADEPT_ROBOTIC_DAMAGE_REDUCTION_PCT': return class'UT_Trait_PsiAdept'.default.PSIADEPT_ROBOTIC_DAMAGE_REDUCTION_PCT;
+		case 'GIVEMEMORE_DEFENSE_MALUS': return class'UT_Trait_GiveMeMore'.default.GIVEMEMORE_DEFENSE_MALUS;
+		case 'GIVEMEMORE_DODGE_BONUS': return class'UT_Trait_GiveMeMore'.default.GIVEMEMORE_DODGE_BONUS;
+		case 'GIVEMEMORE_WOUND_HP_REDUCTION': return class'UT_Trait_GiveMeMore'.default.GIVEMEMORE_WOUND_HP_REDUCTION;
+		case 'MINDOVERMATTER_HP_MALUS': return class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_HP_MALUS;
+		case 'MINDOVERMATTER_MOBILITY_MALUS': return class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_MOBILITY_MALUS;
+		case 'MINDOVERMATTER_AIM_MALUS': return class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_AIM_MALUS;
+		case 'MINDOVERMATTER_RECOVERY_MALUS_PCT': return class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_RECOVERY_MALUS_PCT;
+		case 'MINDOVERMATTER_HP_PCT_OF_WILL': return Round(class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_HP_PCT_OF_WILL * 100.0);
+		case 'MINDOVERMATTER_MOBILITY_PCT_OF_WILL': return Round(class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_MOBILITY_PCT_OF_WILL * 100.0);
+		case 'MINDOVERMATTER_AIM_PCT_OF_WILL': return Round(class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_AIM_PCT_OF_WILL * 100.0);
+		case 'MINDOVERMATTER_RECOVERY_PCT_OF_WILL': return Round(class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_RECOVERY_PCT_OF_WILL * 100.0);
+		case 'CHEMIST_AIM_MALUS': return class'UT_Trait_Chemist'.default.CHEMIST_AIM_MALUS;
+		case 'CHEMIST_DAMAGE_MALUS': return class'UT_Trait_Chemist'.default.CHEMIST_DAMAGE_MALUS;
+		case 'CHEMIST_DISEASE_TURNS': return class'UT_Trait_Chemist'.default.CHEMIST_DISEASE_TURNS;
+		case 'CHEMIST_DOT_DAMAGE_BONUS': return class'UT_Trait_Chemist'.default.CHEMIST_DOT_DAMAGE_BONUS;
+		case 'PSYCHICBOND_SHARED_DAMAGE_PCT': return class'UT_Trait_PsychicBond'.default.PSYCHICBOND_SHARED_DAMAGE_PCT;
+		case 'LASERDESIGNATOR_COOLDOWN': return class'UT_Trait_LaserDesignator'.default.LASERDESIGNATOR_COOLDOWN;
+		case 'LASERDESIGNATOR_MARK_TURNS': return class'UT_Trait_LaserDesignator'.default.LASERDESIGNATOR_MARK_TURNS;
+		case 'LASERDESIGNATOR_DODGE_BONUS': return class'UT_Trait_LaserDesignator'.default.LASERDESIGNATOR_DODGE_BONUS;
+		case 'LASERDESIGNATOR_HOLOTARGET_COOLDOWN_REDUCTION': return class'UT_Trait_LaserDesignator'.default.LASERDESIGNATOR_HOLOTARGET_COOLDOWN_REDUCTION;
+		case 'SECURITYHACKER_DEFENSE_MULT': return Round(class'UT_Trait_SecurityHacker'.default.SECURITYHACKER_DEFENSE_MULT * 100.0);
+		case 'SECURITYHACKER_FAILURE_DAMAGE_PCT': return class'UT_Trait_SecurityHacker'.default.SECURITYHACKER_FAILURE_DAMAGE_PCT;
+		case 'NEMESIS_AIM_PER_KILL': return class'UT_Trait_Nemesis'.default.NEMESIS_AIM_PER_KILL;
+		case 'NEMESIS_MAX_AIM': return class'UT_Trait_Nemesis'.default.NEMESIS_MAX_AIM;
+		case 'NEMESIS_DEFENSE_PER_KILL': return class'UT_Trait_Nemesis'.default.NEMESIS_DEFENSE_PER_KILL;
+		case 'NEMESIS_MAX_DEFENSE': return class'UT_Trait_Nemesis'.default.NEMESIS_MAX_DEFENSE;
+		case 'MEATTENDERIZER_STUN_ACTIONS_PER_TURN': return class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_STUN_ACTIONS_PER_TURN;
+		case 'MEATTENDERIZER_DEFENSE_MALUS': return class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_DEFENSE_MALUS;
+		case 'MEATTENDERIZER_DODGE_MALUS': return class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_DODGE_MALUS;
+		case 'MEATTENDERIZER_MOBILITY_MALUS': return class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_MOBILITY_MALUS;
+		case 'MEATTENDERIZER_SLIGHT_DEFENSE_MALUS': return class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_SLIGHT_DEFENSE_MALUS;
+		case 'MEATTENDERIZER_SLIGHT_DODGE_MALUS': return class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_SLIGHT_DODGE_MALUS;
+		case 'MEATTENDERIZER_SLIGHT_MOBILITY_MALUS': return class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_SLIGHT_MOBILITY_MALUS;
+		case 'SHREDDER_ACID_TICK_BONUS': return class'UT_Trait_Shredder'.default.SHREDDER_ACID_TICK_BONUS;
+		case 'SHREDDER_UNARMORED_DAMAGE_MALUS_PCT': return class'UT_Trait_Shredder'.default.SHREDDER_UNARMORED_DAMAGE_MALUS_PCT;
+		case 'JACKOFALLTRADES_AP_BONUS': return class'UT_Trait_JackOfAllTrades'.default.JACKOFALLTRADES_AP_BONUS;
+		case 'SOMEONEDIFFERENT_KNOCKOUT_TURN': return class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_KNOCKOUT_TURN;
+		case 'SOMEONEDIFFERENT_PCT_LOW_0': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW.Length <= 0) return 0; return class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW[0];
+		case 'SOMEONEDIFFERENT_PCT_LOW_1': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW.Length <= 1) return 0; return class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW[1];
+		case 'SOMEONEDIFFERENT_PCT_LOW_2': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW.Length <= 2) return 0; return class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW[2];
+		case 'SOMEONEDIFFERENT_PCT_HIGH_1': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH.Length <= 1) return 0; return class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH[1];
+		case 'SOMEONEDIFFERENT_PCT_HIGH_0': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH.Length <= 0) return 0; return class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH[0];
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_WillMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 0, 0);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_AimMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 0, 1);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_MobilityMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 0, 2);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_HPMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 0, 3);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_1_WillMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 1, 0);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_1_AimMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 1, 1);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_1_MobilityMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 1, 2);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_1_HPMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 1, 3);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_2_WillMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 2, 0);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_2_AimMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 2, 1);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_2_MobilityMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 2, 2);
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_2_HPMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 2, 3);
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_0_WillMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(false, 0, 0);
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_0_AimMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(false, 0, 1);
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_0_MobilityMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(false, 0, 2);
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_0_HPMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(false, 0, 3);
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_1_WillMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(false, 1, 0);
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_1_AimMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(false, 1, 1);
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_1_MobilityMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(false, 1, 2);
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_1_HPMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(false, 1, 3);
+	}
+
+	return 0;
+}
+
+// Puts Value (scaled) in the class default. Nothing for an element that does not exist.
+static final function SetCurrent(name Key, int Value)
+{
+	switch (Key)
+	{
+		case 'ATHLETE_MOBILITY': class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY = Value; break;
+		case 'ATHLETE_DODGE': class'UT_Trait_Athlete'.default.ATHLETE_DODGE = Value; break;
+		case 'ATHLETE_AIM': class'UT_Trait_Athlete'.default.ATHLETE_AIM = Value; break;
+		case 'ATHLETE_CRIT': class'UT_Trait_Athlete'.default.ATHLETE_CRIT = Value; break;
+		case 'NERD_HACKING_BASE': class'UT_Trait_Nerd'.default.NERD_HACKING_BASE = Value; break;
+		case 'NERD_HACKING_PER_RANK': class'UT_Trait_Nerd'.default.NERD_HACKING_PER_RANK = Value; break;
+		case 'NERD_WILL_BASE': class'UT_Trait_Nerd'.default.NERD_WILL_BASE = Value; break;
+		case 'NERD_WILL_PER_RANK': class'UT_Trait_Nerd'.default.NERD_WILL_PER_RANK = Value; break;
+		case 'NERD_MELEE_DAMAGE_TAKEN': class'UT_Trait_Nerd'.default.NERD_MELEE_DAMAGE_TAKEN = Value; break;
+		case 'GUARD_AIM': class'UT_Trait_Guard'.default.GUARD_AIM = Value; break;
+		case 'GUARD_OVERWATCH_AIM': class'UT_Trait_Guard'.default.GUARD_OVERWATCH_AIM = Value; break;
+		case 'PACIFIST_AIM': class'UT_Trait_Pacifist'.default.PACIFIST_AIM = Value; break;
+		case 'PACIFIST_ORGANIC_DEFENSE': class'UT_Trait_Pacifist'.default.PACIFIST_ORGANIC_DEFENSE = Value; break;
+		case 'BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION': class'UT_Trait_BaseballPlayer'.default.BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION = Value; break;
+		case 'ALLINARMS_THROW_RANGE': class'UT_Trait_AllInArms'.default.ALLINARMS_THROW_RANGE = Value; break;
+		case 'ALLINARMS_MOBILITY': class'UT_Trait_AllInArms'.default.ALLINARMS_MOBILITY = Value; break;
+		case 'DISCREET_DETECTION_MULT': class'UT_Trait_Discreet'.default.DISCREET_DETECTION_MULT = float(Value) / 100.0; break;
+		case 'DISCREET_PRIMARY_WEAPON_DAMAGE_REDUCTION': class'UT_Trait_Discreet'.default.DISCREET_PRIMARY_WEAPON_DAMAGE_REDUCTION = Value; break;
+		case 'ACROBAT_AIM_PENALTY': class'UT_Trait_Acrobat'.default.ACROBAT_AIM_PENALTY = Value; break;
+		case 'ACROBAT_CRIT_PENALTY': class'UT_Trait_Acrobat'.default.ACROBAT_CRIT_PENALTY = Value; break;
+		case 'ALWAYSREADY_RELOAD_BASE_CHANCE_PCT': class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_BASE_CHANCE_PCT = Value; break;
+		case 'ALWAYSREADY_RELOAD_WILL_FACTOR': class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_WILL_FACTOR = float(Value) / 100.0; break;
+		case 'ALWAYSREADY_RELOAD_AMMO_FACTOR': class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_AMMO_FACTOR = float(Value) / 100.0; break;
+		case 'QUICKHEALING_DAMAGE_TAKEN_MULT': class'UT_Trait_QuickHealing'.default.QUICKHEALING_DAMAGE_TAKEN_MULT = float(Value) / 100.0; break;
+		case 'THIEF_STEAL_CHANCE_PCT': class'UT_Trait_Thief'.default.THIEF_STEAL_CHANCE_PCT = Value; break;
+		case 'BRIBE_SUPPLY_BONUS': class'UT_Trait_Bribe'.default.BRIBE_SUPPLY_BONUS = Value; break;
+		case 'SCOUT_SIGHT_RADIUS_PENALTY': class'UT_Trait_Scout'.default.SCOUT_SIGHT_RADIUS_PENALTY = Value; break;
+		case 'SCOUT_SCANNER_RANGE_MULT': class'UT_Trait_Scout'.default.SCOUT_SCANNER_RANGE_MULT = float(Value) / 100.0; break;
+		case 'SCOUT_SCANNER_COOLDOWN': class'UT_Trait_Scout'.default.SCOUT_SCANNER_COOLDOWN = Value; break;
+		case 'TACTICIAN_AIM': class'UT_Trait_Tactician'.default.TACTICIAN_AIM = Value; break;
+		case 'STAYFOCUS_WILL_LOSS': class'UT_Trait_StayFocus'.default.STAYFOCUS_WILL_LOSS = Value; break;
+		case 'STAYFOCUS_AIM_BONUS': class'UT_Trait_StayFocus'.default.STAYFOCUS_AIM_BONUS = Value; break;
+		case 'STAYFOCUS_CRIT_BONUS': class'UT_Trait_StayFocus'.default.STAYFOCUS_CRIT_BONUS = Value; break;
+		case 'STAYFOCUS_RADIUS_TILES': class'UT_Trait_StayFocus'.default.STAYFOCUS_RADIUS_TILES = Value; break;
+		case 'STAYFOCUS_COOLDOWN': class'UT_Trait_StayFocus'.default.STAYFOCUS_COOLDOWN = Value; break;
+		case 'SMOKER_WILL_REGEN': class'UT_Trait_Smoker'.default.SMOKER_WILL_REGEN = Value; break;
+		case 'SMOKER_FATIGUE_INTERVAL_NORMAL': class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_NORMAL = Value; break;
+		case 'SMOKER_FATIGUE_INTERVAL_TIRED': class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_TIRED = Value; break;
+		case 'SMOKER_GRENADE_COUNT': class'UT_Trait_Smoker'.default.SMOKER_GRENADE_COUNT = Value; break;
+		case 'BORNTOBECHIEF_AIM_DODGE_WILL_BASE': class'UT_Trait_BornToBeChief'.default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE = Value; break;
+		case 'BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK': class'UT_Trait_BornToBeChief'.default.BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK = Value; break;
+		case 'MANIAC_EXTRA_GRENADE_POCKETS': class'UT_Trait_ManiacExplosive'.default.MANIAC_EXTRA_GRENADE_POCKETS = Value; break;
+		case 'MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT': class'UT_Trait_ManiacExplosive'.default.MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT = Value; break;
+		case 'MANIAC_IMPROVISE_CHARGES': class'UT_Trait_ManiacExplosive'.default.MANIAC_IMPROVISE_CHARGES = Value; break;
+		case 'MANIAC_IMPROVISE_COOLDOWN': class'UT_Trait_ManiacExplosive'.default.MANIAC_IMPROVISE_COOLDOWN = Value; break;
+		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_0': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 0) break; class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[0] = Value; break;
+		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_1': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 1) break; class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[1] = Value; break;
+		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_2': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 2) break; class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[2] = Value; break;
+		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_3': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 3) break; class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[3] = Value; break;
+		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_4': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 4) break; class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[4] = Value; break;
+		case 'SWORDSMAN_FIREARM_DAMAGE_REDUCTION': class'UT_Trait_Swordsman'.default.SWORDSMAN_FIREARM_DAMAGE_REDUCTION = Value; break;
+		case 'HUNTER_HEARING_INTERVAL': class'UT_Trait_Hunter'.default.HUNTER_HEARING_INTERVAL = Value; break;
+		case 'HUNTER_DETECTION_MODIFIER': class'UT_Trait_Hunter'.default.HUNTER_DETECTION_MODIFIER = float(Value) / 100.0; break;
+		case 'FALSEHOPE_XP_REDUCTION_PCT': class'UT_Trait_FalseHope'.default.FALSEHOPE_XP_REDUCTION_PCT = Value; break;
+		case 'FALSEHOPE_AIM_BASE': class'UT_Trait_FalseHope'.default.FALSEHOPE_AIM_BASE = Value; break;
+		case 'FALSEHOPE_HP_BASE': class'UT_Trait_FalseHope'.default.FALSEHOPE_HP_BASE = float(Value) / 100.0; break;
+		case 'FALSEHOPE_AIM_PER_RANK': class'UT_Trait_FalseHope'.default.FALSEHOPE_AIM_PER_RANK = float(Value) / 100.0; break;
+		case 'FALSEHOPE_HP_PER_RANK': class'UT_Trait_FalseHope'.default.FALSEHOPE_HP_PER_RANK = float(Value) / 100.0; break;
+		case 'FALSEHOPE_HP_FLOOR': class'UT_Trait_FalseHope'.default.FALSEHOPE_HP_FLOOR = float(Value) / 100.0; break;
+		case 'LONGRANGE_FAR_RANGE_SHIFT': class'UT_Trait_LongRange'.default.LONGRANGE_FAR_RANGE_SHIFT = Value; break;
+		case 'LONGRANGE_CLOSE_RANGE_AIM_PENALTY_0': if (class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY.Length <= 0) break; class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY[0] = Value; break;
+		case 'LONGRANGE_CLOSE_RANGE_AIM_PENALTY_1': if (class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY.Length <= 1) break; class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY[1] = Value; break;
+		case 'LONGRANGE_CLOSE_RANGE_AIM_PENALTY_2': if (class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY.Length <= 2) break; class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY[2] = Value; break;
+		case 'LONGRANGE_CLOSE_RANGE_AIM_PENALTY_3': if (class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY.Length <= 3) break; class'UT_Trait_LongRange'.default.LONGRANGE_CLOSE_RANGE_AIM_PENALTY[3] = Value; break;
+		case 'QUALITY_CRIT_BY_TIER_0': if (class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER.Length <= 0) break; class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER[0] = Value; break;
+		case 'QUALITY_CRIT_BY_TIER_1': if (class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER.Length <= 1) break; class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER[1] = Value; break;
+		case 'QUALITY_CRIT_BY_TIER_2': if (class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER.Length <= 2) break; class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER[2] = Value; break;
+		case 'QUALITY_CRIT_BY_TIER_3': if (class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER.Length <= 3) break; class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER[3] = Value; break;
+		case 'QUALITY_CRIT_BY_TIER_4': if (class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER.Length <= 4) break; class'UT_Trait_QualityOverQuantity'.default.QUALITY_CRIT_BY_TIER[4] = Value; break;
+		case 'QUALITY_CLIP_REDUCTION': class'UT_Trait_QualityOverQuantity'.default.QUALITY_CLIP_REDUCTION = Value; break;
+		case 'QUALITY_CLIP_MIN_FOR_REDUCTION': class'UT_Trait_QualityOverQuantity'.default.QUALITY_CLIP_MIN_FOR_REDUCTION = Value; break;
+		case 'BOUNTYHUNTER_SUPPLY_PER_KILL': class'UT_Trait_BountyHunter'.default.BOUNTYHUNTER_SUPPLY_PER_KILL = Value; break;
+		case 'BOUNTYHUNTER_NO_XP_CHANCE_PCT': class'UT_Trait_BountyHunter'.default.BOUNTYHUNTER_NO_XP_CHANCE_PCT = Value; break;
+		case 'CYBORG_UPGRADE_CHANCE_PCT': class'UT_Trait_Cyborg'.default.CYBORG_UPGRADE_CHANCE_PCT = Value; break;
+		case 'RECRUITER_DODGE_MALUS': class'UT_Trait_Recruiter'.default.RECRUITER_DODGE_MALUS = Value; break;
+		case 'RECRUITER_RECRUIT_CHANCE_FACTOR': class'UT_Trait_Recruiter'.default.RECRUITER_RECRUIT_CHANCE_FACTOR = float(Value) / 100.0; break;
+		case 'RECRUITER_ROOKIE_CHANCE_FACTOR': class'UT_Trait_Recruiter'.default.RECRUITER_ROOKIE_CHANCE_FACTOR = float(Value) / 100.0; break;
+		case 'YOUNGDOCTOR_HEAL_REDUCTION_PCT': class'UT_Trait_YoungDoctor'.default.YOUNGDOCTOR_HEAL_REDUCTION_PCT = Value; break;
+		case 'YOUNGDOCTOR_XP_PER_TREATMENT': class'UT_Trait_YoungDoctor'.default.YOUNGDOCTOR_XP_PER_TREATMENT = float(Value) / 100.0; break;
+		case 'YOUNGDOCTOR_STABILIZE_XP_MULT': class'UT_Trait_YoungDoctor'.default.YOUNGDOCTOR_STABILIZE_XP_MULT = float(Value) / 100.0; break;
+		case 'YOUNGDOCTOR_RANK_FOR_TWO_XP': class'UT_Trait_YoungDoctor'.default.YOUNGDOCTOR_RANK_FOR_TWO_XP = Value; break;
+		case 'YOUNGDOCTOR_RANK_FOR_THREE_XP': class'UT_Trait_YoungDoctor'.default.YOUNGDOCTOR_RANK_FOR_THREE_XP = Value; break;
+		case 'PSIADEPT_PSI_PER_PIERCE': class'UT_Trait_PsiAdept'.default.PSIADEPT_PSI_PER_PIERCE = Value; break;
+		case 'PSIADEPT_PSI_PER_DAMAGE': class'UT_Trait_PsiAdept'.default.PSIADEPT_PSI_PER_DAMAGE = Value; break;
+		case 'PSIADEPT_ROBOTIC_DAMAGE_REDUCTION_PCT': class'UT_Trait_PsiAdept'.default.PSIADEPT_ROBOTIC_DAMAGE_REDUCTION_PCT = Value; break;
+		case 'GIVEMEMORE_DEFENSE_MALUS': class'UT_Trait_GiveMeMore'.default.GIVEMEMORE_DEFENSE_MALUS = Value; break;
+		case 'GIVEMEMORE_DODGE_BONUS': class'UT_Trait_GiveMeMore'.default.GIVEMEMORE_DODGE_BONUS = Value; break;
+		case 'GIVEMEMORE_WOUND_HP_REDUCTION': class'UT_Trait_GiveMeMore'.default.GIVEMEMORE_WOUND_HP_REDUCTION = Value; break;
+		case 'MINDOVERMATTER_HP_MALUS': class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_HP_MALUS = Value; break;
+		case 'MINDOVERMATTER_MOBILITY_MALUS': class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_MOBILITY_MALUS = Value; break;
+		case 'MINDOVERMATTER_AIM_MALUS': class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_AIM_MALUS = Value; break;
+		case 'MINDOVERMATTER_RECOVERY_MALUS_PCT': class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_RECOVERY_MALUS_PCT = Value; break;
+		case 'MINDOVERMATTER_HP_PCT_OF_WILL': class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_HP_PCT_OF_WILL = float(Value) / 100.0; break;
+		case 'MINDOVERMATTER_MOBILITY_PCT_OF_WILL': class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_MOBILITY_PCT_OF_WILL = float(Value) / 100.0; break;
+		case 'MINDOVERMATTER_AIM_PCT_OF_WILL': class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_AIM_PCT_OF_WILL = float(Value) / 100.0; break;
+		case 'MINDOVERMATTER_RECOVERY_PCT_OF_WILL': class'UT_Trait_MindOverMatter'.default.MINDOVERMATTER_RECOVERY_PCT_OF_WILL = float(Value) / 100.0; break;
+		case 'CHEMIST_AIM_MALUS': class'UT_Trait_Chemist'.default.CHEMIST_AIM_MALUS = Value; break;
+		case 'CHEMIST_DAMAGE_MALUS': class'UT_Trait_Chemist'.default.CHEMIST_DAMAGE_MALUS = Value; break;
+		case 'CHEMIST_DISEASE_TURNS': class'UT_Trait_Chemist'.default.CHEMIST_DISEASE_TURNS = Value; break;
+		case 'CHEMIST_DOT_DAMAGE_BONUS': class'UT_Trait_Chemist'.default.CHEMIST_DOT_DAMAGE_BONUS = Value; break;
+		case 'PSYCHICBOND_SHARED_DAMAGE_PCT': class'UT_Trait_PsychicBond'.default.PSYCHICBOND_SHARED_DAMAGE_PCT = Value; break;
+		case 'LASERDESIGNATOR_COOLDOWN': class'UT_Trait_LaserDesignator'.default.LASERDESIGNATOR_COOLDOWN = Value; break;
+		case 'LASERDESIGNATOR_MARK_TURNS': class'UT_Trait_LaserDesignator'.default.LASERDESIGNATOR_MARK_TURNS = Value; break;
+		case 'LASERDESIGNATOR_DODGE_BONUS': class'UT_Trait_LaserDesignator'.default.LASERDESIGNATOR_DODGE_BONUS = Value; break;
+		case 'LASERDESIGNATOR_HOLOTARGET_COOLDOWN_REDUCTION': class'UT_Trait_LaserDesignator'.default.LASERDESIGNATOR_HOLOTARGET_COOLDOWN_REDUCTION = Value; break;
+		case 'SECURITYHACKER_DEFENSE_MULT': class'UT_Trait_SecurityHacker'.default.SECURITYHACKER_DEFENSE_MULT = float(Value) / 100.0; break;
+		case 'SECURITYHACKER_FAILURE_DAMAGE_PCT': class'UT_Trait_SecurityHacker'.default.SECURITYHACKER_FAILURE_DAMAGE_PCT = Value; break;
+		case 'NEMESIS_AIM_PER_KILL': class'UT_Trait_Nemesis'.default.NEMESIS_AIM_PER_KILL = Value; break;
+		case 'NEMESIS_MAX_AIM': class'UT_Trait_Nemesis'.default.NEMESIS_MAX_AIM = Value; break;
+		case 'NEMESIS_DEFENSE_PER_KILL': class'UT_Trait_Nemesis'.default.NEMESIS_DEFENSE_PER_KILL = Value; break;
+		case 'NEMESIS_MAX_DEFENSE': class'UT_Trait_Nemesis'.default.NEMESIS_MAX_DEFENSE = Value; break;
+		case 'MEATTENDERIZER_STUN_ACTIONS_PER_TURN': class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_STUN_ACTIONS_PER_TURN = Value; break;
+		case 'MEATTENDERIZER_DEFENSE_MALUS': class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_DEFENSE_MALUS = Value; break;
+		case 'MEATTENDERIZER_DODGE_MALUS': class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_DODGE_MALUS = Value; break;
+		case 'MEATTENDERIZER_MOBILITY_MALUS': class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_MOBILITY_MALUS = Value; break;
+		case 'MEATTENDERIZER_SLIGHT_DEFENSE_MALUS': class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_SLIGHT_DEFENSE_MALUS = Value; break;
+		case 'MEATTENDERIZER_SLIGHT_DODGE_MALUS': class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_SLIGHT_DODGE_MALUS = Value; break;
+		case 'MEATTENDERIZER_SLIGHT_MOBILITY_MALUS': class'UT_Trait_MeatTenderizer'.default.MEATTENDERIZER_SLIGHT_MOBILITY_MALUS = Value; break;
+		case 'SHREDDER_ACID_TICK_BONUS': class'UT_Trait_Shredder'.default.SHREDDER_ACID_TICK_BONUS = Value; break;
+		case 'SHREDDER_UNARMORED_DAMAGE_MALUS_PCT': class'UT_Trait_Shredder'.default.SHREDDER_UNARMORED_DAMAGE_MALUS_PCT = Value; break;
+		case 'JACKOFALLTRADES_AP_BONUS': class'UT_Trait_JackOfAllTrades'.default.JACKOFALLTRADES_AP_BONUS = Value; break;
+		case 'SOMEONEDIFFERENT_KNOCKOUT_TURN': class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_KNOCKOUT_TURN = Value; break;
+		case 'SOMEONEDIFFERENT_PCT_LOW_0': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW.Length <= 0) break; class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW[0] = Value; break;
+		case 'SOMEONEDIFFERENT_PCT_LOW_1': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW.Length <= 1) break; class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW[1] = Value; break;
+		case 'SOMEONEDIFFERENT_PCT_LOW_2': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW.Length <= 2) break; class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW[2] = Value; break;
+		case 'SOMEONEDIFFERENT_PCT_HIGH_1': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH.Length <= 1) break; class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH[1] = Value; break;
+		case 'SOMEONEDIFFERENT_PCT_HIGH_0': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH.Length <= 0) break; class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH[0] = Value; break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_WillMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 0, 0, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_AimMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 0, 1, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_MobilityMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 0, 2, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_HPMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 0, 3, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_1_WillMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 1, 0, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_1_AimMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 1, 1, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_1_MobilityMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 1, 2, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_1_HPMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 1, 3, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_2_WillMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 2, 0, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_2_AimMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 2, 1, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_2_MobilityMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 2, 2, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_LWOTC_2_HPMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 2, 3, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_0_WillMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(false, 0, 0, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_0_AimMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(false, 0, 1, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_0_MobilityMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(false, 0, 2, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_0_HPMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(false, 0, 3, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_1_WillMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(false, 1, 0, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_1_AimMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(false, 1, 1, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_1_MobilityMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(false, 1, 2, Value); break;
+		case 'SOMEONEDIFFERENT_STAGES_BASEGAME_1_HPMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(false, 1, 3, Value); break;
+	}
+}
+
+// Applies the player's values (and the mod's ini values for what he did not change). The ini value of an option is cached the FIRST time, before any
+// value of the player is written, so that "back to the ini" works while the game runs.
+static function ApplyOverrides()
+{
+	local array<string> Rows, Parts;
+	local name Key;
+	local int i, Value;
+
+	Rows = GetRows();
+	for (i = 0; i < Rows.Length; ++i)
+	{
+		ParseStringIntoArray(Rows[i], Parts, "|", false);
+		Key = name(Parts[0]);
+
+		if (!class'UniqueTraits_MCMSettings'.static.HasIniCached(Key))
+			class'UniqueTraits_MCMSettings'.static.CacheIni(Key, GetCurrent(Key));
+
+		if (class'UniqueTraits_MCMSettings'.static.GetOverride(Key, Value))
+			SetCurrent(Key, Value);
+		else
+			SetCurrent(Key, class'UniqueTraits_MCMSettings'.static.GetIniCached(Key));
+	}
+}

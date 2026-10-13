@@ -1,9 +1,10 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_Recruiter.uc
 //  PURPOSE: Recruiter [LWOTC ONLY: "haven adviser" is LWOTC's liaison]: -RECRUITER_DODGE_MALUS dodge. At the end of every month, with
-//           X% chance (X = the share of the past month he spent stationed as haven adviser, UT_LWOTCHelpers.GetLiaisonRegion) one
-//           more soldier recruit joins the Resistance's recruitable pool, and with Y% = X * RECRUITER_ROOKIE_CHANCE_FACTOR (half) a
-//           free rookie joins the XCOM roster; the two rolls are independent.
+//           X% chance (X = the share of the past month he spent stationed as haven adviser, UT_LWOTCHelpers.GetLiaisonRegion) times
+//           RECRUITER_RECRUIT_CHANCE_FACTOR (1.0) one more soldier recruit joins the Resistance's
+//           recruitable pool, and with Y% = X * RECRUITER_ROOKIE_CHANCE_FACTOR (half) a free rookie joins the XCOM roster; the two rolls
+//           are independent (the rookie chance does not depend on the recruit factor).
 //           Time as adviser is tracked on the holder in UnitValues (hours of the game clock, UT_Recruiter_Hours = this month's total,
 //           UT_Recruiter_Mark = clock of the running interval or -1, UT_Recruiter_MonthStart): updated by SyncLiaisonTime when the staff
 //           changes ('StaffUpdated') and at the end of the month.
@@ -13,7 +14,7 @@
 class UT_Trait_Recruiter extends UT_TraitBase config(UniqueTraits);
 
 var config int RECRUITER_DODGE_MALUS;
-var config float RECRUITER_ROOKIE_CHANCE_FACTOR;
+var config float RECRUITER_RECRUIT_CHANCE_FACTOR, RECRUITER_ROOKIE_CHANCE_FACTOR;
 var localized string RECRUITER_ROOKIE_NOTICE;
 
 static function array<X2DataTemplate> CreateTemplates()
@@ -144,7 +145,7 @@ static function EventListenerReturn OnPreEndOfMonth_Recruiter(Object EventData, 
 	local XComGameState_HeadquartersResistance ResistanceHQ;
 	local array<XComGameState_Unit> Soldiers;
 	local XComGameState_Unit Soldier, MutableUnit, NewSoldier;
-	local float Hours, MonthHours, SharePct, RookiePct;
+	local float Hours, MonthHours, SharePct, RecruitPct, RookiePct;
 	local int Now;
 
 	if (GameState == none)
@@ -173,10 +174,11 @@ static function EventListenerReturn OnPreEndOfMonth_Recruiter(Object EventData, 
 		MutableUnit.SetUnitFloatValue('UT_Recruiter_MonthStart', Now, eCleanup_Never);
 
 		SharePct = (MonthHours > 0) ? FClamp(Hours / MonthHours, 0.0, 1.0) * 100.0 : 0.0;
+		RecruitPct = SharePct * default.RECRUITER_RECRUIT_CHANCE_FACTOR;
 		RookiePct = SharePct * default.RECRUITER_ROOKIE_CHANCE_FACTOR;
-		`log("UniqueTraits : Recruiter --" @ Soldier.GetFullName() @ ": adviser for" @ Hours @ "h of" @ MonthHours @ "h => recruit chance" @ SharePct $ "%, rookie chance" @ RookiePct $ "%",, 'UniqueTraits');
+		`log("UniqueTraits : Recruiter --" @ Soldier.GetFullName() @ ": adviser for" @ Hours @ "h of" @ MonthHours @ "h => recruit chance" @ RecruitPct $ "%, rookie chance" @ RookiePct $ "%",, 'UniqueTraits');
 
-		if (`SYNC_FRAND_STATIC() * 100.0 < SharePct)
+		if (`SYNC_FRAND_STATIC() * 100.0 < RecruitPct)
 		{
 			ResistanceHQ = XComGameState_HeadquartersResistance(GameState.ModifyStateObject(class'XComGameState_HeadquartersResistance', ResistanceHQ.ObjectID));
 			NewSoldier = CreateRecruit(GameState);

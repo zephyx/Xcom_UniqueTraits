@@ -12,8 +12,15 @@ class X2DownloadableContentInfo_UniqueTraits extends X2DownloadableContentInfo;
 // Does nothing otherwise: the normal draw happens after a mission / covert action.
 static event OnLoadedSavedGameToStrategy()
 {
-	if (class'UniqueTraits_TraitConfig'.default.ASSIGN_TRAIT_AT_RECRUITMENT)
+	if (class'UniqueTraits_TraitConfig'.static.ShouldAssignAtRecruitment())
 		AssignTraitsToEligibleRookies();
+}
+
+// CHL #412: before any X2DataSet is built. The values the player changed in the Mod Config Menu (Advanced page) are written into the trait classes' defaults here, so that
+// even the ones baked into the ability templates are his (UniqueTraits_MCMOptions.ApplyOverrides). Without Mod Config Menu there is none and nothing changes.
+static function OnPreCreateTemplates()
+{
+	class'UniqueTraits_MCMOptions'.static.ApplyOverrides();
 }
 
 // Smoker splices its "doesn't end the turn" cost into the shared ThrowGrenade template; Meat Tenderizer adds a twin of every stun / disorient effect; Shredder copies the acid damage of its reference grenade.
@@ -101,7 +108,7 @@ static event OnPostMission()
 // ASSIGN_TRAIT_AT_RECRUITMENT, any rookie of the roster (not a Resistance hero).
 static final function bool IsRookieEligibleForTrait(XComGameState_Unit Soldier)
 {
-	return Soldier.CanRankUpSoldier() || (class'UniqueTraits_TraitConfig'.default.ASSIGN_TRAIT_AT_RECRUITMENT && !Soldier.IsResistanceHero());
+	return Soldier.CanRankUpSoldier() || (class'UniqueTraits_TraitConfig'.static.ShouldAssignAtRecruitment() && !Soldier.IsResistanceHero());
 }
 
 // Gives a trait to every living rookie who can now choose a class and has none yet. Called after a
@@ -216,7 +223,7 @@ static final function AssignTraitToEligibleRookie(XComGameState_Unit MutableUnit
 	}
 
 	// Weighted draw: each available trait covers a stretch of the roll as long as its probability.
-	`log("UniqueTraits : draw --" @ AvailableIndices.Length @ "available trait(s), total weight" @ TotalWeight @ "(default weight" @ class'UniqueTraits_TraitConfig'.default.DEFAULT_TRAIT_PROBABILITY $ ")",, 'UniqueTraits');
+	`log("UniqueTraits : draw --" @ AvailableIndices.Length @ "available trait(s), total weight" @ TotalWeight @ "(default weight" @ class'UniqueTraits_TraitConfig'.static.GetDefaultTraitProbability() $ ")",, 'UniqueTraits');
 	Roll = `SYNC_RAND_STATIC(TotalWeight);
 	PickedIndex = AvailableIndices[AvailableIndices.Length - 1];
 	for (i = 0; i < AvailableIndices.Length; ++i)

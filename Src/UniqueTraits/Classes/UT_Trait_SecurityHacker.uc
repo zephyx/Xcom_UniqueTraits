@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------------------
 class UT_Trait_SecurityHacker extends UT_TraitBase config(UniqueTraits);
 
-var config int SECURITYHACKER_DEFENSE_MULT;
+var config float SECURITYHACKER_DEFENSE_MULT;   // a decimal number (1.0 to 3.0 in the Mod Config Menu)
 var config int SECURITYHACKER_FAILURE_DAMAGE_PCT;
 var config array<string> SECURITYHACKER_TOWER_KEYWORDS;
 var config array<name> SECURITYHACKER_END_ABILITIES;
@@ -331,7 +331,7 @@ static function EventListenerReturn OnAbilityActivated_SecurityHacker(Object Eve
 			}
 		}
 
-		if (LockValue.fValue > 0 && default.SECURITYHACKER_DEFENSE_MULT > 1)
+		if (LockValue.fValue > 0 && default.SECURITYHACKER_DEFENSE_MULT > 1.0)
 			SetLockStrengthExactly(MutableObj, int(LockValue.fValue));
 		MutableObj.bOffersTacticalHackRewards = TacticalValue.fValue > 0;
 		MutableObj.bOffersStrategyHackRewards = StrategyValue.fValue > 0;
@@ -391,8 +391,8 @@ static function EventListenerReturn OnAbilityActivated_SecurityHacker(Object Eve
 	{
 		`log("UniqueTraits [WARN] : Security hacker -- the tower has rewards of its own, left as they are (only the defense is doubled)",, 'UniqueTraits');
 	}
-	if (OldStrength > 0 && default.SECURITYHACKER_DEFENSE_MULT > 1)
-		SetLockStrengthExactly(MutableObj, OldStrength * default.SECURITYHACKER_DEFENSE_MULT);
+	if (OldStrength > 0 && default.SECURITYHACKER_DEFENSE_MULT > 1.0)
+		SetLockStrengthExactly(MutableObj, Round(float(OldStrength) * default.SECURITYHACKER_DEFENSE_MULT));
 
 	`log("UniqueTraits : Security hacker -- tower AFTER:" @ DescribeHackable(MutableObj),, 'UniqueTraits');
 

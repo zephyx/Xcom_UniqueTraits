@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_StayFocus.uc
-//  PURPOSE: Stay focus [LWOTC ONLY]: free-action ally buff; its Will cost is UT_Trait_StayFocus.OnAbilityActivated_StayFocus.
+//  PURPOSE: Stay focus: free-action ally buff; its Will cost is UT_Trait_StayFocus.OnAbilityActivated_StayFocus.
 //---------------------------------------------------------------------------------------
 class UT_Trait_StayFocus extends UT_TraitBase config(UniqueTraits);
 

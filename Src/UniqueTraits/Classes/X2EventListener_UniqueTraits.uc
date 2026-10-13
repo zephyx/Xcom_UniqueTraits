@@ -217,7 +217,7 @@ static function EventListenerReturn OnCovertActionCompleted_RookieTrait(Object E
 // roster without a trait one. A reward soldier is created ranked and is left alone, like in the default mode.
 static function EventListenerReturn OnNewRookie_RookieTrait(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
 {
-	if (class'UniqueTraits_TraitConfig'.default.ASSIGN_TRAIT_AT_RECRUITMENT)
+	if (class'UniqueTraits_TraitConfig'.static.ShouldAssignAtRecruitment())
 		class'X2DownloadableContentInfo_UniqueTraits'.static.AssignTraitsToEligibleRookies();
 
 	return ELR_NoInterrupt;
