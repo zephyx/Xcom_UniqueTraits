@@ -100,6 +100,7 @@ simulated function ClientModCallback(MCM_API_Instance ConfigAPI, int GameMode)
 
 	// The explanation of the probabilities is the tooltip of this one row (TraitTip)
 	Group.AddLabel('UT_ProbabilityHelp', ProbabilityHelp $ HELP_MARK, TraitTip);
+	Group.AddLabel('MCM_NoBorder_Empty', "", "");
 
 	Group = Page.AddGroup('UT_Probabilities', GroupProbabilities);
 	AbilityMgr = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();

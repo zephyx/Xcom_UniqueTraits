@@ -23,12 +23,14 @@ static function OnPreCreateTemplates()
 	class'UniqueTraits_MCMOptions'.static.ApplyOverrides();
 }
 
-// Smoker splices its "doesn't end the turn" cost into the shared ThrowGrenade template; Meat Tenderizer adds a twin of every stun / disorient effect; Shredder copies the acid damage of its reference grenade.
+// Smoker splices its "doesn't end the turn" cost into the shared ThrowGrenade template; Meat Tenderizer adds a twin of every stun / disorient effect; Shredder copies the acid damage of its reference grenade; Pacifist closes the overwatch abilities; Baseball player's own Salvo is added to every cost that lists Salvo.
 static event OnPostTemplatesCreated()
 {
 	class'UT_Trait_Smoker'.static.OnPostTemplatesCreated();
 	class'UT_Trait_MeatTenderizer'.static.OnPostTemplatesCreated();
 	class'UT_Trait_Shredder'.static.OnPostTemplatesCreated();
+	class'UT_Trait_Pacifist'.static.OnPostTemplatesCreated();
+	class'UT_Trait_BaseballPlayer'.static.OnPostTemplatesCreated();
 }
 
 // Dispatches to the unit's own trait (UT_TraitBase.IsItemBlocked): Maniac explosive's primary weapon block, Swordsman's

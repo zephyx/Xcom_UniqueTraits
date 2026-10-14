@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UniqueTraits_MCMOptions.uc
-//  PURPOSE: The tunables of the traits that the "Advanced options" page of the Mod Config Menu can change.
-//           A tunable is a `var config` number of a UT_Trait_<Name> class (or an element of one of its arrays), read through
+//  PURPOSE: GENERATED (2026-10-13, from the table of the scratchpad generator: see CLAUDE.md section 10 item 7). The tunables of the traits that the "Advanced options"
+//           page of the Mod Config Menu can change. A tunable is a `var config` number of a UT_Trait_<Name> class (or an element of one of its arrays), read through
 //           `class'UT_Trait_<Name>'.default.<VAR>`; the player's value (UniqueTraits_MCMSettings, only what he changed) is written into that default.
 //           - GetRows: one line per option, "KEY|TRAIT|min|max|step|scale|flags" (values in scaled units: a float is stored x100, scale 100). flags: R = the value is
 //             baked into the ability templates when the game starts, so it applies at the next launch; P = a permanent change made when the trait is given, soldiers
@@ -29,9 +29,12 @@ static final function array<string> GetRows()
 	Rows.AddItem("NERD_MELEE_DAMAGE_TAKEN|UT_Nerd|0|6|1|1|R");
 	Rows.AddItem("GUARD_AIM|UT_Guard|0|40|1|1|R");
 	Rows.AddItem("GUARD_OVERWATCH_AIM|UT_Guard|0|60|1|1|R");
-	Rows.AddItem("PACIFIST_AIM|UT_Pacifist|0|50|1|1|R");
-	Rows.AddItem("PACIFIST_ORGANIC_DEFENSE|UT_Pacifist|0|60|1|1|R");
+	Rows.AddItem("PACIFIST_DEFENSE_BONUS|UT_Pacifist|0|30|1|1|R");
+	Rows.AddItem("PACIFIST_DODGE_BONUS|UT_Pacifist|0|30|1|1|R");
+	Rows.AddItem("PACIFIST_RADIUS_TILES|UT_Pacifist|1|15|1|1|R");
+	Rows.AddItem("PACIFIST_COOLDOWN|UT_Pacifist|0|5|1|1|R");
 	Rows.AddItem("BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION|UT_BaseballPlayer|0|10|1|1|R");
+	Rows.AddItem("BASEBALL_BOMBARD_RANGE|UT_BaseballPlayer|0|10|1|1|-");
 	Rows.AddItem("ALLINARMS_THROW_RANGE|UT_AllInArms|0|15|1|1|-");
 	Rows.AddItem("ALLINARMS_MOBILITY|UT_AllInArms|0|8|1|1|R");
 	Rows.AddItem("DISCREET_DETECTION_MULT|UT_Discreet|0|100|5|100|R");
@@ -185,9 +188,12 @@ static final function int GetCurrent(name Key)
 		case 'NERD_MELEE_DAMAGE_TAKEN': return class'UT_Trait_Nerd'.default.NERD_MELEE_DAMAGE_TAKEN;
 		case 'GUARD_AIM': return class'UT_Trait_Guard'.default.GUARD_AIM;
 		case 'GUARD_OVERWATCH_AIM': return class'UT_Trait_Guard'.default.GUARD_OVERWATCH_AIM;
-		case 'PACIFIST_AIM': return class'UT_Trait_Pacifist'.default.PACIFIST_AIM;
-		case 'PACIFIST_ORGANIC_DEFENSE': return class'UT_Trait_Pacifist'.default.PACIFIST_ORGANIC_DEFENSE;
+		case 'PACIFIST_DEFENSE_BONUS': return class'UT_Trait_Pacifist'.default.PACIFIST_DEFENSE_BONUS;
+		case 'PACIFIST_DODGE_BONUS': return class'UT_Trait_Pacifist'.default.PACIFIST_DODGE_BONUS;
+		case 'PACIFIST_RADIUS_TILES': return class'UT_Trait_Pacifist'.default.PACIFIST_RADIUS_TILES;
+		case 'PACIFIST_COOLDOWN': return class'UT_Trait_Pacifist'.default.PACIFIST_COOLDOWN;
 		case 'BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION': return class'UT_Trait_BaseballPlayer'.default.BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION;
+		case 'BASEBALL_BOMBARD_RANGE': return class'UT_Trait_BaseballPlayer'.default.BASEBALL_BOMBARD_RANGE;
 		case 'ALLINARMS_THROW_RANGE': return class'UT_Trait_AllInArms'.default.ALLINARMS_THROW_RANGE;
 		case 'ALLINARMS_MOBILITY': return class'UT_Trait_AllInArms'.default.ALLINARMS_MOBILITY;
 		case 'DISCREET_DETECTION_MULT': return Round(class'UT_Trait_Discreet'.default.DISCREET_DETECTION_MULT * 100.0);
@@ -342,9 +348,12 @@ static final function SetCurrent(name Key, int Value)
 		case 'NERD_MELEE_DAMAGE_TAKEN': class'UT_Trait_Nerd'.default.NERD_MELEE_DAMAGE_TAKEN = Value; break;
 		case 'GUARD_AIM': class'UT_Trait_Guard'.default.GUARD_AIM = Value; break;
 		case 'GUARD_OVERWATCH_AIM': class'UT_Trait_Guard'.default.GUARD_OVERWATCH_AIM = Value; break;
-		case 'PACIFIST_AIM': class'UT_Trait_Pacifist'.default.PACIFIST_AIM = Value; break;
-		case 'PACIFIST_ORGANIC_DEFENSE': class'UT_Trait_Pacifist'.default.PACIFIST_ORGANIC_DEFENSE = Value; break;
+		case 'PACIFIST_DEFENSE_BONUS': class'UT_Trait_Pacifist'.default.PACIFIST_DEFENSE_BONUS = Value; break;
+		case 'PACIFIST_DODGE_BONUS': class'UT_Trait_Pacifist'.default.PACIFIST_DODGE_BONUS = Value; break;
+		case 'PACIFIST_RADIUS_TILES': class'UT_Trait_Pacifist'.default.PACIFIST_RADIUS_TILES = Value; break;
+		case 'PACIFIST_COOLDOWN': class'UT_Trait_Pacifist'.default.PACIFIST_COOLDOWN = Value; break;
 		case 'BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION': class'UT_Trait_BaseballPlayer'.default.BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION = Value; break;
+		case 'BASEBALL_BOMBARD_RANGE': class'UT_Trait_BaseballPlayer'.default.BASEBALL_BOMBARD_RANGE = Value; break;
 		case 'ALLINARMS_THROW_RANGE': class'UT_Trait_AllInArms'.default.ALLINARMS_THROW_RANGE = Value; break;
 		case 'ALLINARMS_MOBILITY': class'UT_Trait_AllInArms'.default.ALLINARMS_MOBILITY = Value; break;
 		case 'DISCREET_DETECTION_MULT': class'UT_Trait_Discreet'.default.DISCREET_DETECTION_MULT = float(Value) / 100.0; break;

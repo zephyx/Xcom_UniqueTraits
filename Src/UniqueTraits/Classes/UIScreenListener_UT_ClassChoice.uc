@@ -50,7 +50,7 @@ event OnInit(UIScreen Screen)
 		return;
 
 	// Only the trait's OWN abilities (this mod's 'UT_' ones) are shown: a trait may also grant a base-game
-	// ability (Acrobat -> Grapple, Baseball player -> Salvo, ...) whose icon/description must not
+	// ability (Acrobat -> SkirmisherGrapple, Baseball player -> Salvo before 2026-10-14, ...) whose icon/description must not
 	// replace or pile onto the trait's own, which already mentions it. The icon and the name come from
 	// the first own ability; the roll-over lists every own displayable ability.
 	AbilityMgr = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();

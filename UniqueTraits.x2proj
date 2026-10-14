@@ -112,7 +112,6 @@
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Swordsman.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_LongRange.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2ItemSlot_UniqueTraits.uc" />
-    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_OrganicCombat.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakExplosives.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_PrimaryWeaponMalus.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakPrimaryWeapons.uc" />
@@ -121,6 +120,7 @@
     <Content Include="Src\UniqueTraits\Classes\XComGameState_Effect_UT_TemporaryItem.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2AbilityCost_UT_SmokeThrow.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Condition_UT_ExcludeAlreadyOverwatching.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Condition_UT_PacifistNoOverwatch.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Item_UniqueTraits.uc" />
     <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_LootWindow.uc" />
     <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_RookieTrait.uc" />

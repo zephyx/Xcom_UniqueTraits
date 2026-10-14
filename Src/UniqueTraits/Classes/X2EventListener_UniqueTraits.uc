@@ -89,6 +89,7 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 
 	Template.AddCHEvent('OnGetItemRange', class'UT_Trait_AllInArms'.static.OnGetItemRange_AllInArms, ELD_Immediate, 50);
 	Template.AddCHEvent('OnGetItemRange', class'UT_Trait_Scout'.static.OnGetItemRange_Scout, ELD_Immediate, 50);
+	Template.AddCHEvent('OnGetItemRange', class'UT_Trait_BaseballPlayer'.static.OnGetItemRange_BaseballPlayer, ELD_Immediate, 50);
 	Template.AddCHEvent('ItemLooted', class'UT_Trait_Thief'.static.OnItemLooted, ELD_Immediate, 50);
 	Template.AddCHEvent('UnitBleedingOut', class'UT_Trait_QuickHealing'.static.OnUnitBleedingOut, ELD_Immediate, 50);
 	// Fired by the tactical rules when the mission is cleaned up, with the state submitted before the end-of-mission health adjustment.
@@ -136,6 +137,9 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	// Someone different: mission-start sync of its permanent stats, and the collapse (unconscious) at the start of the Nth XCOM turn.
 	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_SomeoneDifferent'.static.OnTacticalBeginPlay_SomeoneDifferent, ELD_Immediate, 50);
 	Template.AddCHEvent('PlayerTurnBegun', class'UT_Trait_SomeoneDifferent'.static.OnPlayerTurnBegun_SomeoneDifferent, ELD_OnStateSubmitted, 50);
+	// Pacifist: the marker "inflicted damage" (after the ability resolved), and its move to "previous turn" at the start of XCOM's turns.
+	Template.AddCHEvent('AbilityActivated', class'UT_Trait_Pacifist'.static.OnAbilityActivated_Pacifist, ELD_OnStateSubmitted, 50);
+	Template.AddCHEvent('PlayerTurnBegun', class'UT_Trait_Pacifist'.static.OnPlayerTurnBegun_Pacifist, ELD_OnStateSubmitted, 50);
 	Template.RegisterInTactical = true;
 
 	return Template;

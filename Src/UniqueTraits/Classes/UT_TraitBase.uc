@@ -47,7 +47,7 @@ static final function ShiftStat(XComGameState_Unit UnitState, ECharStatType Stat
 }
 
 // Label shown in the shot breakdown (hit chance tooltip) for a trait's aim modifier: the effect's display name
-// (SetDisplayInfo, i.e. the trait's name) rather than its internal EffectName ("UT_PACIFIST_ORGANICCOMBAT").
+// (SetDisplayInfo, i.e. the trait's name) rather than its internal EffectName ("UT_NEMESIS_...").
 static final function string GetShotModifierLabel(X2Effect_Persistent Effect)
 {
 	if (Effect.FriendlyName != "")
