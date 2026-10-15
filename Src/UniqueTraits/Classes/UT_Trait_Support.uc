@@ -20,6 +20,7 @@ var localized string SupportNoOffensiveItemReason;
 
 var config name SUPPORT_MEDIKIT_ITEM_NAME;
 var config name SUPPORT_GRENADEPOCKET_BACKFILL_ITEM_NAME;
+var config int SUPPORT_MOBILITY_BONUS;
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -52,6 +53,25 @@ static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 {
 	RemoveSupportOffensiveItems(MutableUnit, NewGameState);
 	MoveUtilityVestToVestSlot(MutableUnit, NewGameState);
+
+	// Permanent mobility bonus, given once; the amount is kept so OnClear takes back exactly that, whatever the ini says by then.
+	if (default.SUPPORT_MOBILITY_BONUS != 0 && GetUnitFloat(MutableUnit, 'UT_Support_MobilityApplied') == 0)
+	{
+		ShiftStat(MutableUnit, eStat_Mobility, default.SUPPORT_MOBILITY_BONUS);
+		MutableUnit.SetUnitFloatValue('UT_Support_MobilityApplied', default.SUPPORT_MOBILITY_BONUS, eCleanup_Never);
+	}
+}
+
+static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+{
+	local float Applied;
+
+	Applied = GetUnitFloat(MutableUnit, 'UT_Support_MobilityApplied');
+	if (Applied != 0)
+	{
+		ShiftStat(MutableUnit, eStat_Mobility, -Applied);
+		MutableUnit.ClearUnitValue('UT_Support_MobilityApplied');
+	}
 }
 
 // Vests can no longer be equipped in Utility (CanAddItemToInventory_CH_Improved): one already carried there
