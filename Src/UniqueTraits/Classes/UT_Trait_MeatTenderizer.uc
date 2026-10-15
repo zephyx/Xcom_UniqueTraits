@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_MeatTenderizer.uc
-//  PURPOSE: Meat Tenderizer: what the holder would STUN becomes "Tenderized" (-defense, -dodge, -mobility) for as many enemy turns as the stun
+//  PURPOSE: Meat Tenderizer: what the holder would STUN becomes "Tenderized" (-mobility, and +aim / +crit for every unit that attacks it, like a holotarget) for as many enemy turns as the stun
 //           would have taken (ceil(StunLevel / MEATTENDERIZER_STUN_ACTIONS_PER_TURN)), and what he would DISORIENT becomes "Slightly Tenderized"
 //           (lighter malus, the disorient's own duration). Each time one is applied the holder gets a standard action point back (max one per turn).
 //           Tenderized and Slightly Tenderized do not stack: only Tenderized stays.
@@ -20,8 +20,8 @@
 class UT_Trait_MeatTenderizer extends UT_TraitBase config(UniqueTraits);
 
 var config int MEATTENDERIZER_STUN_ACTIONS_PER_TURN;
-var config int MEATTENDERIZER_DEFENSE_MALUS, MEATTENDERIZER_DODGE_MALUS, MEATTENDERIZER_MOBILITY_MALUS;
-var config int MEATTENDERIZER_SLIGHT_DEFENSE_MALUS, MEATTENDERIZER_SLIGHT_DODGE_MALUS, MEATTENDERIZER_SLIGHT_MOBILITY_MALUS;
+var config int MEATTENDERIZER_AIM_BONUS, MEATTENDERIZER_CRIT_BONUS, MEATTENDERIZER_MOBILITY_MALUS;
+var config int MEATTENDERIZER_SLIGHT_AIM_BONUS, MEATTENDERIZER_SLIGHT_CRIT_BONUS, MEATTENDERIZER_SLIGHT_MOBILITY_MALUS;
 
 var localized string MEATTENDERIZER_TENDERIZED_NAME, MEATTENDERIZER_TENDERIZED_DESC;
 var localized string MEATTENDERIZER_SLIGHT_NAME, MEATTENDERIZER_SLIGHT_DESC;
@@ -156,31 +156,33 @@ static final function X2Effect_UT_Tenderized CreateTwin(X2Effect Original, bool 
 	local X2Condition_UnitEffects NoFullTenderized;
 	local X2Condition Condition;
 	local string DisplayName, Desc;
-	local int DefenseMalus, DodgeMalus, MobilityMalus;
+	local int AimBonus, CritBonus, MobilityMalus;
 
 	if (bSlight)
 	{
-		DefenseMalus = default.MEATTENDERIZER_SLIGHT_DEFENSE_MALUS;
-		DodgeMalus = default.MEATTENDERIZER_SLIGHT_DODGE_MALUS;
+		AimBonus = default.MEATTENDERIZER_SLIGHT_AIM_BONUS;
+		CritBonus = default.MEATTENDERIZER_SLIGHT_CRIT_BONUS;
 		MobilityMalus = default.MEATTENDERIZER_SLIGHT_MOBILITY_MALUS;
 		DisplayName = default.MEATTENDERIZER_SLIGHT_NAME;
 		Desc = default.MEATTENDERIZER_SLIGHT_DESC;
 	}
 	else
 	{
-		DefenseMalus = default.MEATTENDERIZER_DEFENSE_MALUS;
-		DodgeMalus = default.MEATTENDERIZER_DODGE_MALUS;
+		AimBonus = default.MEATTENDERIZER_AIM_BONUS;
+		CritBonus = default.MEATTENDERIZER_CRIT_BONUS;
 		MobilityMalus = default.MEATTENDERIZER_MOBILITY_MALUS;
 		DisplayName = default.MEATTENDERIZER_TENDERIZED_NAME;
 		Desc = default.MEATTENDERIZER_TENDERIZED_DESC;
 	}
-	Desc = Repl(Desc, "%DEF", string(DefenseMalus));
-	Desc = Repl(Desc, "%DODGE", string(DodgeMalus));
+	Desc = Repl(Desc, "%AIM", string(AimBonus));
+	Desc = Repl(Desc, "%CRIT", string(CritBonus));
 	Desc = Repl(Desc, "%MOB", string(MobilityMalus));
 
 	Twin = new class'X2Effect_UT_Tenderized';
 	Twin.bSlight = bSlight;
 	Twin.SlightEffectName = 'UT_MeatTenderizer_SlightlyTenderized';
+	Twin.AimBonus = AimBonus;
+	Twin.CritBonus = CritBonus;
 	if (bSlight)
 		Twin.EffectName = Twin.SlightEffectName;
 	else
@@ -219,8 +221,6 @@ static final function X2Effect_UT_Tenderized CreateTwin(X2Effect Original, bool 
 		Twin.VisualizationFn = TenderizedVisualization;
 	Twin.BuildPersistentEffect(Turns, false, false, false, eGameRule_PlayerTurnBegin);
 	Twin.SetDisplayInfo(ePerkBuff_Penalty, DisplayName, Desc, "img:///UILibrary_PerkIcons.UIPerk_standard", true,, 'eAbilitySource_Perk');
-	Twin.AddPersistentStatChange(eStat_Defense, -DefenseMalus);
-	Twin.AddPersistentStatChange(eStat_Dodge, -DodgeMalus);
 	Twin.AddPersistentStatChange(eStat_Mobility, -MobilityMalus);
 	Twin.bRemoveWhenTargetDies = true;
 
