@@ -60,6 +60,9 @@ static function CHEventListenerTemplate CreateStrategyListeners()
 	Template.AddCHEvent('PreEndOfMonth', class'UT_Trait_Recruiter'.static.OnPreEndOfMonth_Recruiter, ELD_Immediate, 50);
 	// Recruiter: tracks the time spent as haven adviser (a staff slot, incl. LWOTC's liaison slots, was filled or emptied).
 	Template.AddCHEvent('StaffUpdated', class'UT_Trait_Recruiter'.static.OnStaffUpdated_Recruiter, ELD_OnStateSubmitted, 50);
+	// Self-reinforcement: a staff slot (here: of a covert operation not launched yet) was filled or emptied -> resync the operation's duration (+50 % once) and the
+	// doubling of the stat boost reward of the holder's slot.
+	Template.AddCHEvent('StaffUpdated', class'UT_Trait_SelfReinforcement'.static.OnStaffUpdated_SelfReinforcement, ELD_OnStateSubmitted, 50);
 	// MEC conversion (optional mods Playable MEC Troopers / Ted MEC Troopers for LWOTC): the soldier whose conversion project just started loses his trait.
 	Template.AddCHEvent('StaffUpdated', class'UT_MecConversion'.static.OnStaffUpdated_MecConversion, ELD_OnStateSubmitted, 50);
 	// Mind over matter: permanent stats that follow the max Will. No hook exists on a max Will change: every known cause resyncs (rank-up,

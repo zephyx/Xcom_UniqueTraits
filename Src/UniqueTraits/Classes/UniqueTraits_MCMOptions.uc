@@ -57,6 +57,8 @@ static final function array<string> GetRows()
 	Rows.AddItem("STAYFOCUS_CRIT_BONUS|UT_StayFocus|0|30|1|1|R");
 	Rows.AddItem("STAYFOCUS_RADIUS_TILES|UT_StayFocus|1|10|1|1|R");
 	Rows.AddItem("STAYFOCUS_COOLDOWN|UT_StayFocus|0|6|1|1|R");
+	Rows.AddItem("SELFREINFORCEMENT_DURATION_PCT|UT_SelfReinforcement|0|200|5|1|-");
+	Rows.AddItem("SELFREINFORCEMENT_STAT_MULT|UT_SelfReinforcement|1|5|1|1|-");
 	Rows.AddItem("SMOKER_WILL_REGEN|UT_Smoker|0|30|1|1|-");
 	Rows.AddItem("SMOKER_FATIGUE_INTERVAL_NORMAL|UT_Smoker|1|8|1|1|-");
 	Rows.AddItem("SMOKER_FATIGUE_INTERVAL_TIRED|UT_Smoker|1|8|1|1|-");
@@ -217,6 +219,8 @@ static final function int GetCurrent(name Key)
 		case 'STAYFOCUS_CRIT_BONUS': return class'UT_Trait_StayFocus'.default.STAYFOCUS_CRIT_BONUS;
 		case 'STAYFOCUS_RADIUS_TILES': return class'UT_Trait_StayFocus'.default.STAYFOCUS_RADIUS_TILES;
 		case 'STAYFOCUS_COOLDOWN': return class'UT_Trait_StayFocus'.default.STAYFOCUS_COOLDOWN;
+		case 'SELFREINFORCEMENT_DURATION_PCT': return class'UT_Trait_SelfReinforcement'.default.SELFREINFORCEMENT_DURATION_PCT;
+		case 'SELFREINFORCEMENT_STAT_MULT': return class'UT_Trait_SelfReinforcement'.default.SELFREINFORCEMENT_STAT_MULT;
 		case 'SMOKER_WILL_REGEN': return class'UT_Trait_Smoker'.default.SMOKER_WILL_REGEN;
 		case 'SMOKER_FATIGUE_INTERVAL_NORMAL': return class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_NORMAL;
 		case 'SMOKER_FATIGUE_INTERVAL_TIRED': return class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_TIRED;
@@ -378,6 +382,8 @@ static final function SetCurrent(name Key, int Value)
 		case 'STAYFOCUS_CRIT_BONUS': class'UT_Trait_StayFocus'.default.STAYFOCUS_CRIT_BONUS = Value; break;
 		case 'STAYFOCUS_RADIUS_TILES': class'UT_Trait_StayFocus'.default.STAYFOCUS_RADIUS_TILES = Value; break;
 		case 'STAYFOCUS_COOLDOWN': class'UT_Trait_StayFocus'.default.STAYFOCUS_COOLDOWN = Value; break;
+		case 'SELFREINFORCEMENT_DURATION_PCT': class'UT_Trait_SelfReinforcement'.default.SELFREINFORCEMENT_DURATION_PCT = Value; break;
+		case 'SELFREINFORCEMENT_STAT_MULT': class'UT_Trait_SelfReinforcement'.default.SELFREINFORCEMENT_STAT_MULT = Value; break;
 		case 'SMOKER_WILL_REGEN': class'UT_Trait_Smoker'.default.SMOKER_WILL_REGEN = Value; break;
 		case 'SMOKER_FATIGUE_INTERVAL_NORMAL': class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_NORMAL = Value; break;
 		case 'SMOKER_FATIGUE_INTERVAL_TIRED': class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_TIRED = Value; break;

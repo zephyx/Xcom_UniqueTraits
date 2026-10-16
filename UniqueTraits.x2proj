@@ -53,6 +53,7 @@
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_BountyHunter.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Cyborg.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Recruiter.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_SelfReinforcement.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_YoungDoctor.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Chemist.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_PsychicBond.uc" />
