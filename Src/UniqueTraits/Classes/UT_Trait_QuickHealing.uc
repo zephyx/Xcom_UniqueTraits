@@ -19,19 +19,18 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
-// Quick healing: +25% damage taken (base X2Effect_ConditionalDamageModifier, reused as-is) +
+// Quick healing: +25% damage taken (X2Effect_UT_DamageTakenMult: a percentage, applied in CHL's post-default hook) +
 // the recovery-time mechanic (OnCleanupTacticalMission_QuickHealing below).
 static function X2AbilityTemplate QuickHealing()
 {
 	local X2AbilityTemplate Template;
-	local X2Effect_ConditionalDamageModifier DamageTakenEffect;
+	local X2Effect_UT_DamageTakenMult DamageTakenEffect;
 
 	Template = PurePassive('UT_QuickHealing', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
 
-	DamageTakenEffect = new class'X2Effect_ConditionalDamageModifier';
+	DamageTakenEffect = new class'X2Effect_UT_DamageTakenMult';
 	DamageTakenEffect.EffectName = 'UT_QuickHealing_DamageTaken';
-	DamageTakenEffect.bModifyIncomingDamage = true;
-	DamageTakenEffect.DamageModifier = default.QUICKHEALING_DAMAGE_TAKEN_MULT;
+	DamageTakenEffect.DamageMultiplier = default.QUICKHEALING_DAMAGE_TAKEN_MULT;
 	DamageTakenEffect.BuildPersistentEffect(1, true, false);
 	DamageTakenEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(DamageTakenEffect);

@@ -1,7 +1,8 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_ManiacExplosive.uc
-//  PURPOSE: Maniac explosive. UT_ManiacExplosive carries the malus (the primary weapon deals MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT%
-//           less damage, X2Effect_UT_PrimaryWeaponMalus); the +3 grenade pockets are the UT_ManiacExtraPockets CHItemSlot template
+//  PURPOSE: Maniac explosive. UT_ManiacExplosive carries the malus (the primary weapon's BASE damage is reduced by
+//           MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT%, before any other damage modifier: X2Effect_UT_PrimaryWeaponMalus, pre-default hook);
+//           the +3 grenade pockets are the UT_ManiacExtraPockets CHItemSlot template
 //           (CreateExtraPocketsSlot below, registered by X2ItemSlot_UniqueTraits.uc). Its second ability, UT_ManiacImproviseGrenade,
 //           is a limited-use activated ability that conjures a free explosive grenade, frag or plasma (if researched), added
 //           permanently to the holder's inventory for the rest of the mission.
@@ -11,7 +12,7 @@ class UT_Trait_ManiacExplosive extends UT_TraitBase config(UniqueTraits);
 var config int MANIAC_EXTRA_GRENADE_POCKETS;
 var localized string ManiacPocketsSlotName, ManiacPocketsSlotLetter;
 
-// Damage malus when the primary weapon is used (X2Effect_UT_PrimaryWeaponMalus).
+// Malus on the BASE damage of the primary weapon, before any other modifier (X2Effect_UT_PrimaryWeaponMalus).
 var config int MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT;
 var config name MANIAC_IMPROVISE_GRENADE_ITEM_NAME;
 // Better grenade once a research is done (first match wins): parallel lists, see X2Effect_UT_TemporaryItem.ResearchProjectNames.
