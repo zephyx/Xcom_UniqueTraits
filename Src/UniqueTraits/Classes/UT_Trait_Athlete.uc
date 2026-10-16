@@ -21,7 +21,7 @@ static function X2AbilityTemplate Athlete()
 	local X2AbilityTemplate Template;
 	local X2Effect_PersistentStatChange StatEffect;
 
-	Template = PurePassive('UT_Athlete', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Athlete', "img:///UniqueTraits_Icons.UT_Athlete", true);
 
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Athlete';

@@ -27,7 +27,7 @@ static function X2AbilityTemplate AllInArms()
 	local X2Effect_PersistentStatChange StatEffect;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'UT_AllInArms');
-	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_standard";
+	Template.IconImage = "img:///UniqueTraits_Icons.UT_AllInArms";
 	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
 	Template.AbilityToHitCalc = default.DeadEye;
 	Template.AbilityTargetStyle = default.SelfTarget;

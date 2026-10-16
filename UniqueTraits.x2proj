@@ -20,6 +20,9 @@
     <Folder Include="Src\ModConfigMenuAPI\Classes\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\UniqueTraits_Icons.upk">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="ReadMe.txt" />
     <Content Include="ModPreview.jpg" />
     <Content Include="Config\XComEditor.ini" />

@@ -24,7 +24,7 @@ static function X2AbilityTemplate BaseballPlayer()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_WeakExplosives WeakExplosivesEffect;
 
-	Template = PurePassive('UT_BaseballPlayer', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_BaseballPlayer', "img:///UniqueTraits_Icons.UT_BaseballPlayer", true);
 
 	WeakExplosivesEffect = new class'X2Effect_UT_WeakExplosives';
 	WeakExplosivesEffect.EffectName = 'UT_BaseballPlayer_WeakExplosives';

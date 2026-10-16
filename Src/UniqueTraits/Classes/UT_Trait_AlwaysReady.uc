@@ -28,7 +28,7 @@ static function X2AbilityTemplate AlwaysReady()
 {
 	local X2AbilityTemplate Template;
 
-	Template = PurePassive('UT_AlwaysReady', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_AlwaysReady', "img:///UniqueTraits_Icons.UT_AlwaysReady", true);
 
 	return Template;
 }

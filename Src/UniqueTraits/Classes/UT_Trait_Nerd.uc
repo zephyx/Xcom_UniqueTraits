@@ -29,7 +29,7 @@ static function X2AbilityTemplate Nerd()
 	local X2AbilityTemplate Template;
 	local X2Effect_MeleeDamageAdjust MeleeEffect;
 
-	Template = PurePassive('UT_Nerd', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Nerd', "img:///UniqueTraits_Icons.UT_Nerd", true);
 
 	MeleeEffect = new class'X2Effect_MeleeDamageAdjust';
 	MeleeEffect.EffectName = 'UT_Nerd_MeleeVulnerability';

@@ -35,7 +35,7 @@ static function X2AbilityTemplate ManiacExplosive()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_PrimaryWeaponMalus MalusEffect;
 
-	Template = PurePassive('UT_ManiacExplosive', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_ManiacExplosive', "img:///UniqueTraits_Icons.UT_ManiacExplosive", true);
 
 	MalusEffect = new class'X2Effect_UT_PrimaryWeaponMalus';
 	MalusEffect.EffectName = 'UT_ManiacExplosive_PrimaryWeaponMalus';

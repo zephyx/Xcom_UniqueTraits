@@ -28,7 +28,7 @@ static function X2AbilityTemplate Scout()
 	local X2Effect_PersistentStatChange StatEffect;
 	local X2Effect_UT_TemporaryItem ScannerEffect;
 
-	Template = PurePassive('UT_Scout', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Scout', "img:///UniqueTraits_Icons.UT_Scout", true);
 
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Scout';

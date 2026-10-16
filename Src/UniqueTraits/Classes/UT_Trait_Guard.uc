@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_Guard.uc
-//  PURPOSE: Guard: -15 aim, +25 aim on overwatch/reaction shots which can crit (base-game effect classes).
+//  PURPOSE: Guard: -15 aim, +25 aim on every overwatch/reaction attack, ranged or melee (any ability whose to-hit calc has bReactionFire), which can crit (base-game effect classes).
 //---------------------------------------------------------------------------------------
 class UT_Trait_Guard extends UT_TraitBase config(UniqueTraits);
 
@@ -15,14 +15,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
-// Guard: -15 aim, +25 aim on overwatch/reaction shots and those shots can crit.
+// Guard: -15 aim, +25 aim on every overwatch/reaction attack (ranged or melee) and those attacks can crit.
 static function X2AbilityTemplate Guard()
 {
 	local X2AbilityTemplate Template;
 	local X2Effect_PersistentStatChange StatEffect;
 	local X2Effect_ModifyReactionFire ReactionEffect;
 
-	Template = PurePassive('UT_Guard', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Guard', "img:///UniqueTraits_Icons.UT_Guard", true);
 
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Guard';

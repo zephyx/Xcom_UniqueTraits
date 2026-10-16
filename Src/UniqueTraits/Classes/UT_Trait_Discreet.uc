@@ -23,7 +23,7 @@ static function X2AbilityTemplate Discreet()
 	local X2Effect_PersistentStatChange StatEffect;
 	local X2Effect_UT_WeakPrimaryWeapons WeakPrimaryEffect;
 
-	Template = PurePassive('UT_Discreet', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Discreet', "img:///UniqueTraits_Icons.UT_Discreet", true);
 
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Discreet';

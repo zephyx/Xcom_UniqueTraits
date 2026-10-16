@@ -36,7 +36,7 @@ static function X2AbilityTemplate Support()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_TemporaryItem MedikitEffect;
 
-	Template = PurePassive('UT_Support', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Support', "img:///UniqueTraits_Icons.UT_Support", true);
 
 	MedikitEffect = new class'X2Effect_UT_TemporaryItem';
 	MedikitEffect.EffectName = 'UT_Support_FreeMedikit';
