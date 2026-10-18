@@ -36,7 +36,7 @@ static function X2AbilityTemplate LaserDesignator()
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'UT_LaserDesignator');
 
-	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_standard";
+	Template.IconImage = "img:///UniqueTraits_Icons.UT_LaserDesignator";
 	Template.AbilitySourceName = 'eAbilitySource_Perk';
 	Template.Hostility = eHostility_Neutral;
 	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;

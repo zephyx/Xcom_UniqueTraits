@@ -33,7 +33,7 @@ static function X2AbilityTemplate Shredder()
 	local X2Effect_UT_Shredder ShredderEffect;
 	local name DamageType;
 
-	Template = PurePassive('UT_Shredder', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Shredder', "img:///UniqueTraits_Icons.UT_Shredder", true);
 
 	ShredderEffect = new class'X2Effect_UT_Shredder';
 	ShredderEffect.AcidTickBonus = default.SHREDDER_ACID_TICK_BONUS;

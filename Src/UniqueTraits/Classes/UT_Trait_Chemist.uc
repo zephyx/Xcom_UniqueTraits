@@ -28,7 +28,7 @@ static function X2AbilityTemplate Chemist()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_DoTVulnerability VulnerabilityEffect;
 
-	Template = PurePassive('UT_Chemist', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Chemist', "img:///UniqueTraits_Icons.UT_Chemist", true);
 
 	VulnerabilityEffect = new class'X2Effect_UT_DoTVulnerability';
 	VulnerabilityEffect.EffectName = 'UT_Chemist_DoTVulnerability';

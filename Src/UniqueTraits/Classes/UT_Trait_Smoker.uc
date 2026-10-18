@@ -30,7 +30,7 @@ static function X2AbilityTemplate Smoker()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_TemporaryItem GrenadeEffect;
 
-	Template = PurePassive('UT_Smoker', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Smoker', "img:///UniqueTraits_Icons.UT_Smoker", true);
 
 	GrenadeEffect = new class'X2Effect_UT_TemporaryItem';
 	GrenadeEffect.EffectName = 'UT_Smoker_FreeSmokeGrenades';

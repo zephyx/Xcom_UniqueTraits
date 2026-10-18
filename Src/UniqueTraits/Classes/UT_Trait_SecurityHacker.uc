@@ -38,7 +38,7 @@ static function array<X2DataTemplate> CreateTemplates()
 	local array<X2DataTemplate> Templates;
 	local X2AbilityTemplate Passive;
 
-	Passive = PurePassive('UT_SecurityHacker', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Passive = PurePassive('UT_SecurityHacker', "img:///UniqueTraits_Icons.UT_SecurityHacker", true);
 	Passive.AdditionalAbilities.AddItem('UT_SecurityHackerBacklash');
 	Templates.AddItem(Passive);
 	Templates.AddItem(SecurityHackerBacklash());

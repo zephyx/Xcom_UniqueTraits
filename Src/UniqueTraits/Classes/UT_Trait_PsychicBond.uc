@@ -28,7 +28,7 @@ static function X2AbilityTemplate PsychicBond()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_BondStats BondEffect;
 
-	Template = PurePassive('UT_PsychicBond', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_PsychicBond', "img:///UniqueTraits_Icons.UT_PsychicBond", true);
 
 	BondEffect = new class'X2Effect_UT_BondStats';
 	BondEffect.EffectName = 'UT_PsychicBond_Stats';

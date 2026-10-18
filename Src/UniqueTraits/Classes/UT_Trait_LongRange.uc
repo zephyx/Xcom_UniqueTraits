@@ -22,7 +22,7 @@ static function X2AbilityTemplate LongRange()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_LongRange RangeEffect;
 
-	Template = PurePassive('UT_LongRange', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_LongRange', "img:///UniqueTraits_Icons.UT_LongRange", true);
 
 	RangeEffect = new class'X2Effect_UT_LongRange';
 	RangeEffect.EffectName = 'UT_LongRange_Effect';

@@ -30,7 +30,7 @@ static function array<X2DataTemplate> CreateTemplates()
 // Self-reinforcement: a bare passive, everything happens in OnStaffUpdated_SelfReinforcement.
 static function X2AbilityTemplate SelfReinforcement()
 {
-	return PurePassive('UT_SelfReinforcement', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	return PurePassive('UT_SelfReinforcement', "img:///UniqueTraits_Icons.UT_SelfReinforcement", true);
 }
 
 // 'StaffUpdated' (a staff slot was filled or emptied): resyncs the covert operation that slot belongs to, if it is one and not launched yet.

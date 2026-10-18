@@ -31,7 +31,7 @@ static function array<X2DataTemplate> CreateTemplates()
 // A bare icon holder: the stats are permanent changes (SyncMindOverMatterStats), the recovery time a handler.
 static function X2AbilityTemplate MindOverMatter()
 {
-	return PurePassive('UT_MindOverMatter', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	return PurePassive('UT_MindOverMatter', "img:///UniqueTraits_Icons.UT_MindOverMatter", true);
 }
 
 //---------------------------------------------------------------------------------------

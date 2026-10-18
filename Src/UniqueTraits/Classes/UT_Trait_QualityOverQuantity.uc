@@ -25,7 +25,7 @@ static function X2AbilityTemplate QualityOverQuantity()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_QualityCrit CritEffect;
 
-	Template = PurePassive('UT_QualityOverQuantity', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_QualityOverQuantity', "img:///UniqueTraits_Icons.UT_QualityOverQuantity", true);
 
 	CritEffect = new class'X2Effect_UT_QualityCrit';
 	CritEffect.EffectName = 'UT_QualityOverQuantity_Crit';

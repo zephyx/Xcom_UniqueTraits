@@ -34,7 +34,7 @@ static function X2AbilityTemplate StayFocus()
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'UT_StayFocus');
 
-	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_standard";
+	Template.IconImage = "img:///UniqueTraits_Icons.UT_StayFocus";
 	Template.AbilitySourceName = 'eAbilitySource_Perk';
 	Template.Hostility = eHostility_Defensive;
 	Template.AbilityToHitCalc = default.DeadEye;

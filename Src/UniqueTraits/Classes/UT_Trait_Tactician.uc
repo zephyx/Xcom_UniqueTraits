@@ -26,7 +26,7 @@ static function X2AbilityTemplate Tactician()
 	local X2AbilityTemplate Template;
 	local X2Effect_PersistentStatChange StatEffect;
 
-	Template = PurePassive('UT_Tactician', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Tactician', "img:///UniqueTraits_Icons.UT_Tactician", true);
 
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Tactician';

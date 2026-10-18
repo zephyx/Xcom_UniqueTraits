@@ -24,7 +24,7 @@ static function X2AbilityTemplate PsiAdept()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_PsiAdept PsiEffect;
 
-	Template = PurePassive('UT_PsiAdept', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_PsiAdept', "img:///UniqueTraits_Icons.UT_PsiAdept", true);
 
 	PsiEffect = new class'X2Effect_UT_PsiAdept';
 	PsiEffect.EffectName = 'UT_PsiAdept_Effect';

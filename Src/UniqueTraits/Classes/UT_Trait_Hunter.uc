@@ -24,7 +24,7 @@ static function X2AbilityTemplate Hunter()
 	local X2AbilityTemplate Template;
 	local X2Effect_PersistentStatChange StatEffect;
 
-	Template = PurePassive('UT_Hunter', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Hunter', "img:///UniqueTraits_Icons.UT_Hunter", true);
 
 	StatEffect = new class'X2Effect_PersistentStatChange';
 	StatEffect.EffectName = 'UT_Hunter_Detection';

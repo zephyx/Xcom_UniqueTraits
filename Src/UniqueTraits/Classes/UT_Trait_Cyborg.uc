@@ -30,7 +30,7 @@ static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
 
-	Templates.AddItem(PurePassive('UT_Cyborg', "img:///UILibrary_PerkIcons.UIPerk_standard", true));
+	Templates.AddItem(PurePassive('UT_Cyborg', "img:///UniqueTraits_Icons.UT_Cyborg", true));
 
 	return Templates;
 }

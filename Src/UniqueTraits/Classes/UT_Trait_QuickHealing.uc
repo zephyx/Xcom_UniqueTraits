@@ -26,7 +26,7 @@ static function X2AbilityTemplate QuickHealing()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_DamageTakenMult DamageTakenEffect;
 
-	Template = PurePassive('UT_QuickHealing', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_QuickHealing', "img:///UniqueTraits_Icons.UT_QuickHealing", true);
 
 	DamageTakenEffect = new class'X2Effect_UT_DamageTakenMult';
 	DamageTakenEffect.EffectName = 'UT_QuickHealing_DamageTaken';

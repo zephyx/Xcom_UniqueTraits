@@ -24,7 +24,7 @@ static function X2AbilityTemplate Thief()
 {
 	local X2AbilityTemplate Template;
 
-	Template = PurePassive('UT_Thief', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Thief', "img:///UniqueTraits_Icons.UT_Thief", true);
 
 	return Template;
 }

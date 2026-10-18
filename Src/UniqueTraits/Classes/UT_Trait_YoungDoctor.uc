@@ -36,7 +36,7 @@ static function X2AbilityTemplate YoungDoctor()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_TemporaryItem MedikitEffect;
 
-	Template = PurePassive('UT_YoungDoctor', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_YoungDoctor', "img:///UniqueTraits_Icons.UT_YoungDoctor", true);
 
 	MedikitEffect = new class'X2Effect_UT_TemporaryItem';
 	MedikitEffect.EffectName = 'UT_YoungDoctor_FreeMedikit';

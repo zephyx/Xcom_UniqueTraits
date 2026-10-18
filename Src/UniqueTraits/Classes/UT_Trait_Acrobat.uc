@@ -21,7 +21,7 @@ static function X2AbilityTemplate Acrobat()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_AcrobatMalus MalusEffect;
 
-	Template = PurePassive('UT_Acrobat', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Acrobat', "img:///UniqueTraits_Icons.UT_Acrobat", true);
 
 	MalusEffect = new class'X2Effect_UT_AcrobatMalus';
 	MalusEffect.EffectName = 'UT_Acrobat_Malus';

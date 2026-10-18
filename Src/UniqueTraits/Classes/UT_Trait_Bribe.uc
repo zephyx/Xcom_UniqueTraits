@@ -27,7 +27,7 @@ static function X2AbilityTemplate Bribe()
 {
 	local X2AbilityTemplate Template;
 
-	Template = PurePassive('UT_Bribe', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Bribe', "img:///UniqueTraits_Icons.UT_Bribe", true);
 
 	return Template;
 }

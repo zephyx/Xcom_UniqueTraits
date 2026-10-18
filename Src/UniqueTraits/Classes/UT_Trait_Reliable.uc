@@ -36,7 +36,7 @@ static function X2AbilityTemplate Reliable()
 	local X2Effect_UT_Reliable ReliableEffect;
 	local X2AbilityTrigger_UnitPostBeginPlay LateTrigger;
 
-	Template = PurePassive('UT_Reliable', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Reliable', "img:///UniqueTraits_Icons.UT_Reliable", true);
 
 	LateTrigger = new class'X2AbilityTrigger_UnitPostBeginPlay';
 	LateTrigger.Priority = RELIABLE_TRIGGER_PRIORITY;

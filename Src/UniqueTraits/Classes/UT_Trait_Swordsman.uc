@@ -29,7 +29,7 @@ static function X2AbilityTemplate Swordsman()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_Swordsman SwordEffect;
 
-	Template = PurePassive('UT_Swordsman', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Swordsman', "img:///UniqueTraits_Icons.UT_Swordsman", true);
 
 	SwordEffect = new class'X2Effect_UT_Swordsman';
 	SwordEffect.EffectName = 'UT_Swordsman_Effect';

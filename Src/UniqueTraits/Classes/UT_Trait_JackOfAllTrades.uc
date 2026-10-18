@@ -16,7 +16,7 @@ static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
 
-	Templates.AddItem(PurePassive('UT_JackOfAllTrades', "img:///UILibrary_PerkIcons.UIPerk_standard", true));
+	Templates.AddItem(PurePassive('UT_JackOfAllTrades', "img:///UniqueTraits_Icons.UT_JackOfAllTrades", true));
 
 	return Templates;
 }

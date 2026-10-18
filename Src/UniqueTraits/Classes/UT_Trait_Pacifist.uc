@@ -30,7 +30,7 @@ static function X2AbilityTemplate Pacifist()
 {
 	local X2AbilityTemplate Template;
 
-	Template = PurePassive('UT_Pacifist', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Pacifist', "img:///UniqueTraits_Icons.UT_Pacifist", true);
 	Template.AdditionalAbilities.AddItem('UT_PacifistStayCovered');
 
 	return Template;

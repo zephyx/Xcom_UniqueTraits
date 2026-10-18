@@ -28,7 +28,7 @@ static function X2AbilityTemplate Nemesis()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_Nemesis NemesisEffect;
 
-	Template = PurePassive('UT_Nemesis', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Nemesis', "img:///UniqueTraits_Icons.UT_Nemesis", true);
 
 	NemesisEffect = new class'X2Effect_UT_Nemesis';
 	NemesisEffect.AimPerKill = default.NEMESIS_AIM_PER_KILL;

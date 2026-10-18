@@ -40,7 +40,7 @@ static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
 
-	Templates.AddItem(PurePassive('UT_SomeoneDifferent', "img:///UILibrary_PerkIcons.UIPerk_standard", true));
+	Templates.AddItem(PurePassive('UT_SomeoneDifferent', "img:///UniqueTraits_Icons.UT_SomeoneDifferent", true));
 	Templates.AddItem(Mutant());
 	Templates.AddItem(SomeoneDifferentKnockout());
 
@@ -53,7 +53,7 @@ static function X2AbilityTemplate Mutant()
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_Mutant DamageEffect;
 
-	Template = PurePassive('UT_Mutant', "img:///UILibrary_PerkIcons.UIPerk_standard", true);
+	Template = PurePassive('UT_Mutant', "img:///UniqueTraits_Icons.UT_SomeoneDifferent_2", true);
 
 	DamageEffect = new class'X2Effect_UT_Mutant';
 	DamageEffect.EffectName = 'UT_Mutant_Damage';
