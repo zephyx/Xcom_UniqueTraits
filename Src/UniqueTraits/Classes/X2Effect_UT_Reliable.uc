@@ -36,7 +36,10 @@
 //---------------------------------------------------------------------------------------
 class X2Effect_UT_Reliable extends X2Effect_Persistent;
 
-// The note left for the delegate by the holder's shot being computed (CLASS defaults, mutated at run time: the delegate below is static).
+// The note left for the delegate by the holder's shot being computed. INSTANCE variables, on purpose: UnrealScript refuses to change at run time the default
+// of a property that is not config, so a static delegate could not share them. The delegate below is
+// therefore a method of this very effect object, which both GetToHitModifiers (called on the template's effect through EffectState.GetX2Effect()) and
+// UT_Trait_Reliable.OnPostTemplatesCreated (which takes the effect from the 'UT_Reliable' template) reach: it is ONE object.
 var transient X2AbilityToHitCalc PendingCalc;
 var transient XComGameState_Unit PendingAttacker, PendingTarget;
 
@@ -50,9 +53,9 @@ function GetToHitModifiers(XComGameState_Effect EffectState, XComGameState_Unit 
 	AbilityTemplate = AbilityState.GetMyTemplate();
 	if (AbilityTemplate != none)
 	{
-		default.PendingCalc = AbilityTemplate.AbilityToHitCalc;
-		default.PendingAttacker = Attacker;
-		default.PendingTarget = Target;
+		PendingCalc = AbilityTemplate.AbilityToHitCalc;
+		PendingAttacker = Attacker;
+		PendingTarget = Target;
 	}
 }
 
@@ -68,22 +71,29 @@ function bool ChangeHitResultForAttacker(XComGameState_Unit Attacker, XComGameSt
 	return false;
 }
 
+// Puts the delegate below in FRONT of a calc's OverrideFinalHitChanceFns.
+// A method of this object that names its own method as the delegate called by UT_Trait_Reliable.OnPostTemplatesCreated.
+function RegisterDelegate(X2AbilityToHitCalc Calc)
+{
+	Calc.OverrideFinalHitChanceFns.InsertItem(0, OverrideFinalHitChance_Reliable);
+}
+
 // The delegate of OverrideFinalHitChanceFns. Always returns false: it only reshapes the table, the finalization (default or LWOTC's) goes on with it.
-static function bool OverrideFinalHitChance_Reliable(X2AbilityToHitCalc AbilityToHitCalc, out ShotBreakdown ShotBreakdown)
+function bool OverrideFinalHitChance_Reliable(X2AbilityToHitCalc AbilityToHitCalc, out ShotBreakdown ShotBreakdown)
 {
 	local X2AbilityToHitCalc_StandardAim StandardAim;
 	local XComGameState_Unit ShotAttacker, ShotTarget;
 	local ShotModifierInfo ModInfo;
 	local int Crit, Divisor, AimGain, DodgeCut;
 
-	if (default.PendingCalc == none || default.PendingCalc != AbilityToHitCalc)
+	if (PendingCalc == none || PendingCalc != AbilityToHitCalc)
 		return false;
 
-	ShotAttacker = default.PendingAttacker;
-	ShotTarget = default.PendingTarget;
-	default.PendingCalc = none;
-	default.PendingAttacker = none;
-	default.PendingTarget = none;
+	ShotAttacker = PendingAttacker;
+	ShotTarget = PendingTarget;
+	PendingCalc = none;
+	PendingAttacker = none;
+	PendingTarget = none;
 
 	StandardAim = X2AbilityToHitCalc_StandardAim(AbilityToHitCalc);
 	Crit = ShotBreakdown.ResultTable[eHit_Crit];

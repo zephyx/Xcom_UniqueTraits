@@ -54,15 +54,33 @@ static function X2AbilityTemplate Reliable()
 
 // Puts the delegate in FRONT of OverrideFinalHitChanceFns on every StandardAim calc (LWOTC's own delegate is added by its OnPostTemplatesCreated and
 // must come after ours; this mod runs RUN_LAST and inserts at index 0 anyway). A calc object shared by several templates is handled once.
+// The delegate is a method of the effect object of the 'UT_Reliable' template (the same object the game calls GetToHitModifiers on), because it shares
+// instance variables with that hook (see X2Effect_UT_Reliable).
 static function OnPostTemplatesCreated()
 {
 	local X2AbilityTemplateManager AbilityManager;
 	local X2DataTemplate DataTemplate;
-	local X2AbilityTemplate Template;
+	local X2AbilityTemplate Template, ReliableTemplate;
+	local X2Effect Effect;
+	local X2Effect_UT_Reliable ReliableEffect;
 	local array<X2AbilityToHitCalc> Done;
 	local int Patched;
 
 	AbilityManager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
+
+	ReliableTemplate = AbilityManager.FindAbilityTemplate('UT_Reliable');
+	if (ReliableTemplate == none)
+		return;
+
+	foreach ReliableTemplate.AbilityTargetEffects(Effect)
+	{
+		ReliableEffect = X2Effect_UT_Reliable(Effect);
+		if (ReliableEffect != none)
+			break;
+	}
+	if (ReliableEffect == none)
+		return;
+
 	foreach AbilityManager.IterateTemplates(DataTemplate, none)
 	{
 		Template = X2AbilityTemplate(DataTemplate);
@@ -76,7 +94,7 @@ static function OnPostTemplatesCreated()
 			continue;
 
 		Done.AddItem(Template.AbilityToHitCalc);
-		Template.AbilityToHitCalc.OverrideFinalHitChanceFns.InsertItem(0, class'X2Effect_UT_Reliable'.static.OverrideFinalHitChance_Reliable);
+		ReliableEffect.RegisterDelegate(Template.AbilityToHitCalc);
 		++Patched;
 	}
 
