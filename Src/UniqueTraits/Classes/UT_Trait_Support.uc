@@ -1,7 +1,8 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_Support.uc
-//  PURPOSE: Support: a free medikit and a dedicated vest slot, but no offensive items in the other equipment
-//           slots. The vest slot itself is the UT_SupportVestSlot CHItemSlot template in
+//  PURPOSE: Support: a free medikit and a dedicated vest slot, but no offensive items in the UTILITY slots (the dedicated
+//           Grenade Pocket and Ammo Pocket are NOT restricted, they keep taking their own kind of item).
+//           The vest slot itself is the UT_SupportVestSlot CHItemSlot template in
 //           X2ItemSlot_UniqueTraits.uc, defined by CreateVestSlot below; the offensive-item block is
 //           X2DownloadableContentInfo_UniqueTraits.CanAddItemToInventory_CH_Improved (it only stops FUTURE
 //           equips, so OnGrant strips what the unit already carries). The free medikit is granted the same
@@ -19,7 +20,6 @@ var localized string SupportVestSlotName, SupportVestSlotLetter;
 var localized string SupportNoOffensiveItemReason;
 
 var config name SUPPORT_MEDIKIT_ITEM_NAME;
-var config name SUPPORT_GRENADEPOCKET_BACKFILL_ITEM_NAME;
 var config int SUPPORT_MOBILITY_BONUS;
 
 static function array<X2DataTemplate> CreateTemplates()
@@ -103,72 +103,30 @@ static final function MoveUtilityVestToVestSlot(XComGameState_Unit UnitState, XC
 	}
 }
 
-// Support's offensive-item block (CanAddItemToInventory_CH_Improved) only stops FUTURE equip attempts.
+// Support's offensive-item block (CanAddItemToInventory_CH_Improved) only stops FUTURE equip attempts. It only concerns the UTILITY slots, 
+// so the Grenade Pocket and the Ammo Pocket are left alone and nothing is stripped from them.
 static final function RemoveSupportOffensiveItems(XComGameState_Unit UnitState, XComGameState NewGameState)
 {
 	local XComGameState_HeadquartersXCom XComHQ;
-	local array<EInventorySlot> PocketSlots;
-	local EInventorySlot PocketSlot;
 	local array<XComGameState_Item> SlotItems;
 	local XComGameState_Item SlotItem;
 
-	PocketSlots.AddItem(eInvSlot_Utility);
-	PocketSlots.AddItem(eInvSlot_GrenadePocket);
-	PocketSlots.AddItem(eInvSlot_AmmoPocket);
-
 	XComHQ = XComGameState_HeadquartersXCom(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
 
-	foreach PocketSlots(PocketSlot)
+	SlotItems = UnitState.GetAllItemsInSlot(eInvSlot_Utility, NewGameState);
+	foreach SlotItems(SlotItem)
 	{
-		SlotItems = UnitState.GetAllItemsInSlot(PocketSlot, NewGameState);
-		foreach SlotItems(SlotItem)
-		{
-			if (!IsOffensiveWeaponItem(SlotItem.GetMyTemplate()))
-				continue;
+		if (!IsOffensiveWeaponItem(SlotItem.GetMyTemplate()))
+			continue;
 
-			SlotItem = XComGameState_Item(NewGameState.ModifyStateObject(class'XComGameState_Item', SlotItem.ObjectID));
-			if (UnitState.RemoveItemFromInventory(SlotItem, NewGameState) && XComHQ != none)
-				XComHQ.PutItemInInventory(NewGameState, SlotItem);
-		}
+		SlotItem = XComGameState_Item(NewGameState.ModifyStateObject(class'XComGameState_Item', SlotItem.ObjectID));
+		if (UnitState.RemoveItemFromInventory(SlotItem, NewGameState) && XComHQ != none)
+			XComHQ.PutItemInInventory(NewGameState, SlotItem);
 	}
-
-	BackfillSupportGrenadePocket(UnitState, NewGameState);
 }
 
-// Vanilla's own Grenade Pocket always wants at least one grenade equipped (CHItemSlot.
-// SlotGetMinimumEquipped defaults every vanilla eInvSlot_GrenadePocket to MinimumEquipped = 1)
-// Backfilling with a real, persistent Smoke Grenade here (same CreateInstanceFromTemplate +
-// AddItemToInventory pattern GrenadePocketPurchased itself uses) keeps the slot non-empty so that
-// auto-refill path never triggers at all.
-static final function BackfillSupportGrenadePocket(XComGameState_Unit UnitState, XComGameState NewGameState)
-{
-	local X2ItemTemplate BackfillTemplate;
-	local XComGameState_Item BackfillItem;
-	local name BackfillItemName;
-
-	if (!UnitState.HasGrenadePocket())
-		return;
-
-	if (UnitState.GetItemInSlot(eInvSlot_GrenadePocket, NewGameState) != none)
-		return;
-
-	BackfillItemName = default.SUPPORT_GRENADEPOCKET_BACKFILL_ITEM_NAME;
-	if (BackfillItemName == '')
-		BackfillItemName = 'SmokeGrenade';
-
-	BackfillTemplate = class'X2ItemTemplateManager'.static.GetItemTemplateManager().FindItemTemplate(BackfillItemName);
-	if (BackfillTemplate == none)
-	{
-		`log("UniqueTraits [WARN] : BackfillSupportGrenadePocket -- backfill item '" $ BackfillItemName $ "' is not a valid item template",, 'UniqueTraits');
-		return;
-	}
-
-	BackfillItem = BackfillTemplate.CreateInstanceFromTemplate(NewGameState);
-	UnitState.AddItemToInventory(BackfillItem, eInvSlot_GrenadePocket, NewGameState);
-}
-
-// Support: hides (not just grays out) from the Armory picker the offensive items (frag grenades, ammo, etc.) in
-// Utility/Grenade pocket/Ammo pocket, and vests in Utility (they go in the vest slot).
+// Support: hides (not just grays out) from the Armory picker the offensive items (frag grenades, ammo, etc.) and the vests in the Utility slots
+// (the vests go in the vest slot). The Grenade Pocket and the Ammo Pocket are not touched.
 static function EventListenerReturn OnOverrideShowItemInLockerList_Support(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
 {
 	local XComLWTuple Tuple;
@@ -182,28 +140,27 @@ static function EventListenerReturn OnOverrideShowItemInLockerList_Support(Objec
 		return ELR_NoInterrupt;
 
 	Slot = EInventorySlot(Tuple.Data[1].i);
-	if (Slot != eInvSlot_Utility && Slot != eInvSlot_GrenadePocket && Slot != eInvSlot_AmmoPocket)
+	if (Slot != eInvSlot_Utility)
 		return ELR_NoInterrupt;
 
 	UnitState = XComGameState_Unit(Tuple.Data[2].o);
 	if (UnitState == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(UnitState, 'UT_Support'))
 		return ELR_NoInterrupt;
 
-	if (IsOffensiveWeaponItem(ItemState.GetMyTemplate())
-		|| (Slot == eInvSlot_Utility && IsEligibleForVestSlot(ItemState.GetMyTemplate())))
+	if (IsOffensiveWeaponItem(ItemState.GetMyTemplate()) || IsEligibleForVestSlot(ItemState.GetMyTemplate()))
 		Tuple.Data[0].b = false;
 
 	return ELR_NoInterrupt;
 }
 
-// No offensive item in the utility/grenade/ammo pockets, no vest in Utility (it goes in the vest slot).
+// No offensive item and no vest in the Utility slots (the vests go in the vest slot). The dedicated Grenade Pocket and Ammo Pocket are NOT restricted
 static function bool IsItemBlocked(EInventorySlot Slot, X2ItemTemplate ItemTemplate, out string DisabledReason)
 {
-	if (Slot != eInvSlot_Utility && Slot != eInvSlot_GrenadePocket && Slot != eInvSlot_AmmoPocket)
+	if (Slot != eInvSlot_Utility)
 		return false;
 
 	// Vests live in Support's vest slot, not in Utility.
-	if (Slot == eInvSlot_Utility && IsEligibleForVestSlot(ItemTemplate))
+	if (IsEligibleForVestSlot(ItemTemplate))
 		return true;
 
 	if (!IsOffensiveWeaponItem(ItemTemplate))
