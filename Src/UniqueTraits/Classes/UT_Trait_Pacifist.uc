@@ -115,7 +115,7 @@ static function X2Effect_PersistentStatChange CreateCoveredEffect(X2AbilityTempl
 	return StatEffect;
 }
 
-// X2DownloadableContentInfo_UniqueTraits.OnPostTemplatesCreated: "never overwatch". Every ability that reserves overwatch points (the plain and the
+// UT_TraitBase.OnPostTemplatesCreated (called for every trait of the pool by X2DownloadableContentInfo_UniqueTraits): "never overwatch". Every ability that reserves overwatch points (the plain and the
 // pistol overwatch, Long Watch, the overwatch of other mods...: an X2Effect_ReserveOverwatchPoints, or a reserve effect of an overwatch action point type,
 // on the shooter, the target or the multi targets) gets a shooter condition that fails for a holder of this trait. Suppression, Kill Zone and the other
 // reserve types are NOT overwatch and are left alone.

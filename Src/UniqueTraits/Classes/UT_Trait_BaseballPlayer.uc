@@ -44,7 +44,7 @@ static function X2AbilityTemplate BaseballSalvo()
 	return PurePassive('UT_BaseballSalvo', "img:///UILibrary_PerkIcons.UIPerk_salvo", true);
 }
 
-// X2DownloadableContentInfo_UniqueTraits.OnPostTemplatesCreated: wherever 'Salvo' keeps an action cost from consuming every point (grenade throws and launches,
+// UT_TraitBase.OnPostTemplatesCreated (called for every trait of the pool by X2DownloadableContentInfo_UniqueTraits): wherever 'Salvo' keeps an action cost from consuming every point (grenade throws and launches,
 // heavy weapons, other mods' grenade abilities: any X2AbilityCost_ActionPoints that lists it), UT_BaseballSalvo does the same. Runs last (RUN_LAST), so the costs
 // other mods add to their templates are seen too.
 static function OnPostTemplatesCreated()

@@ -4,7 +4,8 @@
 //           auto-discovered as an X2DataSet, so each trait class returns its own ability
 //           template(s) from CreateTemplates(); this base does not override it (X2DataSet's own is empty). The hooks below are all
 //           no-ops by default; a trait overrides only the ones it needs. They are dispatched from
-//           X2DownloadableContentInfo_UniqueTraits (GrantTraitToUnit / ClearAssignedTrait, or RemoveUnitTrait / SetUnitTrait as a transaction) and
+//           X2DownloadableContentInfo_UniqueTraits (GrantTraitToUnit / ClearAssignedTrait, or RemoveUnitTrait / SetUnitTrait as a transaction;
+//           OnPostMission and OnPostTemplatesCreated on every trait of the pool) and
 //           X2EventListener_UniqueTraits (OnUnitRankUp) through
 //           UniqueTraits_TraitConfig.GetTraitClass(TraitID).
 //---------------------------------------------------------------------------------------
@@ -59,6 +60,13 @@ static final function string GetShotModifierLabel(X2Effect_Persistent Effect)
 // Called by X2DownloadableContentInfo_UniqueTraits.OnPostMission (CHL #212) on EVERY trait class once a mission is over and committed,
 // before the After Action screen: a trait that has something to do then checks for its own holders (supplies, upgrades...).
 static function OnPostMission()
+{
+}
+
+// Called by X2DownloadableContentInfo_UniqueTraits.OnPostTemplatesCreated on EVERY trait class of the pool (ini order) once all the templates exist, with this mod's
+// CHDLCRunOrder RUN_LAST (so the templates other mods add or change are already there): a trait that patches templates it does not own (another ability's cost, a
+// shared effect, a to-hit calc...) does it here. The traits' patches do not depend on each other's order.
+static function OnPostTemplatesCreated()
 {
 }
 

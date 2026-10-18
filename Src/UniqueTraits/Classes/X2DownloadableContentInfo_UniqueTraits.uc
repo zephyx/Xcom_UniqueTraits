@@ -23,14 +23,19 @@ static function OnPreCreateTemplates()
 	class'UniqueTraits_MCMOptions'.static.ApplyOverrides();
 }
 
-// Smoker splices its "doesn't end the turn" cost into the shared ThrowGrenade template; Meat Tenderizer adds a twin of every stun / disorient effect; Shredder copies the acid damage of its reference grenade; Pacifist closes the overwatch abilities; Baseball player's own Salvo is added to every cost that lists Salvo.
+// Every trait of the pool gets to patch the templates it does not own (UT_TraitBase.OnPostTemplatesCreated).
+// A trait taken out of the ini pool is no longer patched in.
 static event OnPostTemplatesCreated()
 {
-	class'UT_Trait_Smoker'.static.OnPostTemplatesCreated();
-	class'UT_Trait_MeatTenderizer'.static.OnPostTemplatesCreated();
-	class'UT_Trait_Shredder'.static.OnPostTemplatesCreated();
-	class'UT_Trait_Pacifist'.static.OnPostTemplatesCreated();
-	class'UT_Trait_BaseballPlayer'.static.OnPostTemplatesCreated();
+	local int i;
+	local class<UT_TraitBase> TraitClass;
+
+	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
+	{
+		TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[i].TraitID);
+		if (TraitClass != none)
+			TraitClass.static.OnPostTemplatesCreated();
+	}
 }
 
 // Dispatches to the unit's own trait (UT_TraitBase.IsItemBlocked): Maniac explosive's primary weapon block, Swordsman's

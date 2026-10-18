@@ -35,7 +35,7 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
-// X2DownloadableContentInfo_UniqueTraits.OnPostTemplatesCreated.
+// UT_TraitBase.OnPostTemplatesCreated (called for every trait of the pool by X2DownloadableContentInfo_UniqueTraits).
 static function OnPostTemplatesCreated()
 {
 	local X2AbilityTemplateManager AbilityManager;

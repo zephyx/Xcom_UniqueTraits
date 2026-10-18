@@ -60,7 +60,7 @@ static function X2AbilityTemplate ShredderAcid()
 	return Template;
 }
 
-// X2DownloadableContentInfo_UniqueTraits.OnPostTemplatesCreated: the acid of the shred deals what the acid effect of the reference grenade
+// UT_TraitBase.OnPostTemplatesCreated (called for every trait of the pool by X2DownloadableContentInfo_UniqueTraits): the acid of the shred deals what the acid effect of the reference grenade
 // (SHREDDER_ACID_REFERENCE_GRENADE, the plain acid grenade) deals per tick, damage and spread, whatever the game or a mod made it: it is read here,
 // once every template exists (this mod runs LAST, see Config/XComGame.ini). CreateAcidBurningStatusEffect takes the damage as an argument, there is no
 // global "acid damage". SHREDDER_ACID_DAMAGE / SHREDDER_ACID_SPREAD stay in use as the fallback when the grenade or its acid cannot be found.
