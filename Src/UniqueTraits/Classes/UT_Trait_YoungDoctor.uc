@@ -80,6 +80,52 @@ static function GrantKillXp(XComGameState_Unit Unit, float Multiplier)
 	}
 }
 
+// The NOMINAL heal of an activation: what the ability's X2Effect_ApplyMedikitHeal effects heal before the target's max HP caps it (PerUseHP, the research that
+// raises it, a gremlin's HealingBonus: the same rules as X2Effect_ApplyMedikitHeal.OnEffectAdded, which keeps the amount to itself and only calls ModifyCurrentStat,
+// so it cannot be read back afterwards). 0 for an ability with no such effect (A Harder War's Resuscitate...).
+static final function int GetNominalMedikitHeal(XComGameState_Ability AbilityState)
+{
+	local X2AbilityTemplate Template;
+	local X2Effect Effect;
+	local X2Effect_ApplyMedikitHeal MedikitHeal;
+	local XComGameState_HeadquartersXCom XComHQ;
+	local XComGameState_Item SourceWeapon;
+	local X2GremlinTemplate GremlinTemplate;
+	local int Amount, Total;
+
+	Template = AbilityState.GetMyTemplate();
+	if (Template == none)
+		return 0;
+
+	foreach Template.AbilityTargetEffects(Effect)
+	{
+		MedikitHeal = X2Effect_ApplyMedikitHeal(Effect);
+		if (MedikitHeal == none)
+			continue;
+
+		Amount = MedikitHeal.PerUseHP;
+
+		if (MedikitHeal.IncreasedHealProject != '')
+		{
+			XComHQ = XComGameState_HeadquartersXCom(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom', true));
+			if (XComHQ != none && XComHQ.IsTechResearched(MedikitHeal.IncreasedHealProject))
+				Amount = MedikitHeal.IncreasedPerUseHP;
+		}
+
+		SourceWeapon = AbilityState.GetSourceWeapon();
+		if (SourceWeapon != none)
+		{
+			GremlinTemplate = X2GremlinTemplate(SourceWeapon.GetMyTemplate());
+			if (GremlinTemplate != none)
+				Amount += GremlinTemplate.HealingBonus;
+		}
+
+		Total += Amount;
+	}
+
+	return Total;
+}
+
 // 'AbilityActivated' (ELD_Immediate, so GameState is still the ability's pending state, effects applied). Fires more than once per ability:
 // the interrupt step is skipped, and the work below is idempotent (the HP comparison is against the committed history, the XP is guarded by the
 // "already treated" marks).
@@ -91,7 +137,7 @@ static function EventListenerReturn OnAbilityActivated_YoungDoctor(Object EventD
 	local name AbilityName, HealedName;
 	local bool bHeal, bStabilize;
 	local UnitValue Value;
-	local int TargetID, Healed, Cut, Granted;
+	local int TargetID, Healed, Nominal, Cut, WantedHP, Granted;
 
 	if (!ParseAbilityActivation(GameState, EventSource, 'UT_YoungDoctor', AbilityContext, SourceUnit))
 		return ELR_NoInterrupt;
@@ -111,14 +157,25 @@ static function EventListenerReturn OnAbilityActivated_YoungDoctor(Object EventD
 	if (TargetUnit == none)
 		return ELR_NoInterrupt;
 
-	// The HP healed (pending HP against the last committed ones) are reduced; a stabilization that also heals (Resuscitate) is reduced too.
+	// The heal is reduced, and the reduction is taken on the NOMINAL heal of the ability, not on the HP that really went in: a medikit worth 4 HP cut by 25 %
+	// heals 3, so a soldier who misses only 3 HP gets his 3 HP (the cap at his max HP is applied AFTER the reduction, as it would be for any other heal).
+	// The nominal heal is read from the ability (GetNominalMedikitHeal); an ability without such an effect
+	// (a stabilization that also heals, like Resuscitate) falls back on the HP really healed (pending HP against the last committed ones).
 	PreviousTarget = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(TargetID));
 	if (PreviousTarget != none)
 	{
 		Healed = int(TargetUnit.GetCurrentStat(eStat_HP) - PreviousTarget.GetCurrentStat(eStat_HP));
-		Cut = Min(Round(Healed * default.YOUNGDOCTOR_HEAL_REDUCTION_PCT / 100.0), Healed - 1);
-		if (Healed > 0 && Cut > 0)
-			TargetUnit.ModifyCurrentStat(eStat_HP, -Cut);
+		if (Healed > 0)
+		{
+			Nominal = Max(Healed, GetNominalMedikitHeal(AbilityState));
+			Cut = Min(Round(Nominal * default.YOUNGDOCTOR_HEAL_REDUCTION_PCT / 100.0), Nominal - 1);
+			if (Cut > 0)
+			{
+				WantedHP = Min(int(TargetUnit.GetMaxStat(eStat_HP)), int(PreviousTarget.GetCurrentStat(eStat_HP)) + Nominal - Cut);
+				if (WantedHP < int(TargetUnit.GetCurrentStat(eStat_HP)))
+					TargetUnit.ModifyCurrentStat(eStat_HP, WantedHP - TargetUnit.GetCurrentStat(eStat_HP));
+			}
+		}
 	}
 
 	// The experience: a soldier not treated yet in this combat, within the limit of the rank.
