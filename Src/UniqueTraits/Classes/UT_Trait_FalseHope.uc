@@ -93,8 +93,8 @@ static final function ShiftFalseHopeStats(XComGameState_Unit UnitState, float Ai
 //    (with the NewGameState that holds the result), so nothing can be scaled yet; this runs
 //    ELD_OnStateSubmitted and the gain is the XP difference against the unit's previous version.
 // 2. LWOTC (bUseFullXpSystem=false in its XComGameData_XpData.ini: vanilla distributes NO XP, rank-ups
-//    depend on kills only): LWOTC's own listener for the same event (priority 90, so it runs BEFORE this
-//    one at priority 50, larger numbers run first) adds the mission's "experience" to the soldier's
+//    depend on kills only): LWOTC's own listener for the same event (priority 0: ours is registered at -10 
+//    and larger numbers run first, so ours runs AFTER it.
 //    'MissionExperience' UnitValue in a transaction of its own, which LWOTC later turns into kill
 //    equivalents ('OverrideTotalNumKills'). Only the NAME of that value is used here (no LW_Overhaul
 //    class referenced). The gain is MissionExperience minus UT_FalseHope_MissionXpSeen, the amount already

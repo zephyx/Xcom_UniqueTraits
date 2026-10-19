@@ -103,6 +103,29 @@ static function X2AbilityTemplate LaserDesignatorMark()
 	return Template;
 }
 
+// The restored Shadowstep must be listed when the unit is inspected: the UI lists the persistent effects that have display info (bDisplayInUI), which
+// the plain effect of LaserDesignatorMark() lacks. Copied from the real Shadowstep template once every template exists (so another mod's changes to its
+// text or icon are followed).
+static function OnPostTemplatesCreated()
+{
+	local X2AbilityTemplateManager Manager;
+	local X2AbilityTemplate ShadowstepTemplate, MarkTemplate;
+	local X2Effect_Persistent RestoreEffect;
+
+	Manager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
+	ShadowstepTemplate = Manager.FindAbilityTemplate('Shadowstep');
+	MarkTemplate = Manager.FindAbilityTemplate('UT_LaserDesignatorMark');
+	if (ShadowstepTemplate == none || MarkTemplate == none || MarkTemplate.AbilityTargetEffects.Length < 2)
+	{
+		`log("UniqueTraits [WARN] : Laser designator -- Shadowstep or UT_LaserDesignatorMark template not found, the restored Shadowstep will not be listed in the unit inspection",, 'UniqueTraits');
+		return;
+	}
+
+	RestoreEffect = X2Effect_Persistent(MarkTemplate.AbilityTargetEffects[1]);
+	if (RestoreEffect != none)
+		RestoreEffect.SetDisplayInfo(ePerkBuff_Passive, ShadowstepTemplate.LocFriendlyName, ShadowstepTemplate.GetMyLongDescription(), ShadowstepTemplate.IconImage,,, ShadowstepTemplate.AbilitySourceName);
+}
+
 static final function bool IsHolotargeted(XComGameState_Unit Target)
 {
 	local name EffectName;

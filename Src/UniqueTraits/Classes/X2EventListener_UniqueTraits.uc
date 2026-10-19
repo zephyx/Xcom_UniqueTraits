@@ -111,7 +111,9 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_AlwaysReady'.static.OnAbilityActivated_AlwaysReady, ELD_OnStateSubmitted, 50);
 	Template.AddCHEvent('PlayerTurnEnded', class'UT_Trait_Smoker'.static.OnPlayerTurnEnded_Smoker, ELD_OnStateSubmitted, 50);
 	Template.AddCHEvent('PlayerTurnEnded', class'UT_Trait_Hunter'.static.OnPlayerTurnEnded_Hunter, ELD_OnStateSubmitted, 50);
-	Template.AddCHEvent('OnDistributeTacticalGameEndXp', class'UT_Trait_FalseHope'.static.OnDistributeTacticalGameEndXp, ELD_OnStateSubmitted, 50);
+	// False Hope: priority -10 on purpose, it must run AFTER LWOTC's XP listener (which gives the mission experience), whose priority is 0: its ini section
+	// [LW_Overhaul.X2EventListener_XP] has no LISTENER_PRIORITY line, so the config int stays 0 instead of falling back on DEFAULT_LISTENER_PRIORITY (90).
+	Template.AddCHEvent('OnDistributeTacticalGameEndXp', class'UT_Trait_FalseHope'.static.OnDistributeTacticalGameEndXp, ELD_OnStateSubmitted, -10);
 	// Born to be chief: the sync point that actually *guarantees* the officer-rank bonus is correct in combat. Fires
 	// exactly ONCE, right as a mission's tactical state is built.
 	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_BornToBeChief'.static.OnTacticalBeginPlay, ELD_Immediate, 50);
