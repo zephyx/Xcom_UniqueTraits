@@ -136,9 +136,11 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	// Psychic Bond: the bondmate loses a share of the damage (once the damage is submitted, in a state of its own).
 	Template.AddCHEvent('UnitTakeEffectDamage', class'UT_Trait_PsychicBond'.static.OnUnitTakeEffectDamage_PsychicBond, ELD_OnStateSubmitted, 50);
 	// Security hacker: while the HOLDER hacks a security tower (from the ability that opens the hacking screen to the finalize / cancel ability), the
-	// tower offers the computers' rewards and a doubled lock (ELD_Immediate: inside the ability's pending state, before the screen reads them); If it succeeds, disables every security tower.
+	// tower's lock is raised by the force level (ELD_Immediate: inside the ability's pending state, before the screen reads it); if it succeeds, disables every security tower.
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_SecurityHacker'.static.OnAbilityActivated_SecurityHacker, ELD_Immediate, 50);
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_SecurityHacker'.static.OnAbilityActivated_SecurityHackerBacklash, ELD_OnStateSubmitted, 50);
+	// Security hacker: the XCOM ability points on top of the biggest reward of the tower (CHL #120, fired by AcquireHackRewards for each earned reward).
+	Template.AddCHEvent('PreAcquiredHackReward', class'UT_Trait_SecurityHacker'.static.OnPreAcquiredHackReward_SecurityHacker, ELD_Immediate, 50);
 	// Someone different: mission-start sync of its permanent stats, and the collapse (unconscious) at the start of the Nth XCOM turn.
 	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_SomeoneDifferent'.static.OnTacticalBeginPlay_SomeoneDifferent, ELD_Immediate, 50);
 	Template.AddCHEvent('PlayerTurnBegun', class'UT_Trait_SomeoneDifferent'.static.OnPlayerTurnBegun_SomeoneDifferent, ELD_OnStateSubmitted, 50);

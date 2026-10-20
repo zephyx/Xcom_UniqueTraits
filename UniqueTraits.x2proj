@@ -130,6 +130,7 @@
     <Content Include="Src\UniqueTraits\Classes\X2Condition_UT_PacifistNoOverwatch.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Item_UniqueTraits.uc" />
     <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_LootWindow.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_HackingScreen.uc" />
     <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_RookieTrait.uc" />
     <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_ClassChoice.uc" />
   </ItemGroup>

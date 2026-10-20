@@ -1,37 +1,43 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_SecurityHacker.uc
-//  PURPOSE: Security hacker: when the HOLDER hacks a security tower, the tower gives the same rewards as the computers (the mission's strategic
-//           deck) and its lock strength (the hack defense) is multiplied by SECURITYHACKER_DEFENSE_MULT. The price: a FAILED hack deals
-//           SECURITYHACKER_FAILURE_DAMAGE_PCT % of the hacker's MAX HP (rounded up) of damage to the hacker (a real wound dealt by a hidden ability, going through armor and the ablative
-//           protection, that LWOTC's Failsafe cannot cancel since it is not a hack reward), on top of the tower's normal failure penalty.
-//           And a SUCCESSFUL hack disables ALL the security towers of the mission, not only the one that was hacked.
-//           Another soldier hacking the same tower gets the normal tower.
-//           Like in the base game, after a carried-out hack (success or failure) the towers can no longer be hacked: the vanilla finalize sets
-//           BattleData.bTacticalHackCompleted when the hacked object has the tactical flag, and an object with that flag can no longer be hacked
-//           once it is set (XComGameState_InteractiveObject.CanInteractHack). The tower's tactical flag is off during the holder's attempt (it
-//           offers the strategic deck), so the finalize does not set it: the handler sets it itself when the tower had the flag.
+//  PURPOSE: Security hacker: when the HOLDER hacks a security tower, the tower's hack defense (its lock strength) is increased by a percentage that
+//           depends on the force level of the mission (SECURITYHACKER_DEFENSE_PCT_LOW / _MID / _HIGH, see GetDefenseMultiplier), and when he gets the
+//           BIGGEST reward of the tower (the highest MinHackSuccess of its list, normally the tier 2 one, see GetBiggestRewardIndex) he also earns
+//           XCOM ability points on top of that reward's own effect. The amount depends on the difficulty of the reward
+//           (GetAPReward: SECURITYHACKER_AP_MAX_DIFFICULTY / _BY_DIFFICULTY / _TOP) and is
+//           SECURITYHACKER_AP_REWARD_LATE once the XCOM player is past turn SECURITYHACKER_LATE_TURN. The points are given by OnPreAcquiredHackReward_
+//           SecurityHacker ('PreAcquiredHackReward', CHL #120, fired by X2HackRewardTemplateManager.AcquireHackRewards for each earned reward, with the
+//           pending state of the finalize ability); the hacking screen adds a line about them to the description of that reward for the holder
+//           (UIScreenListener_UT_HackingScreen: the hover preview of Perfect Information reads the original template and is left alone).
+//           The price: a FAILED hack deals SECURITYHACKER_FAILURE_DAMAGE_PCT % of the hacker's MAX HP (rounded up) of damage to the hacker (a real
+//           wound dealt by a hidden ability, going through armor and the ablative protection, that LWOTC's Failsafe cannot cancel since it is not a
+//           hack reward), on top of the tower's normal failure penalty. Another soldier hacking the same tower gets the normal tower.
 //           A hack is two abilities: the one that opens the hacking screen (its template has a FinalizeAbilityName) and the finalize / cancel
-//           ability. So the tower is changed for the duration of the holder's attempt only (one handler, 'AbilityActivated', ELD_Immediate, inside
+//           ability. So the defense is changed for the duration of the holder's attempt only (one handler, 'AbilityActivated', ELD_Immediate, inside
 //           the pending state of the ability):
-//           - Start (the ability that opens the screen, before the screen reads the lock strength and the reward list): the tower offers the
-//             COMPUTERS' rewards (the strategic deck, see below) and the lock strength becomes LockStrength * mult (SetLockStrengthExactly).
-//             The original values (the lock strength ALREADY includes the sitrep modifiers) are kept in UnitValues of the hacker (UT_SecHacker_*).
-//           - End (the finalize / cancel abilities, after the rewards were awarded in that very state): the original values are restored
-//             EXACTLY (the sitrep modifiers are not applied a second time). On a FINALIZE (not a cancel): if the hack succeeded, every other
-//             security tower is marked hacked and gets its 'ObjectHacked' event (what the mission's Kismet reacts to: the same as hacking it);
-//             if it failed, the hacker is flagged and takes the damage of a real ability right after (OnAbilityActivated_SecurityHackerBacklash).
-//           Which objects are "security towers": hackable interactive objects (MustBeHacked) whose archetype path (the state's ArchetypePath, or
-//           the actor's ObjectArchetype) contains one of SECURITYHACKER_TOWER_KEYWORDS (seen in the log: AdventTower.Archetypes.
-//           ARC_AdventTower_Hackable). Every hack the holder starts is logged with its archetype (matched or not).
+//           - Start (the ability that opens the screen, before the screen reads the lock strength): the lock strength becomes LockStrength * the
+//             multiplier of the force level (SetLockStrengthExactly). The original value (it ALREADY includes the sitrep modifiers) is kept in a
+//             UnitValue of the hacker (UT_SecHacker_*).
+//           - End (the finalize / cancel abilities, after the rewards were awarded in that very state): the original value is restored EXACTLY (the
+//             sitrep modifiers are not applied a second time). On a FINALIZE (not a cancel): if the hack succeeded, every other security tower is
+//             marked hacked and gets its 'ObjectHacked' event (what the mission's Kismet reacts to: the same as hacking it); if it failed, the hacker
+//             is flagged and takes the damage of a real ability right after (OnAbilityActivated_SecurityHackerBacklash).
 //---------------------------------------------------------------------------------------
 class UT_Trait_SecurityHacker extends UT_TraitBase config(UniqueTraits);
 
-var config float SECURITYHACKER_DEFENSE_MULT;   // a decimal number (1.0 to 3.0 in the Mod Config Menu)
+// Reinforcement of the tower's hack defense, in %, by force level of the mission: LOW below FORCE_LEVEL_MID, MID below FORCE_LEVEL_HIGH, HIGH from there on.
+var config int SECURITYHACKER_DEFENSE_PCT_LOW, SECURITYHACKER_DEFENSE_PCT_MID, SECURITYHACKER_DEFENSE_PCT_HIGH;
+var config int SECURITYHACKER_FORCE_LEVEL_MID, SECURITYHACKER_FORCE_LEVEL_HIGH;
 var config int SECURITYHACKER_FAILURE_DAMAGE_PCT;
+// XCOM ability points of the biggest reward: the first SECURITYHACKER_AP_BY_DIFFICULTY[i] whose SECURITYHACKER_AP_MAX_DIFFICULTY[i] is >= the MinHackSuccess of the
+// reward, else SECURITYHACKER_AP_TOP; SECURITYHACKER_AP_REWARD_LATE when the XCOM player is past turn SECURITYHACKER_LATE_TURN.
+var config array<int> SECURITYHACKER_AP_MAX_DIFFICULTY, SECURITYHACKER_AP_BY_DIFFICULTY;
+var config int SECURITYHACKER_AP_TOP, SECURITYHACKER_AP_REWARD_LATE, SECURITYHACKER_LATE_TURN;
 var config array<string> SECURITYHACKER_TOWER_KEYWORDS;
 var config array<name> SECURITYHACKER_END_ABILITIES;
 var config array<name> SECURITYHACKER_FINALIZE_ABILITIES;
 var localized string SECURITYHACKER_FLYOVER;
+var localized string SECURITYHACKER_AP_TEXT;   // added to the description of the biggest reward in the hacking screen, <Points/> = the amount
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -146,26 +152,139 @@ static final function LogHackSituation(XComGameState_InteractiveObject Tower)
 // TACTICAL deck [ie: Reinforcements_T0 (the bad reward of a failure), Override_T1, Targeting_AimAndCrit_T2]; the other hackable objects (a computer-like
 // object) have the strategic flag and give the STRATEGIC deck [ie: WatchList_T1, LootAlloys_T2].
 // XComGameState_InteractiveObject.GetHackRewards = the object's private list + (tactical flag ? tactical deck : strategic flag ? strategic deck : nothing).
-// For the holder's attempt the tower gets the strategic flag (not the tactical one) and, as its private list, the BAD rewards of the tactical
-// deck (the first entry of a deck is its failure reward): success = the computers' rewards, failure = the tower's own penalty.
-// Only done when the tower's private list is empty (what it offers equals its deck): otherwise its own rewards would be lost on restore, the
-// private list cannot be read back.
-static final function array<name> GetBadTacticalRewards(XComGameState_BattleData BattleData)
+// The biggest reward of a list = the one with the highest MinHackSuccess among the rewards that are not a bad thing (normally the tier 2 one, the last
+// of the list). INDEX_NONE when there is none.
+static final function int GetBiggestRewardIndex(array<name> Rewards)
 {
 	local X2HackRewardTemplateManager TemplateMan;
 	local X2HackRewardTemplate Template;
-	local array<name> Bad;
-	local name RewardName;
+	local int i, BestIndex, BestScore;
 
 	TemplateMan = class'X2HackRewardTemplateManager'.static.GetHackRewardTemplateManager();
-	foreach BattleData.TacticalHackRewards(RewardName)
+	BestIndex = INDEX_NONE;
+	BestScore = -1;
+	for (i = 0; i < Rewards.Length; ++i)
 	{
-		Template = TemplateMan.FindHackRewardTemplate(RewardName);
-		if (Template != none && Template.bBadThing)
-			Bad.AddItem(RewardName);
+		Template = TemplateMan.FindHackRewardTemplate(Rewards[i]);
+		if (Template == none || Template.bBadThing)
+			continue;
+
+		// ">=": on a tie the later one (the better in the list order) is kept.
+		if (Template.MinHackSuccess >= BestScore)
+		{
+			BestIndex = i;
+			BestScore = Template.MinHackSuccess;
+		}
 	}
 
-	return Bad;
+	return BestIndex;
+}
+
+// The factor applied to the tower's hack defense: 1 + (25 % below force level 8, 50 % below 15, 75 % from 15 on, by default) / 100. The force level is
+// the one of the mission (BattleData.GetForceLevel, which is the alien headquarters' level when the mission was created).
+static final function float GetDefenseMultiplier(XComGameState_BattleData BattleData)
+{
+	local int ForceLevel, Pct;
+
+	ForceLevel = (BattleData != none) ? BattleData.GetForceLevel() : 1;
+
+	if (ForceLevel < default.SECURITYHACKER_FORCE_LEVEL_MID)
+		Pct = default.SECURITYHACKER_DEFENSE_PCT_LOW;
+	else if (ForceLevel < default.SECURITYHACKER_FORCE_LEVEL_HIGH)
+		Pct = default.SECURITYHACKER_DEFENSE_PCT_MID;
+	else
+		Pct = default.SECURITYHACKER_DEFENSE_PCT_HIGH;
+
+	return 1.0 + float(Pct) / 100.0;
+}
+
+// True when the XCOM player of the hacker is past turn SECURITYHACKER_LATE_TURN: the ability points reward is then the reduced one.
+static final function bool IsLateTurn(XComGameState_Unit Hacker)
+{
+	local XComGameState_Player PlayerState;
+
+	PlayerState = XComGameState_Player(`XCOMHISTORY.GetGameStateForObjectID(Hacker.ControllingPlayer.ObjectID));
+
+	return PlayerState != none && PlayerState.PlayerTurnCount > default.SECURITYHACKER_LATE_TURN;
+}
+
+// The XCOM ability points earned with the reward Template by Hacker: SECURITYHACKER_AP_REWARD_LATE past the turn limit, else by the difficulty of the
+// reward (its MinHackSuccess, without the random modifier rolled for the hack).
+static final function int GetAPReward(X2HackRewardTemplate Template, XComGameState_Unit Hacker)
+{
+	local int i;
+
+	if (IsLateTurn(Hacker))
+		return default.SECURITYHACKER_AP_REWARD_LATE;
+
+	for (i = 0; i < default.SECURITYHACKER_AP_MAX_DIFFICULTY.Length && i < default.SECURITYHACKER_AP_BY_DIFFICULTY.Length; ++i)
+	{
+		if (Template.MinHackSuccess <= default.SECURITYHACKER_AP_MAX_DIFFICULTY[i])
+			return default.SECURITYHACKER_AP_BY_DIFFICULTY[i];
+	}
+
+	return default.SECURITYHACKER_AP_TOP;
+}
+
+// True when Template is the biggest reward of the list the tower offers (private list + deck, GetBiggestRewardIndex), Hacker holds the trait and the
+// tower is a security tower, ie: when the reward is the one that gives ability points.
+static final function bool IsAPReward(X2HackRewardTemplate Template, XComGameState_Unit Hacker, XComGameState_InteractiveObject Tower)
+{
+	local array<name> Rewards;
+	local int Index;
+
+	if (Template == none || Template.bBadThing || Hacker == none || Tower == none || !IsTower(Tower)
+		|| !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(Hacker, 'UT_SecurityHacker'))
+		return false;
+
+	Rewards = Tower.GetHackRewards('');
+	Index = GetBiggestRewardIndex(Rewards);
+
+	return Index != INDEX_NONE && Rewards[Index] == Template.DataName;
+}
+
+// 'PreAcquiredHackReward' (CHL #120, ELD_Immediate: GameState is the pending state of the finalize ability): the data is a tuple 'OverrideHackRewards'
+// [0] bool (override), [1] the hacker, [2] the hack target; the source is the reward template about to be given. Gives the ability points when it is
+// the biggest reward of a security tower hacked by a holder.
+static function EventListenerReturn OnPreAcquiredHackReward_SecurityHacker(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
+{
+	local XComLWTuple Tuple;
+	local X2HackRewardTemplate Template;
+	local XComGameState_Unit Hacker;
+	local XComGameState_InteractiveObject Tower;
+	local int Points;
+
+	Tuple = XComLWTuple(EventData);
+	Template = X2HackRewardTemplate(EventSource);
+	if (Tuple == none || Template == none || GameState == none || Tuple.Id != 'OverrideHackRewards' || Tuple.Data.Length < 3 || Tuple.Data[0].b)
+		return ELR_NoInterrupt;
+
+	Hacker = XComGameState_Unit(Tuple.Data[1].o);
+	Tower = XComGameState_InteractiveObject(Tuple.Data[2].o);
+	if (!IsAPReward(Template, Hacker, Tower))
+		return ELR_NoInterrupt;
+
+	Points = GetAPReward(Template, Hacker);
+	GiveAbilityPoints(GameState, Points);
+	`log("UniqueTraits : Security hacker -- reward" @ Template.DataName @ "(difficulty" @ Template.MinHackSuccess $ "): +" $ Points @ "XCOM ability point(s) for" @ Hacker.GetFullName(),, 'UniqueTraits');
+
+	return ELR_NoInterrupt;
+}
+
+// Not capped: unlike the tactical ability point events, which stop at MaxTacticalEventAbilityPointsPerBattle, the amount is the exact one.
+static final function GiveAbilityPoints(XComGameState NewGameState, int Points)
+{
+	local XComGameState_HeadquartersXCom XComHQ;
+
+	if (Points <= 0)
+		return;
+
+	XComHQ = XComGameState_HeadquartersXCom(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
+	if (XComHQ == none)
+		return;
+
+	XComHQ = XComGameState_HeadquartersXCom(NewGameState.ModifyStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
+	XComHQ.AddResource(NewGameState, 'AbilityPoint', Points);
 }
 
 // Sets the lock strength to exactly Target. The only way to write it is XComGameState_InteractiveObject.SetLocked, which applies the sitrep
@@ -287,11 +406,9 @@ static function EventListenerReturn OnAbilityActivated_SecurityHacker(Object Eve
 	local XComGameState_Ability AbilityState;
 	local XComGameState_Unit Hacker, MutableHacker;
 	local XComGameState_InteractiveObject Obj, MutableObj;
-	local UnitValue ActiveValue, LockValue, TacticalValue, StrategyValue, PrivateEmptyValue;
+	local UnitValue ActiveValue, LockValue;
 	local XComGameState_BattleData BattleData;
-	local array<name> Combined, Expected, EmptyRewards;
-	local bool bPrivateEmpty;
-	local int OldStrength;
+	local int OldStrength, NewStrength;
 
 	if (!ParseAbilityActivation(GameState, EventSource, 'UT_SecurityHacker', AbilityContext, Hacker))
 		return ELR_NoInterrupt;
@@ -300,20 +417,18 @@ static function EventListenerReturn OnAbilityActivated_SecurityHacker(Object Eve
 	if (AbilityState == none)
 		return ELR_NoInterrupt;
 
-	// End of an attempt: the original rules of the tower come back (the rewards were awarded in this state already).
+	// End of an attempt: the original defense of the tower comes back (the rewards were awarded in this state already).
 	if (Hacker.GetUnitValue('UT_SecHacker_Object', ActiveValue) && ActiveValue.fValue > 0)
 	{
 		if (default.SECURITYHACKER_END_ABILITIES.Find(AbilityState.GetMyTemplateName()) == INDEX_NONE)
 			return ELR_NoInterrupt;
 
 		Hacker.GetUnitValue('UT_SecHacker_Lock', LockValue);
-		Hacker.GetUnitValue('UT_SecHacker_Tactical', TacticalValue);
-		Hacker.GetUnitValue('UT_SecHacker_Strategic', StrategyValue);
-		Hacker.GetUnitValue('UT_SecHacker_PrivateEmpty', PrivateEmptyValue);
 
 		MutableObj = XComGameState_InteractiveObject(GameState.ModifyStateObject(class'XComGameState_InteractiveObject', int(ActiveValue.fValue)));
 
-		// A carried-out hack (not a cancel): on success every tower is disabled, on failure the hacker takes damage.
+		// A carried-out hack (not a cancel): on success every tower is disabled, on failure the hacker takes damage. The tower keeps its tactical
+		// flag, so the vanilla finalize uses up the tactical hack itself (no more retries, as in the base game).
 		if (default.SECURITYHACKER_FINALIZE_ABILITIES.Find(AbilityState.GetMyTemplateName()) != INDEX_NONE)
 		{
 			MutableHacker = XComGameState_Unit(GameState.ModifyStateObject(class'XComGameState_Unit', Hacker.ObjectID));
@@ -321,25 +436,10 @@ static function EventListenerReturn OnAbilityActivated_SecurityHacker(Object Eve
 				DisableOtherTowers(MutableHacker, MutableObj.ObjectID, GameState);
 			else
 				MutableHacker.SetUnitFloatValue('UT_SecHacker_Backlash', 1, eCleanup_BeginTactical);	// see OnAbilityActivated_SecurityHackerBacklash
-
-			// As in the base game, a carried-out hack on a tactical-flag object (the tower, normally) uses up the tactical hack: no more retries.
-			if (TacticalValue.fValue > 0)
-			{
-				BattleData = XComGameState_BattleData(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_BattleData'));
-				BattleData = XComGameState_BattleData(GameState.ModifyStateObject(class'XComGameState_BattleData', BattleData.ObjectID));
-				BattleData.bTacticalHackCompleted = true;
-			}
 		}
 
-		if (LockValue.fValue > 0 && default.SECURITYHACKER_DEFENSE_MULT > 1.0)
+		if (LockValue.fValue > 0 && MutableObj.LockStrength != int(LockValue.fValue))
 			SetLockStrengthExactly(MutableObj, int(LockValue.fValue));
-		MutableObj.bOffersTacticalHackRewards = TacticalValue.fValue > 0;
-		MutableObj.bOffersStrategyHackRewards = StrategyValue.fValue > 0;
-		if (PrivateEmptyValue.fValue > 0)
-		{
-			EmptyRewards.Length = 0;
-			MutableObj.SetHackRewards(EmptyRewards);
-		}
 
 		MutableHacker = XComGameState_Unit(GameState.ModifyStateObject(class'XComGameState_Unit', Hacker.ObjectID));
 		MutableHacker.ClearUnitValue('UT_SecHacker_Object');
@@ -368,31 +468,12 @@ static function EventListenerReturn OnAbilityActivated_SecurityHacker(Object Eve
 	MutableHacker = XComGameState_Unit(GameState.ModifyStateObject(class'XComGameState_Unit', Hacker.ObjectID));
 	MutableHacker.SetUnitFloatValue('UT_SecHacker_Object', Obj.ObjectID, eCleanup_BeginTactical);
 	MutableHacker.SetUnitFloatValue('UT_SecHacker_Lock', OldStrength, eCleanup_BeginTactical);
-	MutableHacker.SetUnitFloatValue('UT_SecHacker_Tactical', MutableObj.bOffersTacticalHackRewards ? 1 : 0, eCleanup_BeginTactical);
-	MutableHacker.SetUnitFloatValue('UT_SecHacker_Strategic', MutableObj.bOffersStrategyHackRewards ? 1 : 0, eCleanup_BeginTactical);
 
-	// The computers' rewards: strategic deck instead of the tactical one, keeping the tower's own failure reward (see GetBadTacticalRewards).
 	BattleData = XComGameState_BattleData(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_BattleData'));
-	Combined = MutableObj.GetHackRewards('');
-	if (MutableObj.bOffersTacticalHackRewards)
-		Expected = BattleData.TacticalHackRewards;
-	else if (MutableObj.bOffersStrategyHackRewards)
-		Expected = BattleData.StrategyHackRewards;
-	bPrivateEmpty = BattleData != none && Combined.Length == Expected.Length;
-
-	MutableHacker.SetUnitFloatValue('UT_SecHacker_PrivateEmpty', bPrivateEmpty ? 1 : 0, eCleanup_BeginTactical);
-	if (bPrivateEmpty)
-	{
-		MutableObj.SetHackRewards(GetBadTacticalRewards(BattleData));
-		MutableObj.bOffersTacticalHackRewards = false;
-		MutableObj.bOffersStrategyHackRewards = true;
-	}
-	else
-	{
-		`log("UniqueTraits [WARN] : Security hacker -- the tower has rewards of its own, left as they are (only the defense is doubled)",, 'UniqueTraits');
-	}
-	if (OldStrength > 0 && default.SECURITYHACKER_DEFENSE_MULT > 1.0)
-		SetLockStrengthExactly(MutableObj, Round(float(OldStrength) * default.SECURITYHACKER_DEFENSE_MULT));
+	NewStrength = Round(float(OldStrength) * GetDefenseMultiplier(BattleData));
+	`log("UniqueTraits : Security hacker -- force level" @ (BattleData != none ? BattleData.GetForceLevel() : 0) @ ": hack defense" @ OldStrength @ "->" @ NewStrength,, 'UniqueTraits');
+	if (OldStrength > 0 && NewStrength != OldStrength)
+		SetLockStrengthExactly(MutableObj, NewStrength);
 
 	`log("UniqueTraits : Security hacker -- tower AFTER:" @ DescribeHackable(MutableObj),, 'UniqueTraits');
 
