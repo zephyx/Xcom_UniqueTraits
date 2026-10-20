@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UniqueTraits_MCMOptions.uc
-//  PURPOSE: GENERATED (2026-10-13, from the table of the scratchpad generator: see CLAUDE.md section 10 item 7). The tunables of the traits that the "Advanced options"
+//  PURPOSE: The tunables of the traits that the "Advanced options"
 //           page of the Mod Config Menu can change. A tunable is a `var config` number of a UT_Trait_<Name> class (or an element of one of its arrays), read through
 //           `class'UT_Trait_<Name>'.default.<VAR>`; the player's value (UniqueTraits_MCMSettings, only what he changed) is written into that default.
 //           - GetRows: one line per option, "KEY|TRAIT|min|max|step|scale|flags" (values in scaled units: a float is stored x100, scale 100). flags: R = the value is

@@ -36,46 +36,65 @@ static function array<X2DataTemplate> CreateTemplates()
 }
 
 // UT_TraitBase.OnPostTemplatesCreated (called for every trait of the pool by X2DownloadableContentInfo_UniqueTraits).
+//
+// The ITEMS are patched in EVERY DIFFICULTY VARIANT. A template manager keeps one cache per campaign difficulty plus the "current"
+// one, and IterateTemplates / FindDataTemplate only see the current cache. A dataset whose bShouldCreateDifficultyVariants is true gets a separate copy of
+// each of its templates per difficulty: the whole vanilla grenade set (X2Item_DefaultGrenades, flashbang included: its disorient lives in the item), the
+// weapons, and the item datasets of most mods. Patching only the current cache would leave the grenades and weapons of the other difficulties untouched,
+// and a campaign started on another difficulty than the one in force at the start of the game would keep its unpatched flashbang.
 static function OnPostTemplatesCreated()
 {
 	local X2AbilityTemplateManager AbilityManager;
-	local X2DataTemplate DataTemplate;
-	local X2AbilityTemplate Template;
 	local X2ItemTemplateManager ItemManager;
-	local X2GrenadeTemplate GrenadeTemplate;
-	local X2WeaponTemplate WeaponTemplate;
-	local X2AmmoTemplate AmmoTemplate;
+	local array<name> TemplateNames;
+	local array<X2DataTemplate> Variants;
+	local X2DataTemplate DataTemplate;
+	local X2AbilityTemplate AbilityTemplate;
+	local name TemplateName;
 
 	AbilityManager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
 	foreach AbilityManager.IterateTemplates(DataTemplate, none)
 	{
-		Template = X2AbilityTemplate(DataTemplate);
-		if (Template == none)
+		AbilityTemplate = X2AbilityTemplate(DataTemplate);
+		if (AbilityTemplate == none)
 			continue;
 
-		PatchEffects(Template.AbilityTargetEffects);
-		PatchEffects(Template.AbilityMultiTargetEffects);
+		PatchEffects(AbilityTemplate.AbilityTargetEffects);
+		PatchEffects(AbilityTemplate.AbilityMultiTargetEffects);
 	}
 
 	// The effects of a thrown / launched grenade, of an ammo and of a weapon's bonus effects are read from the ITEM at activation time.
 	ItemManager = class'X2ItemTemplateManager'.static.GetItemTemplateManager();
-	foreach ItemManager.IterateTemplates(DataTemplate, none)
+	ItemManager.GetTemplateNames(TemplateNames);
+	foreach TemplateNames(TemplateName)
 	{
-		GrenadeTemplate = X2GrenadeTemplate(DataTemplate);
-		if (GrenadeTemplate != none)
-		{
-			PatchEffects(GrenadeTemplate.ThrownGrenadeEffects);
-			PatchEffects(GrenadeTemplate.LaunchedGrenadeEffects);
-		}
-
-		WeaponTemplate = X2WeaponTemplate(DataTemplate);
-		if (WeaponTemplate != none)
-			PatchEffects(WeaponTemplate.BonusWeaponEffects);
-
-		AmmoTemplate = X2AmmoTemplate(DataTemplate);
-		if (AmmoTemplate != none)
-			PatchEffects(AmmoTemplate.TargetEffects);
+		Variants.Length = 0;
+		ItemManager.FindDataTemplateAllDifficulties(TemplateName, Variants);
+		foreach Variants(DataTemplate)
+			PatchItemTemplate(DataTemplate);
 	}
+}
+
+static final function PatchItemTemplate(X2DataTemplate DataTemplate)
+{
+	local X2GrenadeTemplate GrenadeTemplate;
+	local X2WeaponTemplate WeaponTemplate;
+	local X2AmmoTemplate AmmoTemplate;
+
+	GrenadeTemplate = X2GrenadeTemplate(DataTemplate);
+	if (GrenadeTemplate != none)
+	{
+		PatchEffects(GrenadeTemplate.ThrownGrenadeEffects);
+		PatchEffects(GrenadeTemplate.LaunchedGrenadeEffects);
+	}
+
+	WeaponTemplate = X2WeaponTemplate(DataTemplate);
+	if (WeaponTemplate != none)
+		PatchEffects(WeaponTemplate.BonusWeaponEffects);
+
+	AmmoTemplate = X2AmmoTemplate(DataTemplate);
+	if (AmmoTemplate != none)
+		PatchEffects(AmmoTemplate.TargetEffects);
 }
 
 static final function PatchEffects(out array<X2Effect> Effects)
