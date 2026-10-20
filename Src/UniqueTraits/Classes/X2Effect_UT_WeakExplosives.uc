@@ -9,9 +9,9 @@ var int DamageReduction;
 function int GetAttackingDamageModifier_CH(XComGameState_Effect EffectState, XComGameState_Unit Attacker, Damageable TargetDamageable, XComGameState_Ability AbilityState, const out EffectAppliedData AppliedData, const int CurrentDamage, X2Effect_ApplyWeaponDamage WeaponDamageEffect, optional XComGameState NewGameState)
 {
 	// Only the explosion's own base damage: skip nothing-to-reduce cases and tick effects
-	// (poison, burning, ...), which set bIgnoreBaseDamage -- same discriminator LWOTC's HeavyFrags
-	// uses (X2Effect_GrenadeDamage, ApplyToNonBaseDamage=false).
-	if (CurrentDamage <= 0 || WeaponDamageEffect == none || WeaponDamageEffect.bIgnoreBaseDamage)
+	// (poison, burning, ...), told by UT_EffectHelpers.IsTickDamage (LWOTC's HeavyFrags uses
+	// bIgnoreBaseDamage, X2Effect_GrenadeDamage, ApplyToNonBaseDamage=false).
+	if (CurrentDamage <= 0 || WeaponDamageEffect == none || class'UT_EffectHelpers'.static.IsTickDamage(AppliedData))
 		return 0;
 
 	if (!WeaponDamageEffect.bExplosiveDamage)

@@ -50,7 +50,7 @@ function int GetAttackingDamageModifier_CH(XComGameState_Effect EffectState, XCo
 {
 	// Base weapon damage only: skip tick effects (poison, burning, ...), same discriminator as
 	// X2Effect_UT_WeakExplosives.
-	if (CurrentDamage <= 0 || WeaponDamageEffect == none || WeaponDamageEffect.bIgnoreBaseDamage || AbilityState == none)
+	if (CurrentDamage <= 0 || WeaponDamageEffect == none || class'UT_EffectHelpers'.static.IsTickDamage(AppliedData) || AbilityState == none)
 		return 0;
 
 	if (AbilityState.IsMeleeAbility())

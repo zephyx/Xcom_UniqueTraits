@@ -77,7 +77,6 @@ simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffe
 			continue;
 
 		ItemState = EquipmentTemplate.CreateInstanceFromTemplate(NewGameState);
-		NewGameState.AddStateObject(ItemState);
 
 		bCachedIgnoreRestrictions = UnitState.bIgnoreItemEquipRestrictions;
 		UnitState.bIgnoreItemEquipRestrictions = true;

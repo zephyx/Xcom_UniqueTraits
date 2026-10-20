@@ -2,7 +2,7 @@
 //  FILE:   X2Effect_UT_PsiAdept.uc
 //  PURPOSE: Psi adept's two numbers, both only for attacks made with the holder's PRIMARY weapon:
 //           - armor piercing: 1 per PsiPerPierce points of the holder's Psi Offense (GetExtraArmorPiercing), not against a ROBOTIC target;
-//           - damage (tick effects set bIgnoreBaseDamage and are left alone, like X2Effect_UT_PrimaryWeaponMalus): against a non-robotic target
+//           - damage (tick effects are left alone (UT_EffectHelpers.IsTickDamage), like X2Effect_UT_PrimaryWeaponMalus): against a non-robotic target
 //             +1 per PsiPerDamage points of Psi Offense (a FLAT bonus: GetAttackingDamageModifier_CH); against a ROBOTIC target no bonus and
 //             -RoboticDamageReductionPct % instead (never below 1). That percentage is in the POST-default hook
 //             (GetPostDefaultAttackingDamageModifier_CH, CHL #923): it applies to the total once every flat bonus is in, so the result does not
@@ -31,7 +31,7 @@ function int GetAttackingDamageModifier_CH(XComGameState_Effect EffectState, XCo
 
 	Target = XComGameState_Unit(TargetDamageable);
 
-	if (CurrentDamage <= 0 || Attacker == none || WeaponDamageEffect == none || WeaponDamageEffect.bIgnoreBaseDamage || !class'UT_EffectHelpers'.static.IsPrimaryWeaponAbility(AbilityState))
+	if (CurrentDamage <= 0 || Attacker == none || WeaponDamageEffect == none || class'UT_EffectHelpers'.static.IsTickDamage(AppliedData) || !class'UT_EffectHelpers'.static.IsPrimaryWeaponAbility(AbilityState))
 		return 0;
 	if (Target == none || Target.IsRobotic())
 		return 0;
@@ -44,7 +44,7 @@ function float GetPostDefaultAttackingDamageModifier_CH(XComGameState_Effect Eff
 {
 	local XComGameState_Unit Target;
 
-	if (CurrentDamage <= 1.0 || Attacker == none || WeaponDamageEffect == none || WeaponDamageEffect.bIgnoreBaseDamage || !class'UT_EffectHelpers'.static.IsPrimaryWeaponAbility(AbilityState))
+	if (CurrentDamage <= 1.0 || Attacker == none || WeaponDamageEffect == none || class'UT_EffectHelpers'.static.IsTickDamage(AppliedData) || !class'UT_EffectHelpers'.static.IsPrimaryWeaponAbility(AbilityState))
 		return 0.0;
 
 	Target = XComGameState_Unit(TargetDamageable);

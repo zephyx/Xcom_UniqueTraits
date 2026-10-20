@@ -2,7 +2,7 @@
 //  FILE:   X2Effect_UT_Shredder.uc
 //  PURPOSE: Shredder's two damage modifiers, both on the holder as ATTACKER (GetAttackingDamageModifier_CH, which the game also calls for the
 //           damage over time of the effects he is the source of):
-//           - every tick of an ACID damage over time the holder inflicted (the weapon damage effect is a tick effect, bIgnoreBaseDamage, whose
+//           - every tick of an ACID damage over time the holder inflicted (the damage is applied by a tick, UT_EffectHelpers.IsTickDamage, and its
 //             damage type is in AcidDamageTypes) deals AcidTickBonus more damage, whatever applied the acid (his own shred, a grenade...): a FLAT
 //             bonus, GetAttackingDamageModifier_CH.
 //           - His PRIMARY weapon deals UnarmoredMalusPct % less damage (never below 1) to a target that has no armor left: a percentage, so in the
@@ -18,7 +18,7 @@ var array<name> AcidDamageTypes;
 function int GetAttackingDamageModifier_CH(XComGameState_Effect EffectState, XComGameState_Unit Attacker, Damageable TargetDamageable, XComGameState_Ability AbilityState, const out EffectAppliedData AppliedData, const int CurrentDamage, X2Effect_ApplyWeaponDamage WeaponDamageEffect, optional XComGameState NewGameState)
 {
 	// A tick of a damage over time: only acid gets the bonus.
-	if (WeaponDamageEffect != none && WeaponDamageEffect.bIgnoreBaseDamage && AcidDamageTypes.Find(WeaponDamageEffect.EffectDamageValue.DamageType) != INDEX_NONE)
+	if (WeaponDamageEffect != none && class'UT_EffectHelpers'.static.IsTickDamage(AppliedData) && AcidDamageTypes.Find(WeaponDamageEffect.EffectDamageValue.DamageType) != INDEX_NONE)
 		return AcidTickBonus;
 
 	return 0;
@@ -30,7 +30,7 @@ function float GetPostDefaultAttackingDamageModifier_CH(XComGameState_Effect Eff
 {
 	local XComGameState_Unit Target;
 
-	if (WeaponDamageEffect == none || WeaponDamageEffect.bIgnoreBaseDamage)
+	if (WeaponDamageEffect == none || class'UT_EffectHelpers'.static.IsTickDamage(AppliedData))
 		return 0.0;
 
 	if (CurrentDamage <= 1.0 || UnarmoredMalusPct <= 0 || AbilityState == none || !class'UT_EffectHelpers'.static.IsPrimaryWeaponAbility(AbilityState))

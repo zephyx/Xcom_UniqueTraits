@@ -78,6 +78,13 @@ static function AddEffectVisualization(XComGameState VisualizeGameState, name Te
 }
 
 // A damage over time = a persistent effect that applies a weapon damage effect on every tick.
+// True when the damage is applied by a TICK of a persistent effect (poison, burning, acid...): X2Effect_Persistent gives the tick's effect application an
+// EffectRef.ApplyOnTickIndex, which is INDEX_NONE for a direct application.
+static final function bool IsTickDamage(const out EffectAppliedData AppliedData)
+{
+	return AppliedData.EffectRef.ApplyOnTickIndex != INDEX_NONE;
+}
+
 static final function bool IsDamageOverTime(X2Effect_Persistent Effect)
 {
 	local X2Effect TickEffect;
