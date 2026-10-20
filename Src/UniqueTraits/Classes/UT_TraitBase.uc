@@ -51,6 +51,14 @@ static function OnStatsReset(XComGameState_Unit MutableUnit, XComGameState NewGa
 {
 }
 
+// CHL #419: called by X2DownloadableContentInfo_UniqueTraits.AbilityTagExpandHandler_CH for every trait of the pool when a description holds a tag <Ability:UT_...> that the
+// base game did not handle. A trait that has a tag of its own expands it here: fill OutString and return true. ParseObj is the XComGameState_Effect (buff display of a
+// passive), the XComGameState_Ability or the X2AbilityTemplate being described; StrategyParseObj is the unit in the Armory / promotion screens.
+static function bool ExpandAbilityTag(string InString, out string OutString, Object ParseObj, Object StrategyParseObj, XComGameState GameState)
+{
+	return false;
+}
+
 //---------------------------------------------------------------------------------------
 // Permanent stat changes and their ledger
 //---------------------------------------------------------------------------------------

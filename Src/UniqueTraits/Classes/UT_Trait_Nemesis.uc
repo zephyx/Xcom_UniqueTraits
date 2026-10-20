@@ -8,17 +8,20 @@
 //             type being their own character group. Not counted: allies of the holder and ghost copies. The tally stops once both caps are reached.
 //           - The to-hit modifiers are X2Effect_UT_Nemesis (the passive's effect).
 //           - A "Nemesis" flyover on the killer, appended to the visualization of the kill (UT_Nemesis_KillSerial changes on each counted kill).
+//           - The passive "Hunting board" (UT_NemesisBoard, "Hunting Board", granted with the trait): its description holds the tag <Ability:UT_NemesisBoard/>,
+//             expanded when the description is shown (ExpandAbilityTag, CHL #419) into the holder's tally: one line per enemy type killed, with its kills and its two bonuses.
 //---------------------------------------------------------------------------------------
 class UT_Trait_Nemesis extends UT_TraitBase config(UniqueTraits);
 
 var config int NEMESIS_AIM_PER_KILL, NEMESIS_MAX_AIM, NEMESIS_DEFENSE_PER_KILL, NEMESIS_MAX_DEFENSE;
-var localized string NEMESIS_FLYOVER;
+var localized string NEMESIS_FLYOVER, NEMESIS_BOARD_LINE, NEMESIS_BOARD_EMPTY;
 
 static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
 
 	Templates.AddItem(Nemesis());
+	Templates.AddItem(NemesisBoard());
 
 	return Templates;
 }
@@ -40,6 +43,14 @@ static function X2AbilityTemplate Nemesis()
 	Template.AddTargetEffect(NemesisEffect);
 
 	return Template;
+}
+
+// "Hunting board": an icon holder whose description is the live tally. PurePassive keeps the RAW LocLongDescription in the buff (tactical: unit info, perk bar), so the tag
+// is expanded each time it is displayed, with the holder's current tally; GetMyLongDescription() would have expanded it once, here, with no holder. It uses the Nemesis icon
+// (no texture of its own yet).
+static function X2AbilityTemplate NemesisBoard()
+{
+	return PurePassive('UT_NemesisBoard', "img:///UniqueTraits_Icons.UT_Nemesis_2", false);
 }
 
 // Number of kills of one type after which both bonuses are at their cap.
@@ -160,4 +171,117 @@ static function BuildVisualization_NemesisFlyover(XComGameState VisualizeGameSta
 		Message = Repl(Message, "%DEF", string(int(GetUnitFloat(UnitState, 'UT_Nemesis_LastDefense'))));
 		class'UT_EffectHelpers'.static.AddUnitFlyover(VisualizeGameState, UnitState, PreviousState, Message);
 	}
+}
+
+// UT_TraitBase.ExpandAbilityTag: <Ability:UT_NemesisBoard/>. The holder is the target of the buff (XComGameState_Effect), the owner of the ability, or the unit of the
+// Armory / promotion screen (StrategyParseObj).
+static function bool ExpandAbilityTag(string InString, out string OutString, Object ParseObj, Object StrategyParseObj, XComGameState GameState)
+{
+	local XComGameState_Unit Holder;
+	local XComGameState_Effect EffectState;
+	local XComGameState_Ability AbilityState;
+	local int HolderID;
+
+	if (!(InString ~= "UT_NemesisBoard"))
+		return false;
+
+	EffectState = XComGameState_Effect(ParseObj);
+	AbilityState = XComGameState_Ability(ParseObj);
+	if (EffectState != none)
+		HolderID = EffectState.ApplyEffectParameters.TargetStateObjectRef.ObjectID;
+	else if (AbilityState != none)
+		HolderID = AbilityState.OwnerStateObject.ObjectID;
+	else if (XComGameState_Unit(StrategyParseObj) != none)
+		HolderID = XComGameState_Unit(StrategyParseObj).ObjectID;
+
+	if (HolderID != 0)
+	{
+		if (GameState != none)
+			Holder = XComGameState_Unit(GameState.GetGameStateForObjectID(HolderID));
+		if (Holder == none)
+			Holder = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(HolderID));
+	}
+
+	OutString = BuildBoardText(Holder);
+
+	return true;
+}
+
+// One line per enemy type the holder has killed (character template group), most kills first, one per line. The description is this tag alone.
+static final function string BuildBoardText(XComGameState_Unit Holder)
+{
+	local X2CharacterTemplateManager CharacterManager;
+	local X2DataTemplate DataTemplate;
+	local X2CharacterTemplate CharacterTemplate;
+	local array<name> Groups;
+	local array<int> Kills;
+	local array<string> Labels;
+	local name GroupName;
+	local string Line, Result, TmpLabel;
+	local int i, j, Count, TmpKills, Aim, Defense;
+
+	if (Holder == none)
+		return default.NEMESIS_BOARD_EMPTY;
+
+	CharacterManager = class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager();
+	foreach CharacterManager.IterateTemplates(DataTemplate, none)
+	{
+		CharacterTemplate = X2CharacterTemplate(DataTemplate);
+		if (CharacterTemplate == none)
+			continue;
+
+		GroupName = CharacterTemplate.CharacterGroupName;
+		if (GroupName == '')
+			GroupName = CharacterTemplate.DataName;
+
+		i = Groups.Find(GroupName);
+		if (i != INDEX_NONE)
+		{
+			// The template that gives its name to the group is the best label.
+			if (CharacterTemplate.DataName == GroupName && CharacterTemplate.strCharacterName != "")
+				Labels[i] = CharacterTemplate.strCharacterName;
+			continue;
+		}
+
+		Count = int(GetUnitFloat(Holder, Name(class'X2Effect_UT_Nemesis'.default.UVPrefix $ GroupName)));
+		if (Count <= 0)
+			continue;
+
+		Groups.AddItem(GroupName);
+		Kills.AddItem(Count);
+		Labels.AddItem(CharacterTemplate.strCharacterName != "" ? CharacterTemplate.strCharacterName : string(GroupName));
+	}
+
+	if (Groups.Length == 0)
+		return default.NEMESIS_BOARD_EMPTY;
+
+	for (i = 0; i < Groups.Length - 1; ++i)
+	{
+		for (j = i + 1; j < Groups.Length; ++j)
+		{
+			if (Kills[j] > Kills[i])
+			{
+				TmpKills = Kills[i];
+				Kills[i] = Kills[j];
+				Kills[j] = TmpKills;
+				TmpLabel = Labels[i];
+				Labels[i] = Labels[j];
+				Labels[j] = TmpLabel;
+			}
+		}
+	}
+
+	for (i = 0; i < Groups.Length; ++i)
+	{
+		Aim = Min(Kills[i] * default.NEMESIS_AIM_PER_KILL, default.NEMESIS_MAX_AIM);
+		Defense = Min(Kills[i] * default.NEMESIS_DEFENSE_PER_KILL, default.NEMESIS_MAX_DEFENSE);
+
+		Line = Repl(default.NEMESIS_BOARD_LINE, "%TYPE", Labels[i]);
+		Line = Repl(Line, "%KILLS", string(Kills[i]));
+		Line = Repl(Line, "%AIM", string(Aim));
+		Line = Repl(Line, "%DEF", string(Defense));
+		Result = (Result == "") ? Line : Result $ "\n" $ Line;
+	}
+
+	return Result;
 }

@@ -16,6 +16,26 @@ static event OnLoadedSavedGameToStrategy()
 		AssignTraitsToEligibleRookies();
 }
 
+// CHL #419, called by X2AbilityTag.ExpandHandler for a tag the base game did not handle: our tags are written <Ability:UT_...> (the quick exit keeps the cost of the other
+// mods' tags to one comparison); the traits of the pool are asked in turn (UT_TraitBase.ExpandAbilityTag).
+static function bool AbilityTagExpandHandler_CH(string InString, out string OutString, Object ParseObj, Object StrategyParseOb, XComGameState GameState)
+{
+	local int i;
+	local class<UT_TraitBase> TraitClass;
+
+	if (!(Left(InString, 3) ~= "UT_"))
+		return false;
+
+	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
+	{
+		TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[i].TraitID);
+		if (TraitClass != none && TraitClass.static.ExpandAbilityTag(InString, OutString, ParseObj, StrategyParseOb, GameState))
+			return true;
+	}
+
+	return false;
+}
+
 // CHL #412: before any X2DataSet is built. The values the player changed in the Mod Config Menu (Advanced page) are written into the trait classes' defaults here, so that
 // even the ones baked into the ability templates are his (UniqueTraits_MCMOptions.ApplyOverrides). Without Mod Config Menu there is none and nothing changes.
 static function OnPreCreateTemplates()
