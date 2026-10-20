@@ -7,6 +7,8 @@
 //           X2DownloadableContentInfo_UniqueTraits.CanAddItemToInventory_CH_Improved (it only stops FUTURE
 //           equips, so OnGrant strips what the unit already carries). The free medikit is granted the same
 //           way LWOTC's own Corpsman/XMBEffect_AddUtilityItem grants its free medikit.
+//           +SUPPORT_MOBILITY_BONUS mobility is a combat effect (X2Effect_PersistentStatChange, applied at the start of every mission) with a UI stat markup, which adds it
+//           to the mobility shown in the Armory header.
 //---------------------------------------------------------------------------------------
 class UT_Trait_Support extends UT_TraitBase config(UniqueTraits);
 
@@ -35,6 +37,7 @@ static function X2AbilityTemplate Support()
 {
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_TemporaryItem MedikitEffect;
+	local X2Effect_PersistentStatChange MobilityEffect;
 
 	Template = PurePassive('UT_Support', "img:///UniqueTraits_Icons.UT_Support", true);
 
@@ -46,46 +49,28 @@ static function X2AbilityTemplate Support()
 	MedikitEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(MedikitEffect);
 
+	MobilityEffect = new class'X2Effect_PersistentStatChange';
+	MobilityEffect.EffectName = 'UT_Support_MobilityBonus';
+	MobilityEffect.BuildPersistentEffect(1, true, false);
+	MobilityEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
+	MobilityEffect.AddPersistentStatChange(eStat_Mobility, default.SUPPORT_MOBILITY_BONUS);
+	Template.AddTargetEffect(MobilityEffect);
+
+	Template.SetUIStatMarkup(class'XLocalizedData'.default.MobilityLabel, eStat_Mobility, default.SUPPORT_MOBILITY_BONUS);
+
 	return Template;
-}
-
-static function bool ShiftsStats()
-{
-	return true;
-}
-
-// The permanent mobility bonus (SUPPORT_MOBILITY_BONUS), a rookie included: the target minus the LEDGER of ShiftStat, so it is idempotent, removed
-// exactly by OnClear (RevertShifts) and absorbed by OnStatsReset after a respec. True if the unit changed.
-static final function bool SyncMobility(XComGameState_Unit MutableUnit)
-{
-	return ShiftStatTo(MutableUnit, eStat_Mobility, float(default.SUPPORT_MOBILITY_BONUS));
 }
 
 static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	RemoveSupportOffensiveItems(MutableUnit, NewGameState);
 	MoveUtilityVestToVestSlot(MutableUnit, NewGameState);
-
-	SyncMobility(MutableUnit);
 }
 
-// The trait is already out of AcquiredTraits here: the mobility goes back to what it was, exactly.
+// The trait is already out of AcquiredTraits here.
 static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	RevertShifts(MutableUnit);
-}
-
-// 'UnitRankUp': a real promotion.
-static function bool OnRankUp(XComGameState_Unit MutableUnit)
-{
-	return SyncMobility(MutableUnit);
-}
-
-// The base stats were rebuilt by a respec: the bonus is gone.
-static function OnStatsReset(XComGameState_Unit MutableUnit, XComGameState NewGameState)
-{
-	ForgetShifts(MutableUnit);
-	SyncMobility(MutableUnit);
 }
 
 // Vests can no longer be equipped in Utility (CanAddItemToInventory_CH_Improved): one already carried there

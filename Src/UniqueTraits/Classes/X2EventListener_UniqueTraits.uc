@@ -266,7 +266,7 @@ static function EventListenerReturn OnArmoryMainMenuUpdate_StatsCheck(Object Eve
 // 'UnitRandomizedStats' (CHL #185, ELD_Immediate; EventData = EventSource = the unit): sent by XComGameState_Unit.RandomizeStats(), i.e. when a soldier is created and when
 // the console mod [WOTC] Additional Soldier Console Commands resets one WITHOUT keeping his stats (ResetSelectedSoldiersClass: ResetSoldierRank, then RandomizeStats, in a state named "Reset Soldier";
 // its RebuildSelectedSoldiersClass keeps the stats, so the trait's changes survive and nothing is sent). The unit is the pending copy being rebuilt: the trait forgets its
-// changes in it (OnStatsWiped), the rank-ups that follow apply them again. A new soldier has no trait: nothing happens.
+// changes in it, the rank-ups that follow apply them again. A new soldier has no trait: nothing happens.
 // The unit of this event is NOT the pending copy that is submitted (rank and stats of before the reset, the ledger it cleared came back), so
 // nothing is written into it: the unit is only NOTED (UniqueTraits_TraitConfig.RESET_UNIT_IDS) and WasRespecSinceLastShift then counts the "Reset Soldier" state that
 // follows as a respec; the first rank-up state of the console mod (OnUnitRankUp) resyncs the trait.

@@ -164,7 +164,7 @@ simulated function ClientModCallback(MCM_API_Instance ConfigAPI, int GameMode)
 
 // The "Advanced options" page: for each trait, the numbers it can be tuned with (UniqueTraits_MCMOptions). A "*" in a label means the value is
 // built into the abilities when the game starts (applies at the next launch), "**" that it only changes what is done when the trait is given.
-// No mark for the flag "S" (permanent stat changes of Nerd, False Hope, Born to be chief, Support): the tooltip says that the soldiers who already have the trait are
+// No mark for the flag "S" (permanent stat changes of Nerd, False Hope, Born to be chief): the tooltip says that the soldiers who already have the trait are
 // adjusted at their next promotion, mission start or month end.
 simulated function BuildAdvancedPage(MCM_API_Instance ConfigAPI)
 {

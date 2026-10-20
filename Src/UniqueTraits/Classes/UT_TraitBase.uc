@@ -51,14 +51,6 @@ static function OnStatsReset(XComGameState_Unit MutableUnit, XComGameState NewGa
 {
 }
 
-// The base stats of a holder are about to be rebuilt by something that is not a respec of LWOTC's (the event 'UnitRandomizedStats' of RandomizeStats, called by the
-// [WOTC] Additional Soldier Console Commands mod [1370543410] when it resets a soldier without keeping his stats): the trait forgets what it had put in them, WITHOUT touching the stats (the caller rewrites
-// them) and without applying itself again (the ranks that follow do it: OnRankUp). A trait with marks of its own clears them too.
-static function OnStatsWiped(XComGameState_Unit MutableUnit)
-{
-	ForgetShifts(MutableUnit);
-}
-
 //---------------------------------------------------------------------------------------
 // Permanent stat changes and their ledger
 //---------------------------------------------------------------------------------------
@@ -75,7 +67,7 @@ static function OnStatsWiped(XComGameState_Unit MutableUnit)
 // 'UnitRandomizedStats' noted the unit, i.e. when its reset does not keep the stats). Every sync and every removal starts with ForgetIfRespec; the
 // listeners (X2EventListener_UniqueTraits) also run the test at once when the respec happens (a ranked soldier's 'UnitRankUp', the Armory main menu refreshing).
 // A reset that is not LWOTC's (the console mod [WOTC] Additional Soldier Console Commands, whose "Reset Soldier" state wipes the stats and then calls RandomizeStats) is told by the event
-// 'UnitRandomizedStats' instead (OnStatsWiped).
+// 'UnitRandomizedStats' instead (see UniqueTraits_TraitConfig.RESET_UNIT_IDS).
 
 // Adds (or, with a negative Delta, removes) an amount to BOTH the max and the current value of a stat: a genuine,
 // permanent change. Both Get*Stat are captured BEFORE SetBaseMaxStat, which resyncs the current stat as a side effect.
@@ -104,7 +96,7 @@ static final function name StatLedgerName(ECharStatType Stat)
 
 // True if LWOTC's RespecSoldier was made on this unit since the ledger was last written (UT_ShiftIdx): among the versions of the unit newer than that index, one
 // belongs to a change container whose ChangeInfo is exactly "Respec Soldier" (the console mod [WOTC] Additional Soldier Console Commands names its states "Respec Soldier: Rank N" and "Reset Soldier":
-// they do not match, see OnStatsWiped). The ledger and the index are read in the unit GIVEN (pass the latest committed version from a listener, the pending copy from a sync).
+// they do not match, see UniqueTraits_TraitConfig.RESET_UNIT_IDS). The ledger and the index are read in the unit GIVEN (pass the latest committed version from a listener, the pending copy from a sync).
 // The walk starts from the latest committed version.
 static final function bool WasRespecSinceLastShift(XComGameState_Unit Unit)
 {
@@ -122,6 +114,10 @@ static final function bool WasRespecSinceLastShift(XComGameState_Unit Unit)
 	// The ledger and its index are those of the unit GIVEN (a pending copy has already rewritten them after a respec was handled) => only the walk starts from the latest committed version.
 	bHasIdx = Unit.GetUnitValue('UT_ShiftIdx', IdxValue);
 	LastIdx = bHasIdx ? int(IdxValue.fValue) : -1;
+
+	// The ledger was written in the latest state of the history: nothing newer can hold a respec.
+	if (bHasIdx && LastIdx >= `XCOMHISTORY.GetCurrentHistoryIndex())
+		return false;
 
 	while (Version != none)
 	{

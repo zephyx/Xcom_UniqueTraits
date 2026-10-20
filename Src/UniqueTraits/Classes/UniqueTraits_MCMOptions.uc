@@ -47,7 +47,7 @@ static final function array<string> GetRows()
 	Rows.AddItem("ALWAYSREADY_RELOAD_AMMO_FACTOR|UT_AlwaysReady|0|100|5|100|-");
 	Rows.AddItem("QUICKHEALING_DAMAGE_TAKEN_MULT|UT_QuickHealing|100|300|5|100|R");
 	Rows.AddItem("THIEF_STEAL_CHANCE_PCT|UT_Thief|0|100|1|1|-");
-	Rows.AddItem("SUPPORT_MOBILITY_BONUS|UT_Support|0|5|1|1|S");
+	Rows.AddItem("SUPPORT_MOBILITY_BONUS|UT_Support|0|5|1|1|R");
 	Rows.AddItem("BRIBE_SUPPLY_BONUS|UT_Bribe|0|100|1|1|P");
 	Rows.AddItem("SCOUT_SIGHT_RADIUS_PENALTY|UT_Scout|0|8|1|1|R");
 	Rows.AddItem("SCOUT_SCANNER_RANGE_MULT|UT_Scout|100|300|5|100|-");

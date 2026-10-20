@@ -16,7 +16,7 @@
 //              evolutions available at his rank that he bought, the stronger: the percentage SOMEONEDIFFERENT_PCT_LOW[chosen] / _HIGH[not chosen], scaled to a
 //              scale of the number of evolution columns (7 with LWOTC, 6 in the base game; GetTargetPercent), is applied to HP, mobility, aim, will, dodge, hacking and psi offense
 //              (permanent stat changes, SyncStats) and to the direct damage of his attacks (X2Effect_UT_Mutant, UnitValue UT_SD_DamagePct).
-//           Every stat change is a diff against what is already applied (UT_SD_Applied_<stat>), so it is idempotent and OnClear takes back exactly
+//           Every stat change is a diff against what is already applied (the ledger of UT_TraitBase), so it is idempotent and OnClear takes back exactly
 //           that. There is no hook on an ability purchase: SyncStats runs on rank-up, after a respec, at mission start and when the promotion screen
 //           closes (UIScreenListener_UT_PromotionMarks.OnRemoved).
 //---------------------------------------------------------------------------------------
@@ -384,15 +384,10 @@ static final function array<ECharStatType> GetAffectedStats()
 	return Stats;
 }
 
-static final function name AppliedValueName(ECharStatType Stat)
-{
-	return name("UT_SD_Applied_" $ int(Stat));
-}
-
-// The net change currently applied to the soldier for a stat (what OnClear takes back).
+// The net change currently applied to the soldier for a stat (what OnClear takes back): the ledger of UT_TraitBase.
 static final function int GetAppliedShift(XComGameState_Unit Unit, ECharStatType Stat)
 {
-	return int(GetUnitFloat(Unit, AppliedValueName(Stat)));
+	return Round(GetStatLedger(Unit, Stat));
 }
 
 // Phase 1: the fixed malus of the soldier's rank (a negative number), none once mutated.
@@ -465,12 +460,11 @@ static final function bool SyncStats(XComGameState_Unit MutableUnit)
 {
 	local array<ECharStatType> Stats;
 	local ECharStatType Stat;
-	local int TargetShift, Applied, Percent, Column;
+	local int Percent, Column;
 	local bool bChanged;
 
-	// A respec since the last shift: the ledger is forgotten, so are the marks of what was applied.
-	if (ForgetIfRespec(MutableUnit))
-		OnStatsWiped(MutableUnit);
+	// A respec since the last shift: the ledger is forgotten.
+	ForgetIfRespec(MutableUnit);
 
 	// An evolution that is missing or no longer a class ability (a mutation made before the class rows rule, a tree rebuilt by another mod) is drawn again.
 	if (IsMutated(MutableUnit))
@@ -488,13 +482,9 @@ static final function bool SyncStats(XComGameState_Unit MutableUnit)
 	Stats = GetAffectedStats();
 	foreach Stats(Stat)
 	{
-		TargetShift = GetTargetShift(MutableUnit, Stat);
-		Applied = GetAppliedShift(MutableUnit, Stat);
-		if (TargetShift == Applied)
+		if (!ShiftStatTo(MutableUnit, Stat, GetTargetShift(MutableUnit, Stat)))
 			continue;
 
-		ShiftStat(MutableUnit, Stat, TargetShift - Applied);
-		MutableUnit.SetUnitFloatValue(AppliedValueName(Stat), TargetShift, eCleanup_Never);
 		if (Stat == eStat_HP && MutableUnit.GetCurrentStat(eStat_HP) < 1)
 			MutableUnit.SetCurrentStat(eStat_HP, 1);
 		bChanged = true;
@@ -518,14 +508,7 @@ static final function bool SyncStats(XComGameState_Unit MutableUnit)
 // Takes back every stat change currently applied (exactly what ShiftStat put in: the ledger; the unit's values are left at 0).
 static final function TakeBackStats(XComGameState_Unit MutableUnit)
 {
-	local array<ECharStatType> Stats;
-	local ECharStatType Stat;
-
 	RevertShifts(MutableUnit);
-
-	Stats = GetAffectedStats();
-	foreach Stats(Stat)
-		MutableUnit.ClearUnitValue(AppliedValueName(Stat));
 	MutableUnit.ClearUnitValue('UT_SD_DamagePct');
 }
 
@@ -535,23 +518,11 @@ static function bool ShiftsStats()
 }
 
 // The base stats were rebuilt by a respec (LWOTC's RespecSoldier on a holder; the mutation's own respec does not come here): the shifts are gone with them.
-// The marks go to zero without touching the stats and SyncStats applies the stage again (it also draws again an evolution the rebuilt tree lost).
+// The ledger is forgotten without touching the stats and SyncStats applies the stage again (it also draws again an evolution the rebuilt tree lost).
 static function OnStatsReset(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
-	OnStatsWiped(MutableUnit);
-	SyncStats(MutableUnit);
-}
-
-// The ledger and the marks of what was applied go; the stats are not touched.
-static function OnStatsWiped(XComGameState_Unit MutableUnit)
-{
-	local array<ECharStatType> Stats;
-	local ECharStatType Stat;
-
 	ForgetShifts(MutableUnit);
-	Stats = GetAffectedStats();
-	foreach Stats(Stat)
-		MutableUnit.ClearUnitValue(AppliedValueName(Stat));
+	SyncStats(MutableUnit);
 }
 
 static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
