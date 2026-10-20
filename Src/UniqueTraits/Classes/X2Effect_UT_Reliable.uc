@@ -16,6 +16,24 @@
 //             and clears the notes. UT_Trait_Reliable.OnPostTemplatesCreated puts the delegate in FRONT of the array of every StandardAim calc (LWOTC's own
 //             delegate, the graze band, comes after it and so reads the converted table; it returns true, ours returns false: the default or LWOTC finalization
 //             then goes on). Several copies of the delegate on a shared calc are harmless (the note is cleared by the first).
+//// < PROTECTION AGAINST COLLISION
+//           - Other mods that use the same array: FinalizeHitChance calls the delegates in order and
+//             stops at the first one that returns true (X2AbilityToHitCalc.uc: "OverrideHitChanceCalc = OverrideHitChanceCalc || OverrideFn(...)", a short-circuit).
+//             Merist's perk pack (XGS_Effect_HackBreakdown.GetUncappedHitChance) and Iridar's Bounty Hunter (XComGameState_Effect_CritMagic.GetUncappedCritChance)
+//             read the full shot table by inserting a delegate of theirs at INDEX 0 for the time of one GetShotBreakdown call. It returns true and is removed
+//             right after. That call runs a whole GetHitChance on the holder's effects, so our GetToHitModifiers leaves its note, but their delegate (in front of ours)
+//             returns true and ours is never called: the note would stay set, and the NEXT finalization of that calc object, for any shooter (calc objects are shared by
+//             several abilities), would be taken for the holder's shot: no crit and extra aim for someone who has no Reliable. Two protections, both in
+//             GetToHitModifiers: 
+//             - Our delegate is taken out of the calc's array and put back at index 0 EVERY time (this is done before FinalizeHitChance starts to
+//             walk the array, never during), so it is always in front of theirs: it converts the table, clears the note, and theirs then reads the converted table (crit
+//             0, the aim gain included: consistent with "Reliable never crits", but a perk that wants the crit chance of a holder reads 0)
+//             - The note carries a time and is ignored when it is older than NOTE_MAX_AGE_SECONDS (GetToHitModifiers and FinalizeHitChance belong to the same GetHitChance, a few
+//             microseconds apart), whatever the cause of a note that was not consumed.
+//             Known limit (not seen, not handled): the note is a single slot, so a hit chance computed INSIDE the holder's own GetHitChance (another mod's effect
+//             calling GetShotBreakdown from a to-hit hook that runs after ours) consumes it, and the outer shot would then be left unconverted. The
+//             two mods above call theirs from outside the to-hit hooks (as far as their sources show).
+//// PROTECTION AGAINST COLLISION >
 //           - Reaction fire: normally it has no crit chance (the game removes it) and so converts nothing, but when an effect allows reaction crits (Guard, Cool
 //             Under Pressure, Intercept...) the shot keeps its crit chance and is converted like any other (the delegate reads the final table, whatever the kind
 //             of shot). An ability that guarantees the crit (Bullseye, Haymaker) is only denied the crit (see below).
@@ -42,21 +60,39 @@ class X2Effect_UT_Reliable extends X2Effect_Persistent;
 // UT_Trait_Reliable.OnPostTemplatesCreated (which takes the effect from the 'UT_Reliable' template) reach: it is ONE object.
 var transient X2AbilityToHitCalc PendingCalc;
 var transient XComGameState_Unit PendingAttacker, PendingTarget;
+var transient float PendingTime;   // WorldInfo.RealTimeSeconds when the note was left
+
+// A note older than this (real seconds) is ignored by the delegate: the note is left by GetToHitModifiers and read by FinalizeHitChance inside ONE GetHitChance
+// call, so a note that old was never consumed.
+const NOTE_MAX_AGE_SECONDS = 0.5;
 
 function GetToHitModifiers(XComGameState_Effect EffectState, XComGameState_Unit Attacker, XComGameState_Unit Target, XComGameState_Ability AbilityState, class<X2AbilityToHitCalc> ToHitType, bool bMelee, bool bFlanking, bool bIndirectFire, out array<ShotModifierInfo> ShotModifiers)
 {
 	local X2AbilityTemplate AbilityTemplate;
+	local X2AbilityToHitCalc Calc;
 
 	if (AbilityState == none)
 		return;
 
 	AbilityTemplate = AbilityState.GetMyTemplate();
-	if (AbilityTemplate != none)
-	{
-		PendingCalc = AbilityTemplate.AbilityToHitCalc;
-		PendingAttacker = Attacker;
-		PendingTarget = Target;
-	}
+	if (AbilityTemplate == none)
+		return;
+
+	Calc = AbilityTemplate.AbilityToHitCalc;
+
+	// Only the StandardAim calcs carry our delegate (UT_Trait_Reliable.OnPostTemplatesCreated): a note for any other calc would never be consumed.
+	if (Calc == none || !ClassIsChildOf(Calc.Class, class'X2AbilityToHitCalc_StandardAim'))
+		return;
+
+	// Back to index 0 of this calc's delegates, in front of whatever another mod inserted there since (RemoveItem also removes the duplicates). We are
+	// called by GetHitChance, BEFORE FinalizeHitChance starts to walk the array, so the array is not modified while it is walked.
+	Calc.OverrideFinalHitChanceFns.RemoveItem(OverrideFinalHitChance_Reliable);
+	Calc.OverrideFinalHitChanceFns.InsertItem(0, OverrideFinalHitChance_Reliable);
+
+	PendingCalc = Calc;
+	PendingAttacker = Attacker;
+	PendingTarget = Target;
+	PendingTime = class'WorldInfo'.static.GetWorldInfo().RealTimeSeconds;
 }
 
 // Safety net: a critical result that is not removed from the table (an ability that guarantees the crit) becomes a hit.
@@ -88,6 +124,15 @@ function bool OverrideFinalHitChance_Reliable(X2AbilityToHitCalc AbilityToHitCal
 
 	if (PendingCalc == none || PendingCalc != AbilityToHitCalc)
 		return false;
+
+	// A stale note is dropped and this shot is left alone (protection).
+	if (class'WorldInfo'.static.GetWorldInfo().RealTimeSeconds - PendingTime > NOTE_MAX_AGE_SECONDS)
+	{
+		PendingCalc = none;
+		PendingAttacker = none;
+		PendingTarget = none;
+		return false;
+	}
 
 	ShotAttacker = PendingAttacker;
 	ShotTarget = PendingTarget;
