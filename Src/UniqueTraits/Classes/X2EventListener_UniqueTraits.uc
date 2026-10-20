@@ -140,7 +140,9 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_SecurityHacker'.static.OnAbilityActivated_SecurityHacker, ELD_Immediate, 50);
 	Template.AddCHEvent('AbilityActivated', class'UT_Trait_SecurityHacker'.static.OnAbilityActivated_SecurityHackerBacklash, ELD_OnStateSubmitted, 50);
 	// Security hacker: the XCOM ability points on top of the biggest reward of the tower (CHL #120, fired by AcquireHackRewards for each earned reward).
-	Template.AddCHEvent('PreAcquiredHackReward', class'UT_Trait_SecurityHacker'.static.OnPreAcquiredHackReward_SecurityHacker, ELD_Immediate, 50);
+	// Priority -100 on purpose: the listeners of this event can cancel the reward (Data[0].b = true, LWOTC's Failsafe does it for a bad reward); ours must run
+	// after all of them to see the final decision and give the points only for a reward that is really given.
+	Template.AddCHEvent('PreAcquiredHackReward', class'UT_Trait_SecurityHacker'.static.OnPreAcquiredHackReward_SecurityHacker, ELD_Immediate, -100);
 	// Someone different: mission-start sync of its permanent stats, and the collapse (unconscious) at the start of the Nth XCOM turn.
 	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_SomeoneDifferent'.static.OnTacticalBeginPlay_SomeoneDifferent, ELD_Immediate, 50);
 	Template.AddCHEvent('PlayerTurnBegun', class'UT_Trait_SomeoneDifferent'.static.OnPlayerTurnBegun_SomeoneDifferent, ELD_OnStateSubmitted, 50);
