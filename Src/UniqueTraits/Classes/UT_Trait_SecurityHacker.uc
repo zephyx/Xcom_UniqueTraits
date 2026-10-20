@@ -291,22 +291,37 @@ static final function GiveAbilityPoints(XComGameState NewGameState, int Points)
 // hack-defense modifiers (X2SitRepEffect_ModifyHackDefenses) to the value it is given: the stored LockStrength already includes them, so
 // SetLocked(LockStrength) would apply them a second time. The modifiers are a pure function of the value (and exist only with such a sitrep),
 // so the input that gives Target is searched: the value itself first (no sitrep: immediate), then a scan.
+// SetLocked also sets bOffersStrategyHackRewards = true (XComGameState_InteractiveObject.uc:597), which we never want to keep (LWOTC's
+// SeqAct_GetAssociatedObjectiveObjects counts the hackable objects that have it): the flag is put back as it was. SetLocked needs the object's visualizer
+// (it spawns a lock info on it without a null check): without one nothing is changed.
 static final function SetLockStrengthExactly(XComGameState_InteractiveObject Obj, int Target)
 {
 	local int Candidate;
+	local bool bOffersStrategy;
 
-	Obj.SetLocked(Target);
-	if (Obj.LockStrength == Target)
-		return;
-
-	for (Candidate = 0; Candidate <= Target * 4 + 20; ++Candidate)
+	if (Obj.GetVisualizer() == none)
 	{
-		Obj.SetLocked(Candidate);
-		if (Obj.LockStrength == Target)
-			return;
+		`log("UniqueTraits [WARN] : Security hacker -- no visualizer for" @ GetArchetypeText(Obj) @ ", the hack defense is left as it is",, 'UniqueTraits');
+		return;
 	}
 
+	bOffersStrategy = Obj.bOffersStrategyHackRewards;
+
 	Obj.SetLocked(Target);
+	if (Obj.LockStrength != Target)
+	{
+		for (Candidate = 0; Candidate <= Target * 4 + 20; ++Candidate)
+		{
+			Obj.SetLocked(Candidate);
+			if (Obj.LockStrength == Target)
+				break;
+		}
+
+		if (Obj.LockStrength != Target)
+			Obj.SetLocked(Target);
+	}
+
+	Obj.bOffersStrategyHackRewards = bOffersStrategy;
 }
 
 // Visualization of the backlash ability: the standard one (hit animation and damage flyover of the damage effect), then a flyover above the
