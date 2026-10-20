@@ -125,7 +125,7 @@
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_AcrobatMalus.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_TemporaryItem.uc" />
     <Content Include="Src\UniqueTraits\Classes\XComGameState_Effect_UT_TemporaryItem.uc" />
-    <Content Include="Src\UniqueTraits\Classes\X2AbilityCost_UT_SmokeThrow.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_SmokeKeepsTurn.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Condition_UT_ExcludeAlreadyOverwatching.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Condition_UT_PacifistNoOverwatch.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Item_UniqueTraits.uc" />

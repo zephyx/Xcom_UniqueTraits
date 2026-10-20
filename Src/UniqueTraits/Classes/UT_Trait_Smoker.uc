@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_Smoker.uc
-//  PURPOSE: Smoker [LWOTC ONLY]: free smoke grenades here; "no turn end" is X2AbilityCost_UT_SmokeThrow, will gain and fatigue doubling are listeners.
+//  PURPOSE: Smoker [LWOTC ONLY]: free smoke grenades here; "no turn end" is X2Effect_UT_SmokeKeepsTurn, will gain and fatigue doubling are listeners.
 //---------------------------------------------------------------------------------------
 class UT_Trait_Smoker extends UT_TraitBase config(UniqueTraits);
 
@@ -11,6 +11,9 @@ var config WillEventRollData SMOKER_FATIGUE_ROLL_DATA;
 var config name SMOKER_GRENADE_ITEM_NAME;
 var config int SMOKER_GRENADE_COUNT;
 
+// The grenade templates that are smoke grenades (a throw or a launch of one of them does not end the turn; one that lands on the holder gives him Will).
+var config array<name> SMOKER_GRENADE_WEAPON_NAMES;
+
 static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
@@ -20,15 +23,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
-// Smoker: 2 free smoke grenades. "Doesn't end turn when thrown" is
-// X2AbilityCost_UT_SmokeThrow, spliced into the shared ThrowGrenade template by
-// UT_Trait_Smoker.OnPostTemplatesCreated. Regain Will when
-// standing near the smoke grenade impact and the fatigue-doubling malus are both handled by
+// Smoker: 2 free smoke grenades. "Doesn't end turn when thrown" is the effect X2Effect_UT_SmokeKeepsTurn (it gives back the points the throw took beyond its cost).
+// Regain Will when standing near the smoke grenade impact is OnAbilityActivated_Smoker and the fatigue-doubling malus is
 // UT_Trait_Smoker.OnPlayerTurnEnded_Smoker.
 static function X2AbilityTemplate Smoker()
 {
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_TemporaryItem GrenadeEffect;
+	local X2Effect_UT_SmokeKeepsTurn KeepsTurnEffect;
 
 	Template = PurePassive('UT_Smoker', "img:///UniqueTraits_Icons.UT_Smoker", true);
 
@@ -43,7 +45,29 @@ static function X2AbilityTemplate Smoker()
 	GrenadeEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(GrenadeEffect);
 
+	KeepsTurnEffect = new class'X2Effect_UT_SmokeKeepsTurn';
+	KeepsTurnEffect.EffectName = 'UT_Smoker_KeepsTurn';
+	KeepsTurnEffect.BuildPersistentEffect(1, true, false);
+	Template.AddTargetEffect(KeepsTurnEffect);
+
 	return Template;
+}
+
+// True for a smoke grenade thrown (ThrowGrenade) or launched (LaunchGrenade): the grenade is the source AMMO of a launcher and the source weapon of a hand throw.
+// Item is any other item the caller knows (the context's, the effect's).
+static final function bool IsSmokeThrow(XComGameState_Ability AbilityState, optional XComGameState_Item Item)
+{
+	local XComGameState_Item Ammo, Weapon;
+
+	if (AbilityState == none || (AbilityState.GetMyTemplateName() != 'ThrowGrenade' && AbilityState.GetMyTemplateName() != 'LaunchGrenade'))
+		return false;
+
+	Ammo = AbilityState.GetSourceAmmo();
+	Weapon = AbilityState.GetSourceWeapon();
+
+	return (Ammo != none && default.SMOKER_GRENADE_WEAPON_NAMES.Find(Ammo.GetMyTemplateName()) != INDEX_NONE)
+		|| (Weapon != none && default.SMOKER_GRENADE_WEAPON_NAMES.Find(Weapon.GetMyTemplateName()) != INDEX_NONE)
+		|| (Item != none && default.SMOKER_GRENADE_WEAPON_NAMES.Find(Item.GetMyTemplateName()) != INDEX_NONE);
 }
 
 // Smoker's will gain: a ONE-TIME +SMOKER_WILL_REGEN Will per smoke grenade, granted only to a
@@ -67,13 +91,8 @@ static function EventListenerReturn OnAbilityActivated_Smoker(Object EventData, 
 		return ELR_NoInterrupt;
 
 	AbilityState = XComGameState_Ability(`XCOMHISTORY.GetGameStateForObjectID(AbilityContext.InputContext.AbilityRef.ObjectID));
-	if (AbilityState == none
-		|| (AbilityState.GetMyTemplateName() != 'ThrowGrenade' && AbilityState.GetMyTemplateName() != 'LaunchGrenade'))
-		return ELR_NoInterrupt;
-
 	SourceWeapon = XComGameState_Item(`XCOMHISTORY.GetGameStateForObjectID(AbilityContext.InputContext.ItemObject.ObjectID));
-	if (SourceWeapon == none
-		|| class'X2AbilityCost_UT_SmokeThrow'.default.SMOKER_GRENADE_WEAPON_NAMES.Find(SourceWeapon.GetMyTemplateName()) == INDEX_NONE)
+	if (!IsSmokeThrow(AbilityState, SourceWeapon))
 		return ELR_NoInterrupt;
 
 	foreach AbilityContext.InputContext.MultiTargets(TargetRef)
@@ -149,38 +168,4 @@ static function EventListenerReturn OnPlayerTurnEnded_Smoker(Object EventData, O
 	}
 
 	return ELR_NoInterrupt;
-}
-
-static function OnPostTemplatesCreated()
-{
-	local X2AbilityTemplateManager AbilityManager;
-	local X2AbilityTemplate ThrowGrenadeTemplate;
-	local X2AbilityCost_ActionPoints OriginalCost;
-	local X2AbilityCost_UT_SmokeThrow NewCost;
-	local int i;
-
-	AbilityManager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
-	ThrowGrenadeTemplate = AbilityManager.FindAbilityTemplate('ThrowGrenade');
-	if (ThrowGrenadeTemplate == none)
-		return;
-
-	for (i = 0; i < ThrowGrenadeTemplate.AbilityCosts.Length; ++i)
-	{
-		OriginalCost = X2AbilityCost_ActionPoints(ThrowGrenadeTemplate.AbilityCosts[i]);
-		if (OriginalCost == none)
-			continue;
-
-		NewCost = new class'X2AbilityCost_UT_SmokeThrow';
-		NewCost.iNumPoints = OriginalCost.iNumPoints;
-		NewCost.bFreeCost = OriginalCost.bFreeCost;
-		NewCost.bAddWeaponTypicalCost = OriginalCost.bAddWeaponTypicalCost;
-		NewCost.bConsumeAllPoints = OriginalCost.bConsumeAllPoints;
-		NewCost.bMoveCost = OriginalCost.bMoveCost;
-		NewCost.AllowedTypes = OriginalCost.AllowedTypes;
-		NewCost.DoNotConsumeAllEffects = OriginalCost.DoNotConsumeAllEffects;
-		NewCost.DoNotConsumeAllSoldierAbilities = OriginalCost.DoNotConsumeAllSoldierAbilities;
-
-		ThrowGrenadeTemplate.AbilityCosts[i] = NewCost;
-		break;
-	}
 }
