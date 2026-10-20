@@ -468,6 +468,10 @@ static final function bool SyncStats(XComGameState_Unit MutableUnit)
 	local int TargetShift, Applied, Percent, Column;
 	local bool bChanged;
 
+	// A respec since the last shift: the ledger is forgotten, so are the marks of what was applied.
+	if (ForgetIfRespec(MutableUnit))
+		OnStatsWiped(MutableUnit);
+
 	// An evolution that is missing or no longer a class ability (a mutation made before the class rows rule, a tree rebuilt by another mod) is drawn again.
 	if (IsMutated(MutableUnit))
 	{
@@ -511,22 +515,43 @@ static final function bool SyncStats(XComGameState_Unit MutableUnit)
 	return bChanged;
 }
 
-// Takes back every stat change currently applied (the unit's values are left at 0).
+// Takes back every stat change currently applied (exactly what ShiftStat put in: the ledger; the unit's values are left at 0).
 static final function TakeBackStats(XComGameState_Unit MutableUnit)
 {
 	local array<ECharStatType> Stats;
 	local ECharStatType Stat;
-	local int Applied;
+
+	RevertShifts(MutableUnit);
 
 	Stats = GetAffectedStats();
 	foreach Stats(Stat)
-	{
-		Applied = GetAppliedShift(MutableUnit, Stat);
-		if (Applied != 0)
-			ShiftStat(MutableUnit, Stat, -Applied);
 		MutableUnit.ClearUnitValue(AppliedValueName(Stat));
-	}
 	MutableUnit.ClearUnitValue('UT_SD_DamagePct');
+}
+
+static function bool ShiftsStats()
+{
+	return true;
+}
+
+// The base stats were rebuilt by a respec (LWOTC's RespecSoldier on a holder; the mutation's own respec does not come here): the shifts are gone with them.
+// The marks go to zero without touching the stats and SyncStats applies the stage again (it also draws again an evolution the rebuilt tree lost).
+static function OnStatsReset(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+{
+	OnStatsWiped(MutableUnit);
+	SyncStats(MutableUnit);
+}
+
+// The ledger and the marks of what was applied go; the stats are not touched.
+static function OnStatsWiped(XComGameState_Unit MutableUnit)
+{
+	local array<ECharStatType> Stats;
+	local ECharStatType Stat;
+
+	ForgetShifts(MutableUnit);
+	Stats = GetAffectedStats();
+	foreach Stats(Stat)
+		MutableUnit.ClearUnitValue(AppliedValueName(Stat));
 }
 
 static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)

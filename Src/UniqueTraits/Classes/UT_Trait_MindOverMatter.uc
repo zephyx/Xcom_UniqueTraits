@@ -3,7 +3,8 @@
 //  PURPOSE: Mind over matter: -3 HP, -2 mobility, -6 aim and a wound recovery 45% longer, each offset by a percentage of the holder's
 //           MAX Will: +7% (HP), +4% (mobility), +15% (aim) of the Will as stat points (rounded), and -120% of the Will as recovery
 //           time %. The numbers are tuned (ini) so that the trait is neutral around 37 Will, punishing below and rewarding above.
-//           The stats are PERMANENT changes of the soldier (ShiftStat, like Nerd / Born to be chief), so they also show in the Armory.
+//           The stats are PERMANENT changes of the soldier (ShiftStat, like Nerd / Born to be chief), so they also show in the Armory. A rookie gets them at once
+//           (see UT_TraitBase); the removal takes back the LEDGER of ShiftStat (RevertShifts) and a respec is absorbed by OnStatsReset.
 //           What was added is remembered per stat in the UnitValues UT_MindOverMatter_Applied_<Stat> (the net amount currently applied),
 //           and SyncMindOverMatterStats applies only the difference between the amount the current max Will calls for and that one:
 //           idempotent, and OnClear takes back exactly what is applied. There is no hook on a max Will change (SetBaseMaxStat is native),
@@ -110,6 +111,10 @@ static final function bool SyncMindOverMatterStats(XComGameState_Unit MutableUni
 {
 	local bool bChanged;
 
+	// A respec since the last shift: the ledger is forgotten, so are the marks of what was applied.
+	if (ForgetIfRespec(MutableUnit))
+		ClearAppliedMarks(MutableUnit);
+
 	bChanged = SyncOneStat(MutableUnit, eStat_HP);
 	bChanged = SyncOneStat(MutableUnit, eStat_Mobility) || bChanged;
 	bChanged = SyncOneStat(MutableUnit, eStat_Offense) || bChanged;
@@ -121,34 +126,52 @@ static final function bool SyncMindOverMatterStats(XComGameState_Unit MutableUni
 	return bChanged;
 }
 
-static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+static function bool ShiftsStats()
 {
-	// Defensive: a unit that had the trait before was cleared by OnClear, which already resets them.
+	return true;
+}
+
+static final function ClearAppliedMarks(XComGameState_Unit MutableUnit)
+{
 	MutableUnit.SetUnitFloatValue(GetAppliedValueName(eStat_HP), 0, eCleanup_Never);
 	MutableUnit.SetUnitFloatValue(GetAppliedValueName(eStat_Mobility), 0, eCleanup_Never);
 	MutableUnit.SetUnitFloatValue(GetAppliedValueName(eStat_Offense), 0, eCleanup_Never);
+}
+
+static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+{
+	// Defensive: a unit that had the trait before was cleared by OnClear, which already resets them.
+	ForgetShifts(MutableUnit);
+	ClearAppliedMarks(MutableUnit);
 
 	SyncMindOverMatterStats(MutableUnit);
 }
 
-// Takes back exactly what is applied (the trait is already out of AcquiredTraits here, so nothing may depend on UnitHasTrait).
+// Takes back exactly what ShiftStat put in the stats (the ledger; the trait is already out of AcquiredTraits here, so nothing may depend on UnitHasTrait).
 static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
-	local int Applied;
+	RevertShifts(MutableUnit);
+	ClearAppliedMarks(MutableUnit);
+}
 
-	Applied = GetAppliedChange(MutableUnit, eStat_HP);
-	if (Applied != 0)
-		ShiftStat(MutableUnit, eStat_HP, -Applied);
-	Applied = GetAppliedChange(MutableUnit, eStat_Mobility);
-	if (Applied != 0)
-		ShiftStat(MutableUnit, eStat_Mobility, -Applied);
-	Applied = GetAppliedChange(MutableUnit, eStat_Offense);
-	if (Applied != 0)
-		ShiftStat(MutableUnit, eStat_Offense, -Applied);
+// 'UnitRankUp': a real promotion (this trait also has its own 'UnitRankUp' sync, which then finds nothing to do).
+static function bool OnRankUp(XComGameState_Unit MutableUnit)
+{
+	return SyncMindOverMatterStats(MutableUnit);
+}
 
-	MutableUnit.SetUnitFloatValue(GetAppliedValueName(eStat_HP), 0, eCleanup_Never);
-	MutableUnit.SetUnitFloatValue(GetAppliedValueName(eStat_Mobility), 0, eCleanup_Never);
-	MutableUnit.SetUnitFloatValue(GetAppliedValueName(eStat_Offense), 0, eCleanup_Never);
+// The base stats were rebuilt by a respec: what the trait had put in them is gone.
+static function OnStatsReset(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+{
+	OnStatsWiped(MutableUnit);
+	SyncMindOverMatterStats(MutableUnit);
+}
+
+// The ledger and the marks of what was applied go; the stats are not touched.
+static function OnStatsWiped(XComGameState_Unit MutableUnit)
+{
+	ForgetShifts(MutableUnit);
+	ClearAppliedMarks(MutableUnit);
 }
 
 // One handler for the events after which the max Will of a unit may have changed: 'UnitRankUp' (EventData = the unit), 'ItemAddedToSlot' /

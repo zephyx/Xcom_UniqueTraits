@@ -5,7 +5,8 @@
 //           `class'UT_Trait_<Name>'.default.<VAR>`; the player's value (UniqueTraits_MCMSettings, only what he changed) is written into that default.
 //           - GetRows: one line per option, "KEY|TRAIT|min|max|step|scale|flags" (values in scaled units: a float is stored x100, scale 100). flags: R = the value is
 //             baked into the ability templates when the game starts, so it applies at the next launch; P = a permanent change made when the trait is given, soldiers
-//             who already have the trait keep the old value.
+//             who already have the trait keep the old value; S = a permanent stat change kept in step with the target (ledger of UT_TraitBase), soldiers who already
+//             have the trait are adjusted at their next promotion, mission start or month end.
 //           - GetCurrent / SetCurrent: the value now in the class default, scaled to an int.
 //           - ApplyOverrides: puts into every default the player's value, or the mod's ini value (cached the first time, before anything is applied) when he has none.
 //             Called by OnPreCreateTemplates (CHL #412, before any X2DataSet is built, so even the values baked into the templates are the player's) and when the page is saved.
@@ -22,10 +23,10 @@ static final function array<string> GetRows()
 	Rows.AddItem("ATHLETE_DODGE|UT_Athlete|0|50|1|1|R");
 	Rows.AddItem("ATHLETE_AIM|UT_Athlete|0|30|1|1|R");
 	Rows.AddItem("ATHLETE_CRIT|UT_Athlete|0|30|1|1|R");
-	Rows.AddItem("NERD_HACKING_BASE|UT_Nerd|0|30|1|1|P");
-	Rows.AddItem("NERD_HACKING_PER_RANK|UT_Nerd|0|10|1|1|P");
-	Rows.AddItem("NERD_WILL_BASE|UT_Nerd|0|20|1|1|P");
-	Rows.AddItem("NERD_WILL_PER_RANK|UT_Nerd|0|10|1|1|P");
+	Rows.AddItem("NERD_HACKING_BASE|UT_Nerd|0|30|1|1|S");
+	Rows.AddItem("NERD_HACKING_PER_RANK|UT_Nerd|0|10|1|1|S");
+	Rows.AddItem("NERD_WILL_BASE|UT_Nerd|0|20|1|1|S");
+	Rows.AddItem("NERD_WILL_PER_RANK|UT_Nerd|0|10|1|1|S");
 	Rows.AddItem("NERD_MELEE_DAMAGE_TAKEN|UT_Nerd|0|6|1|1|R");
 	Rows.AddItem("GUARD_AIM|UT_Guard|0|40|1|1|R");
 	Rows.AddItem("GUARD_OVERWATCH_AIM|UT_Guard|0|60|1|1|R");
@@ -46,7 +47,7 @@ static final function array<string> GetRows()
 	Rows.AddItem("ALWAYSREADY_RELOAD_AMMO_FACTOR|UT_AlwaysReady|0|100|5|100|-");
 	Rows.AddItem("QUICKHEALING_DAMAGE_TAKEN_MULT|UT_QuickHealing|100|300|5|100|R");
 	Rows.AddItem("THIEF_STEAL_CHANCE_PCT|UT_Thief|0|100|1|1|-");
-	Rows.AddItem("SUPPORT_MOBILITY_BONUS|UT_Support|0|5|1|1|P");
+	Rows.AddItem("SUPPORT_MOBILITY_BONUS|UT_Support|0|5|1|1|S");
 	Rows.AddItem("BRIBE_SUPPLY_BONUS|UT_Bribe|0|100|1|1|P");
 	Rows.AddItem("SCOUT_SIGHT_RADIUS_PENALTY|UT_Scout|0|8|1|1|R");
 	Rows.AddItem("SCOUT_SCANNER_RANGE_MULT|UT_Scout|100|300|5|100|-");
@@ -65,8 +66,8 @@ static final function array<string> GetRows()
 	Rows.AddItem("SMOKER_FATIGUE_INTERVAL_NORMAL|UT_Smoker|1|8|1|1|-");
 	Rows.AddItem("SMOKER_FATIGUE_INTERVAL_TIRED|UT_Smoker|1|8|1|1|-");
 	Rows.AddItem("SMOKER_GRENADE_COUNT|UT_Smoker|0|6|1|1|R");
-	Rows.AddItem("BORNTOBECHIEF_AIM_DODGE_WILL_BASE|UT_BornToBeChief|0|30|1|1|P");
-	Rows.AddItem("BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK|UT_BornToBeChief|0|10|1|1|P");
+	Rows.AddItem("BORNTOBECHIEF_AIM_DODGE_WILL_BASE|UT_BornToBeChief|0|30|1|1|S");
+	Rows.AddItem("BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK|UT_BornToBeChief|0|10|1|1|S");
 	Rows.AddItem("MANIAC_EXTRA_GRENADE_POCKETS|UT_ManiacExplosive|0|6|1|1|-");
 	Rows.AddItem("MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT|UT_ManiacExplosive|0|100|1|1|R");
 	Rows.AddItem("MANIAC_IMPROVISE_CHARGES|UT_ManiacExplosive|1|6|1|1|R");
@@ -80,11 +81,11 @@ static final function array<string> GetRows()
 	Rows.AddItem("HUNTER_HEARING_INTERVAL|UT_Hunter|1|6|1|1|-");
 	Rows.AddItem("HUNTER_DETECTION_MODIFIER|UT_Hunter|-100|0|5|100|R");
 	Rows.AddItem("FALSEHOPE_XP_REDUCTION_PCT|UT_FalseHope|0|100|1|1|-");
-	Rows.AddItem("FALSEHOPE_AIM_BASE|UT_FalseHope|0|30|1|1|P");
-	Rows.AddItem("FALSEHOPE_HP_BASE|UT_FalseHope|0|1000|50|100|P");
-	Rows.AddItem("FALSEHOPE_AIM_PER_RANK|UT_FalseHope|0|500|50|100|P");
-	Rows.AddItem("FALSEHOPE_HP_PER_RANK|UT_FalseHope|0|300|50|100|P");
-	Rows.AddItem("FALSEHOPE_HP_FLOOR|UT_FalseHope|0|500|50|100|P");
+	Rows.AddItem("FALSEHOPE_AIM_BASE|UT_FalseHope|0|30|1|1|S");
+	Rows.AddItem("FALSEHOPE_HP_BASE|UT_FalseHope|0|1000|50|100|S");
+	Rows.AddItem("FALSEHOPE_AIM_PER_RANK|UT_FalseHope|0|500|50|100|S");
+	Rows.AddItem("FALSEHOPE_HP_PER_RANK|UT_FalseHope|0|300|50|100|S");
+	Rows.AddItem("FALSEHOPE_HP_FLOOR|UT_FalseHope|0|500|50|100|S");
 	Rows.AddItem("LONGRANGE_FAR_RANGE_SHIFT|UT_LongRange|0|8|1|1|R");
 	Rows.AddItem("LONGRANGE_CLOSE_RANGE_AIM_PENALTY_0|UT_LongRange|0|40|1|1|R");
 	Rows.AddItem("LONGRANGE_CLOSE_RANGE_AIM_PENALTY_1|UT_LongRange|0|40|1|1|R");

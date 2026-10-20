@@ -1,9 +1,10 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_FalseHope.uc
-//  PURPOSE: False Hope: +FALSEHOPE_AIM_BASE aim / +FALSEHOPE_HP_BASE HP at assignment, then
-//           -FALSEHOPE_AIM_PER_RANK aim / -FALSEHOPE_HP_PER_RANK HP per rank gained after that (the HP bonus
+//  PURPOSE: False Hope: +FALSEHOPE_AIM_BASE aim / +FALSEHOPE_HP_BASE HP, then
+//           -FALSEHOPE_AIM_PER_RANK aim / -FALSEHOPE_HP_PER_RANK HP for every rank gained after the first one (the HP bonus
 //           floors at FALSEHOPE_HP_FLOOR, it never becomes a malus). The ability is a bare icon holder: the stat
-//           changes are permanent direct mutations (OnGrant / OnRankUp, reversed in OnClear), and the XP malus
+//           changes are permanent direct mutations kept in step with the rank by SyncStats (the target minus the LEDGER of UT_TraitBase.ShiftStat: idempotent,
+//           removed exactly by OnClear = RevertShifts, absorbed by OnStatsReset after a respec, or by the rookie snapshot test, see UT_TraitBase; a rookie gets them at once), and the XP malus
 //           is UT_Trait_FalseHope.OnDistributeTacticalGameEndXp.
 //---------------------------------------------------------------------------------------
 class UT_Trait_FalseHope extends UT_TraitBase config(UniqueTraits);
@@ -25,46 +26,61 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+static function bool ShiftsStats()
+{
+	return true;
+}
+
+// The totals the rank calls for: the base at once (a rookie included), minus the per-rank decay for every rank after the first one.
+static final function bool SyncStats(XComGameState_Unit MutableUnit)
+{
+	local int Ranks;
+	local float WantedAim, WantedHP, AimDelta, HPDelta;
+
+	ForgetIfRespec(MutableUnit);
+
+	Ranks = Max(0, MutableUnit.GetRank() - 1);
+	WantedAim = default.FALSEHOPE_AIM_BASE - Ranks * default.FALSEHOPE_AIM_PER_RANK;
+	WantedHP = GetFalseHopeHPDelta(Ranks);
+
+	AimDelta = WantedAim - GetStatLedger(MutableUnit, eStat_Offense);
+	HPDelta = WantedHP - GetStatLedger(MutableUnit, eStat_HP);
+	if (Abs(AimDelta) < 0.0005 && Abs(HPDelta) < 0.0005)
+		return false;
+
+	ShiftFalseHopeStats(MutableUnit, AimDelta, HPDelta);
+
+	return true;
+}
+
 static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
-	local int i;
-
-	ShiftFalseHopeStats(MutableUnit, default.FALSEHOPE_AIM_BASE, default.FALSEHOPE_HP_BASE);
-	MutableUnit.SetUnitFloatValue('UT_FalseHope_RanksScaled', 0, eCleanup_Never);
-
 	// Baseline for the LWOTC part of the XP malus (OnDistributeTacticalGameEndXp_FalseHopeXp): the
 	// mission experience the soldier already has is NOT reduced, only what is added from now on.
 	MutableUnit.SetUnitFloatValue('UT_FalseHope_MissionXpSeen', GetUnitFloat(MutableUnit, 'MissionExperience'), eCleanup_Never);
 
-	// A natural promotion grants the trait at rank 1 (nothing to catch up); AddUniqueTrait on an
-	// already-ranked soldier must apply every rank gained since, as if it had held the trait from rank 1.
-	for (i = 1; i < MutableUnit.GetRank(); ++i)
-		OnRankUp(MutableUnit);
+	// A soldier who is already ranked (AddUniqueTrait) gets the base and every rank of decay at once.
+	SyncStats(MutableUnit);
 }
 
-// Reverses the permanent mutation: base part plus the per-rank decay applied so far.
+// The trait is already out of AcquiredTraits here: the stats go back to what they were, exactly.
 static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
-	local int RanksScaled;
-
-	RanksScaled = int(GetUnitFloat(MutableUnit, 'UT_FalseHope_RanksScaled'));
-
-	ShiftFalseHopeStats(MutableUnit,
-		-(default.FALSEHOPE_AIM_BASE - RanksScaled * default.FALSEHOPE_AIM_PER_RANK),
-		-GetFalseHopeHPDelta(RanksScaled));
-	MutableUnit.SetUnitFloatValue('UT_FalseHope_RanksScaled', 0, eCleanup_Never);
+	RevertShifts(MutableUnit);
 	MutableUnit.SetUnitFloatValue('UT_FalseHope_MissionXpSeen', 0, eCleanup_Never);
 }
 
-static function OnRankUp(XComGameState_Unit UnitState)
+// 'UnitRankUp': a real promotion.
+static function bool OnRankUp(XComGameState_Unit MutableUnit)
 {
-	local int RanksScaled;
+	return SyncStats(MutableUnit);
+}
 
-	RanksScaled = int(GetUnitFloat(UnitState, 'UT_FalseHope_RanksScaled'));
-
-	ShiftFalseHopeStats(UnitState, -default.FALSEHOPE_AIM_PER_RANK,
-		GetFalseHopeHPDelta(RanksScaled + 1) - GetFalseHopeHPDelta(RanksScaled));
-	UnitState.SetUnitFloatValue('UT_FalseHope_RanksScaled', RanksScaled + 1, eCleanup_Never);
+// The base stats were rebuilt by a respec: what the trait had put in them is gone (the XP tracker is untouched).
+static function OnStatsReset(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+{
+	ForgetShifts(MutableUnit);
+	SyncStats(MutableUnit);
 }
 
 // Total HP delta after N ranks gained since assignment: starts at FALSEHOPE_HP_BASE, loses
@@ -93,8 +109,8 @@ static final function ShiftFalseHopeStats(XComGameState_Unit UnitState, float Ai
 //    (with the NewGameState that holds the result), so nothing can be scaled yet; this runs
 //    ELD_OnStateSubmitted and the gain is the XP difference against the unit's previous version.
 // 2. LWOTC (bUseFullXpSystem=false in its XComGameData_XpData.ini: vanilla distributes NO XP, rank-ups
-//    depend on kills only): LWOTC's own listener for the same event (priority 0: ours is registered at -10 
-//    and larger numbers run first, so ours runs AFTER it.
+//    depend on kills only): LWOTC's own listener for the same event (priority 0: its ini section has no LISTENER_PRIORITY; ours is registered at -10 and
+//    larger numbers run first, so ours runs AFTER it) adds the mission's "experience" to the soldier's
 //    'MissionExperience' UnitValue in a transaction of its own, which LWOTC later turns into kill
 //    equivalents ('OverrideTotalNumKills'). Only the NAME of that value is used here (no LW_Overhaul
 //    class referenced). The gain is MissionExperience minus UT_FalseHope_MissionXpSeen, the amount already

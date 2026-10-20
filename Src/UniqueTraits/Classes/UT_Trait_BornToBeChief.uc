@@ -7,7 +7,9 @@
 //           holder; the ini also grants the LW ability 'QuickStudy'.
 //           The officer rank comes from LWOTC's public 'GetLWUnitInfo' blind query (UT_LWOTCHelpers).
 //           ApplyBornToBeChiefRankScaling is synced by X2EventListener_UniqueTraits at mission
-//           start ('OnTacticalBeginPlay'), month end ('PreEndOfMonth') and personnel sort refresh.
+//           start ('OnTacticalBeginPlay'), month end ('PreEndOfMonth') and personnel sort refresh, and at every promotion (OnRankUp).
+//           The stats are brought to the total the rank calls for (-BASE + officer rank x PER_RANK, a rookie included) as a change of ours: the target minus the LEDGER
+//           of UT_TraitBase.ShiftStat. Removal = RevertShifts (the exact stats back), a respec = OnStatsReset (see UT_TraitBase).
 //---------------------------------------------------------------------------------------
 class UT_Trait_BornToBeChief extends UT_TraitBase config(UniqueTraits);
 
@@ -23,71 +25,59 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+static function bool ShiftsStats()
+{
+	return true;
+}
+
 static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
-	ShiftBaseStats(MutableUnit, -default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE);
-
-	// Reset ApplyBornToBeChiefRankScaling's tracking UnitValue in case this unit had the trait before, was
-	// cleared, and is now getting it again (OnClear already resets it, this is just defensive).
-	MutableUnit.SetUnitFloatValue('UT_BornToBeChief_LastOfficerRank', 0, eCleanup_Never);
-
-	// An already-officer soldier (AddUniqueTrait) gets its PER_RANK bonus per officer rank right away instead of waiting for
-	// the next mission start/month end/personnel sort sync. No-op for officer rank 0.
+	// The fixed malus and, for an already-officer soldier (AddUniqueTrait), the PER_RANK bonus per officer rank, right away instead of waiting for the
+	// next mission start / month end / personnel sort sync. A rookie gets the fixed malus at once.
 	ApplyBornToBeChiefRankScaling(MutableUnit);
 }
 
+// The trait is already out of AcquiredTraits here: the stats go back to what they were, exactly.
 static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
-	local UnitValue LastOfficerRankValue;
-	local int LastOfficerRank;
-
-	ShiftBaseStats(MutableUnit, default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE);
-
-	// ApplyBornToBeChiefRankScaling tracks UT_BornToBeChief_LastOfficerRank as the officer rank it last synced
-	// stats for, always diffing from a baseline of 0 => the tracked value IS the total number of "ranks" worth
-	// of delta accumulated so far; multiply back out and undo in one shot.
-	LastOfficerRank = 0;
-	if (MutableUnit.GetUnitValue('UT_BornToBeChief_LastOfficerRank', LastOfficerRankValue))
-		LastOfficerRank = int(LastOfficerRankValue.fValue);
-
-	if (LastOfficerRank > 0)
-		ShiftBaseStats(MutableUnit, -(LastOfficerRank * default.BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK));
-	MutableUnit.SetUnitFloatValue('UT_BornToBeChief_LastOfficerRank', 0, eCleanup_Never);
+	RevertShifts(MutableUnit);
 }
 
-static final function ShiftBaseStats(XComGameState_Unit UnitState, float Delta)
+// 'UnitRankUp': a real promotion (the first one applies the fixed malus).
+static function bool OnRankUp(XComGameState_Unit MutableUnit)
 {
-	ShiftStat(UnitState, eStat_Offense, Delta);
-	ShiftStat(UnitState, eStat_Dodge, Delta);
-	ShiftStat(UnitState, eStat_Will, Delta);
+	return ApplyBornToBeChiefRankScaling(MutableUnit);
 }
 
-// Applies the delta between this unit's currently-known officer rank (UT_LWOTCHelpers.GetLWOfficerRank) and the last rank this
-// function applied stats for (tracked via the UT_BornToBeChief_LastOfficerRank UnitValue),
-// +/- BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK per rank of difference, to Aim/Dodge/Will.
+// The base stats were rebuilt by a respec: what the trait had put in them is gone.
+static function OnStatsReset(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+{
+	ForgetShifts(MutableUnit);
+	ApplyBornToBeChiefRankScaling(MutableUnit);
+}
+
+// Brings Aim / Dodge / Will to the total the unit calls for: -BORNTOBECHIEF_AIM_DODGE_WILL_BASE plus BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK per LWOTC
+// officer rank (UT_LWOTCHelpers.GetLWOfficerRank), a rookie included. The target minus the ledger is applied, so it is idempotent. True if something changed.
 static final function bool ApplyBornToBeChiefRankScaling(XComGameState_Unit MutableUnit)
 {
-	local UnitValue LastRankValue;
-	local int LastRank, CurrentRank;
+	local float Wanted;
+	local int OfficerRank;
+	local bool bChanged;
 
 	if (!class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(MutableUnit, 'UT_BornToBeChief'))
 		return false;
 
-	CurrentRank = class'UT_LWOTCHelpers'.static.GetLWOfficerRank(MutableUnit);
-	LastRank = 0;
-	if (MutableUnit.GetUnitValue('UT_BornToBeChief_LastOfficerRank', LastRankValue))
-		LastRank = int(LastRankValue.fValue);
+	OfficerRank = class'UT_LWOTCHelpers'.static.GetLWOfficerRank(MutableUnit);
+	Wanted = -default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE + OfficerRank * default.BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK;
 
-	if (CurrentRank == LastRank)
-		return false;
+	bChanged = ShiftStatTo(MutableUnit, eStat_Offense, Wanted);
+	bChanged = ShiftStatTo(MutableUnit, eStat_Dodge, Wanted) || bChanged;
+	bChanged = ShiftStatTo(MutableUnit, eStat_Will, Wanted) || bChanged;
 
-	ShiftBaseStats(MutableUnit, (CurrentRank - LastRank) * default.BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK);
+	if (bChanged)
+		`log("UniqueTraits : Born to be chief stats synced on" @ MutableUnit.GetFullName() @ "officer rank" @ OfficerRank @ ": aim/dodge/will" @ Wanted,, 'UniqueTraits');
 
-	MutableUnit.SetUnitFloatValue('UT_BornToBeChief_LastOfficerRank', CurrentRank, eCleanup_Never);
-
-	`log("UniqueTraits : Born to be chief officer rank scaling applied to" @ MutableUnit.GetFullName() @ "rank" @ LastRank @ "->" @ CurrentRank,, 'UniqueTraits');
-
-	return true;
+	return bChanged;
 }
 
 // Born to be chief's officer-rank stat sync, personnel-list variant

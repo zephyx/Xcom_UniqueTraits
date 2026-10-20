@@ -34,6 +34,29 @@ var config int DEFAULT_TRAIT_PROBABILITY;
 // is a rookie of the roster (recruit, starting soldier...), see X2DownloadableContentInfo_UniqueTraits.IsRookieEligibleForTrait.
 var config bool ASSIGN_TRAIT_AT_RECRUITMENT;
 
+// Not an option, a note kept in memory (never read from nor written to a file): the ObjectIDs of the holders whose stats are being rebuilt by the console mod [WOTC] Additional Soldier Console Commands
+// ResetSelectedSoldiersClass, noted by the event 'UnitRandomizedStats' (X2EventListener_UniqueTraits.OnUnitRandomizedStats_StatsWiped) and used by
+// UT_TraitBase.WasRespecSinceLastShift to tell its "Reset Soldier" state from the one of RebuildSelectedSoldiersClass (which keeps the stats). The event's unit is NOT the
+// pending copy that gets submitted (it showed the stale rank and stats), so nothing can be written into it: a config array, whose default may be changed at run time, is
+// the only place a static function can write.
+var config array<int> RESET_UNIT_IDS;
+
+static final function NoteUnitRandomized(int UnitID)
+{
+	if (default.RESET_UNIT_IDS.Find(UnitID) == INDEX_NONE)
+		default.RESET_UNIT_IDS.AddItem(UnitID);
+}
+
+static final function bool IsUnitRandomized(int UnitID)
+{
+	return default.RESET_UNIT_IDS.Find(UnitID) != INDEX_NONE;
+}
+
+static final function ForgetUnitRandomized(int UnitID)
+{
+	default.RESET_UNIT_IDS.RemoveItem(UnitID);
+}
+
 // ---- The settings the player may have changed in the Mod Config Menu (UniqueTraits_MCMSettings, only the changed ones). Without Mod Config Menu there is none
 // and these accessors give the mod's ini values.
 

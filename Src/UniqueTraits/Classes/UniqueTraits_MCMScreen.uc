@@ -26,7 +26,7 @@ const HELP_MARK = " (?)";
 var localized string TabDraw, TitleDraw, GroupGeneral, GroupProbabilities;
 var localized string AssignLabel, AssignTip, DefaultLabel, DefaultTip, TraitTip, ProbabilityHelp, OptionDefault, TipModDefault, TipOn, TipOff;
 
-var localized string TabAdvanced, TitleAdvanced, GroupAdvancedInfo, AdvancedInfoLabel, AdvancedInfoTip, NoteRestart, NotePermanent;
+var localized string TabAdvanced, TitleAdvanced, GroupAdvancedInfo, AdvancedInfoLabel, AdvancedInfoTip, NoteRestart, NotePermanent, NoteStats;
 
 // The Advanced page: one slider per option of UniqueTraits_MCMOptions (parallel arrays).
 var array<MCM_API_Slider> OptSliders;
@@ -164,6 +164,8 @@ simulated function ClientModCallback(MCM_API_Instance ConfigAPI, int GameMode)
 
 // The "Advanced options" page: for each trait, the numbers it can be tuned with (UniqueTraits_MCMOptions). A "*" in a label means the value is
 // built into the abilities when the game starts (applies at the next launch), "**" that it only changes what is done when the trait is given.
+// No mark for the flag "S" (permanent stat changes of Nerd, False Hope, Born to be chief, Support): the tooltip says that the soldiers who already have the trait are
+// adjusted at their next promotion, mission start or month end.
 simulated function BuildAdvancedPage(MCM_API_Instance ConfigAPI)
 {
 	local MCM_API_SettingsPage Page;
@@ -245,6 +247,8 @@ simulated function BuildAdvancedPage(MCM_API_Instance ConfigAPI)
 				Label $= " **";
 				Tip $= "\n" $ NotePermanent;
 			}
+			else if (Flags == "S")
+				Tip $= "\n" $ NoteStats;
 
 			Slider = Group.AddSlider(name("UT_O_" $ Key), Label $ HELP_MARK, Tip, float(Min(OptMin, Current)) / float(Scale), float(Max(OptMax, Current)) / float(Scale), float(OptStep) / float(Scale), float(Current) / float(Scale));
 			if (Scale == 100)

@@ -49,29 +49,43 @@ static function X2AbilityTemplate Support()
 	return Template;
 }
 
+static function bool ShiftsStats()
+{
+	return true;
+}
+
+// The permanent mobility bonus (SUPPORT_MOBILITY_BONUS), a rookie included: the target minus the LEDGER of ShiftStat, so it is idempotent, removed
+// exactly by OnClear (RevertShifts) and absorbed by OnStatsReset after a respec. True if the unit changed.
+static final function bool SyncMobility(XComGameState_Unit MutableUnit)
+{
+	return ShiftStatTo(MutableUnit, eStat_Mobility, float(default.SUPPORT_MOBILITY_BONUS));
+}
+
 static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	RemoveSupportOffensiveItems(MutableUnit, NewGameState);
 	MoveUtilityVestToVestSlot(MutableUnit, NewGameState);
 
-	// Permanent mobility bonus, given once; the amount is kept so OnClear takes back exactly that, whatever the ini says by then.
-	if (default.SUPPORT_MOBILITY_BONUS != 0 && GetUnitFloat(MutableUnit, 'UT_Support_MobilityApplied') == 0)
-	{
-		ShiftStat(MutableUnit, eStat_Mobility, default.SUPPORT_MOBILITY_BONUS);
-		MutableUnit.SetUnitFloatValue('UT_Support_MobilityApplied', default.SUPPORT_MOBILITY_BONUS, eCleanup_Never);
-	}
+	SyncMobility(MutableUnit);
 }
 
+// The trait is already out of AcquiredTraits here: the mobility goes back to what it was, exactly.
 static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
-	local float Applied;
+	RevertShifts(MutableUnit);
+}
 
-	Applied = GetUnitFloat(MutableUnit, 'UT_Support_MobilityApplied');
-	if (Applied != 0)
-	{
-		ShiftStat(MutableUnit, eStat_Mobility, -Applied);
-		MutableUnit.ClearUnitValue('UT_Support_MobilityApplied');
-	}
+// 'UnitRankUp': a real promotion.
+static function bool OnRankUp(XComGameState_Unit MutableUnit)
+{
+	return SyncMobility(MutableUnit);
+}
+
+// The base stats were rebuilt by a respec: the bonus is gone.
+static function OnStatsReset(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+{
+	ForgetShifts(MutableUnit);
+	SyncMobility(MutableUnit);
 }
 
 // Vests can no longer be equipped in Utility (CanAddItemToInventory_CH_Improved): one already carried there
