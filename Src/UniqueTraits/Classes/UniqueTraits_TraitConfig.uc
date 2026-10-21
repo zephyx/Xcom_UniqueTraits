@@ -37,6 +37,10 @@ var config int DEFAULT_TRAIT_PROBABILITY;
 // is a rookie of the roster (recruit, starting soldier...), see X2DownloadableContentInfo_UniqueTraits.IsRookieEligibleForTrait.
 var config bool ASSIGN_TRAIT_AT_RECRUITMENT;
 
+// The traits that LOWER the Will for good (Nerd, Born to be chief, Someone different) never bring the soldier's MAX Will below this value (UT_TraitBase.ShiftStatTo). A soldier
+// already below it is not raised, and the trait takes nothing more from him. 0 = no floor. The descriptions of those three traits say "15".
+var config int MIN_MAX_WILL;
+
 // Not an option, a note kept in memory (never read from nor written to a file): the ObjectIDs of the holders whose stats are being rebuilt by the console mod [WOTC] Additional Soldier Console Commands
 // ResetSelectedSoldiersClass, noted by the event 'UnitRandomizedStats' (X2EventListener_UniqueTraits.OnUnitRandomizedStats_StatsWiped) and used by
 // UT_TraitBase.WasRespecSinceLastShift to tell its "Reset Soldier" state from the one of RebuildSelectedSoldiersClass (which keeps the stats). The event's unit is NOT the

@@ -103,6 +103,10 @@ static final function ShiftStat(XComGameState_Unit UnitState, ECharStatType Stat
 	NewMax = UnitState.GetMaxStat(Stat) + Delta;
 	NewCurrent = UnitState.GetCurrentStat(Stat) + Delta;
 
+	// A lowering never takes the CURRENT Will below 1 (a soldier already below 1 keeps what he has): the max has its own floor, MIN_MAX_WILL (ShiftStatTo).
+	if (Stat == eStat_Will && Delta < 0)
+		NewCurrent = FMax(NewCurrent, FMin(UnitState.GetCurrentStat(Stat), 1.0));
+
 	UnitState.SetBaseMaxStat(Stat, NewMax);
 	UnitState.SetCurrentStat(Stat, NewCurrent);
 
@@ -202,14 +206,23 @@ static final function bool HasStatLedger(XComGameState_Unit Unit)
 	return false;
 }
 
-// Brings a stat to what Wanted calls for as a change of ours: ShiftStat of (Wanted - ledger). True if it moved.
+// Brings a stat to what Wanted calls for as a change of ours: ShiftStat of (Wanted - ledger). True if it really moved.
+// The MAX Will never goes below UniqueTraits_TraitConfig.MIN_MAX_WILL because of a trait: a lowering that would cross the floor is cut to what is left above it (a soldier
+// already below the floor loses nothing more). The ledger records what REALLY changed, so the removal of the trait and the next syncs stay exact: the target is asked again
+// at every sync and applied as far as the floor allows (a Will that grows later, rank-ups, lets the rest of the malus in); a respec starts over from the fresh base.
 static final function bool ShiftStatTo(XComGameState_Unit MutableUnit, ECharStatType Stat, float Wanted)
 {
-	local float Delta;
+	local float Delta, Allowed;
 
 	ForgetIfRespec(MutableUnit);
 
 	Delta = Wanted - GetStatLedger(MutableUnit, Stat);
+	if (Stat == eStat_Will && Delta < 0)
+	{
+		Allowed = FMax(0.0, MutableUnit.GetMaxStat(eStat_Will) - float(class'UniqueTraits_TraitConfig'.default.MIN_MAX_WILL));
+		Delta = -FMin(-Delta, Allowed);
+	}
+
 	if (Abs(Delta) < 0.0005)
 		return false;
 

@@ -605,8 +605,10 @@ static final function SyncUnit(StateObjectReference UnitRef)
 
 	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: Someone different stats sync");
 	MutableUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', Unit.ObjectID));
-	SyncStats(MutableUnit);
-	`GAMERULES.SubmitGameState(NewGameState);
+	if (SyncStats(MutableUnit))
+		`GAMERULES.SubmitGameState(NewGameState);
+	else
+		`XCOMHISTORY.CleanupPendingGameState(NewGameState);
 }
 
 // Mission start (the point that guarantees the stats in combat): the squad's holders are synced in the mission's own state.
