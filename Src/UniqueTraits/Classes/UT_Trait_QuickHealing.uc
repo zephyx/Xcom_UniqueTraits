@@ -19,6 +19,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	Template.AddCHEvent('UnitBleedingOut', OnUnitBleedingOut, ELD_Immediate, 50);
+	// Fired by the tactical rules when the mission is cleaned up, with the state submitted before the end-of-mission health adjustment.
+	Template.AddCHEvent('CleanupTacticalMission', OnCleanupTacticalMission_QuickHealing, ELD_Immediate, 50);
+}
+
 // Quick healing: +25% damage taken (X2Effect_UT_DamageTakenMult: a percentage, applied in CHL's post-default hook) +
 // the recovery-time mechanic (OnCleanupTacticalMission_QuickHealing below).
 static function X2AbilityTemplate QuickHealing()

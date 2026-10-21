@@ -18,6 +18,9 @@ struct UniqueTraitDefinition
 	                                    // Probability=0 disables the trait without deleting it. An omitted field reads -1 (structdefaultproperties below, which
 	                                    // an ini line inherits), so "omitted" and "0" differ.
 
+	var bool bDisabled;                // true: the trait is OFF for real (see IsTraitDisabled): never drawn, no event registered, nothing patched, its abilities do nothing.
+	                                    // The player can switch it in the Mod Config Menu ("Disabled traits", applies at the next launch); that choice wins over this line.
+
 	structdefaultproperties
 	{
 		Probability=-1
@@ -115,13 +118,50 @@ static final function int GetIniTraitProbability(int Index)
 	return Value;
 }
 
-// The weight of the trait at Index in the draw: the player's value for this trait, else its own Probability in the ini (0 = disabled), else the default
-// weight (the player's, else the ini's) when the ini line gives none (negative).
-static final function int GetTraitProbability(int Index)
+// The key of a trait's "disabled" setting in UniqueTraits_MCMSettings (1 = disabled, 0 = enabled although the ini says disabled).
+static final function name GetTraitDisabledKey(int Index)
+{
+	return name("D_" $ default.Traits[Index].TraitID);
+}
+
+// The trait's line in the mod's ini says bDisabled=True, ignoring the player's choice.
+static final function bool IsTraitDisabledByIni(int Index)
+{
+	return Index >= 0 && Index < default.Traits.Length && default.Traits[Index].bDisabled;
+}
+
+// The trait at Index is OFF: the player's choice (Mod Config Menu), else the ini's bDisabled. Everything that runs a trait's code asks this first (the registration of its
+// events, its patches of other templates, its description tags, the item blocks of its holder, the draw, AddUniqueTrait). It is read at the start of the game (the events are
+// registered once), so a change applies at the next launch.
+static final function bool IsTraitDisabled(int Index)
 {
 	local int Value;
 
 	if (Index < 0 || Index >= default.Traits.Length)
+		return false;
+
+	if (class'UniqueTraits_MCMSettings'.static.GetOverride(GetTraitDisabledKey(Index), Value))
+		return Value != 0;
+
+	return default.Traits[Index].bDisabled;
+}
+
+// The class of the trait at Index, or none when the trait is disabled (or has no class): what a loop over the pool wants.
+static final function class<UT_TraitBase> GetActiveTraitClass(int Index)
+{
+	if (Index < 0 || Index >= default.Traits.Length || IsTraitDisabled(Index))
+		return none;
+
+	return GetTraitClass(default.Traits[Index].TraitID);
+}
+
+// The weight of the trait at Index in the draw: the player's value for this trait, else its own Probability in the ini (0 = disabled), else the default
+// weight (the player's, else the ini's) when the ini line gives none (negative). 0 for a disabled trait.
+static final function int GetTraitProbability(int Index)
+{
+	local int Value;
+
+	if (Index < 0 || Index >= default.Traits.Length || IsTraitDisabled(Index))
 		return 0;
 
 	if (class'UniqueTraits_MCMSettings'.static.GetOverride(GetTraitProbabilityKey(Index), Value))

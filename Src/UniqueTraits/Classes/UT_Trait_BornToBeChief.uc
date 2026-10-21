@@ -25,6 +25,23 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Born to be chief: the sync point that actually *guarantees* the officer-rank bonus is correct in combat. Fires
+	// exactly ONCE, right as a mission's tactical state is built.
+	Template.AddCHEvent('OnTacticalBeginPlay', OnTacticalBeginPlay, ELD_Immediate, 50);
+}
+
+// Event registrations (X2EventListener_UniqueTraits.CreateStrategyListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+	// Born to be chief's officer-rank sync, strategy-layer points: month end, and whenever any personnel list finishes
+	// refreshing (display freshness only). The third one (mission start) is in the tactical listeners.
+	Template.AddCHEvent('PreEndOfMonth', OnPreEndOfMonth_BornToBeChief, ELD_Immediate, 50);
+	Template.AddCHEvent('UIPersonnel_OnSortFinished', OnUIPersonnelSortFinished, ELD_Immediate, 50);
+}
+
 static function bool ShiftsStats()
 {
 	return true;

@@ -35,6 +35,17 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateStrategyListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+	// Cyborg: only basic PCS can be equipped from the armory list, and a removed PCS is not lost.
+	// Priority 1 (runs AFTER every other listener, larger numbers run first): LWOTC's own listener for this event (X2EventListener_PCSFix_LW,
+	// priority 50) sets the result to true, which would undo our refusal.
+	Template.AddCHEvent('OverrideCanEquipImplant', OnOverrideCanEquipImplant_Cyborg, ELD_Immediate, 1);
+	Template.AddCHEvent('PCSApplied', OnPCSApplied_Cyborg, ELD_Immediate, 50);
+	Template.AddCHEvent('ItemRemovedFromSlot', OnItemRemovedFromSlot_Cyborg, ELD_Immediate, 50);
+}
+
 // The stats a PCS boosts: its StatsToBoost plus the stat of each of its abilities listed in CYBORG_PCS_ABILITY_STATS. False if it has an
 // ability that is not a plain stat boost (a "special" PCS).
 static final function bool GetBoostedStats(X2EquipmentTemplate PCS, out array<ECharStatType> Stats)

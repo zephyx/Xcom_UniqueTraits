@@ -33,6 +33,13 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateStrategyListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+	// Support / Swordsman: hide (not just gray out) forbidden items from the Armory picker.
+	Template.AddCHEvent('OverrideShowItemInLockerList', OnOverrideShowItemInLockerList_Support, ELD_Immediate, 50);
+}
+
 static function X2AbilityTemplate Support()
 {
 	local X2AbilityTemplate Template;

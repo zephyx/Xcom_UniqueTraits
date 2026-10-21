@@ -16,6 +16,12 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	Template.AddCHEvent('ItemLooted', OnItemLooted, ELD_Immediate, 50);
+}
+
 // Thief: this passive is just the icon holder. The actual mechanics (MP refund on loot pickup,
 // chance to secretly keep a looted item) are implemented as global event listeners in
 // X2EventListener_UniqueTraits (OnItemLooted / OnAfterActionModifyRecoveredLoot), since

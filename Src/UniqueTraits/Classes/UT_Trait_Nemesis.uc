@@ -26,6 +26,13 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Nemesis: the permanent per-enemy-type kill tally (aim against, defense malus against).
+	Template.AddCHEvent('UnitDied', OnUnitDied_Nemesis, ELD_Immediate, 50);
+}
+
 static function X2AbilityTemplate Nemesis()
 {
 	local X2AbilityTemplate Template;

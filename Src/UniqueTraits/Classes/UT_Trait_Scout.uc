@@ -20,6 +20,12 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	Template.AddCHEvent('OnGetItemRange', OnGetItemRange_Scout, ELD_Immediate, 50);
+}
+
 // Scout: -3 sight radius, plus a free, reusable scanning ability (not a consumable item => see
 // UT_ScoutScannerItem in X2Item_UniqueTraits.uc and ScoutScanner() below).
 static function X2AbilityTemplate Scout()

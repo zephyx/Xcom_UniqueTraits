@@ -52,6 +52,19 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Security hacker: while the HOLDER hacks a security tower (from the ability that opens the hacking screen to the finalize / cancel ability), the
+	// tower's lock is raised by the force level (ELD_Immediate: inside the ability's pending state, before the screen reads it); if it succeeds, disables every security tower.
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_SecurityHacker, ELD_Immediate, 50);
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_SecurityHackerBacklash, ELD_OnStateSubmitted, 50);
+	// Security hacker: the XCOM ability points on top of the biggest reward of the tower (CHL #120, fired by AcquireHackRewards for each earned reward).
+	// Priority -100 on purpose: the listeners of this event can cancel the reward (Data[0].b = true, LWOTC's Failsafe does it for a bad reward); ours must run
+	// after all of them to see the final decision and give the points only for a reward that is really given.
+	Template.AddCHEvent('PreAcquiredHackReward', OnPreAcquiredHackReward_SecurityHacker, ELD_Immediate, -100);
+}
+
 // The damage of a failed hack: a hidden ability of the holder (granted with the passive through AdditionalAbilities), activated for real by
 // OnAbilityActivated_SecurityHackerBacklash right after the finalize ability. Its effect is an X2Effect_ApplyWeaponDamage with a flat damage like
 // the one SKULLMINEAbility applies on a miss but sized as a percentage of the max HP (X2Effect_UT_PercentHPDamage), and it runs as an ordinary ability (its own game state and context, normal visualization), so it is a

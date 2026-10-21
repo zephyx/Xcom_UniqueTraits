@@ -1,8 +1,8 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   X2EventListener_UniqueTraits.uc
-//  PURPOSE: Index of every event this mod listens to, with its deferral and priority. The handler bodies live in the
-//           trait that owns them (UT_Trait_<Name>.uc), except the two generic ones below: the per-rank dispatch
-//           ('UnitRankUp') and the covert action path of the trait draw.
+//  PURPOSE: The three event listener templates of the mod. Each trait registers ITS OWN events (UT_Trait_<Name>.OnCreateStrategyListeners / OnCreateTacticalListeners /
+//           OnCreateSharedListeners, called from the loops below for every trait of the pool that is not disabled); only the events of the mod itself are listed
+//           here, with their handlers: the per-rank dispatch ('UnitRankUp'), the respec / stat ledger events, the trait draw (covert action, new crew), the MEC conversion rule.
 //---------------------------------------------------------------------------------------
 class X2EventListener_UniqueTraits extends X2EventListener;
 
@@ -20,9 +20,12 @@ static function array<X2DataTemplate> CreateTemplates()
 static function CHEventListenerTemplate CreateStrategyListeners()
 {
 	local CHEventListenerTemplate Template;
+	local class<UT_TraitBase> TraitClass;
+	local int i;
 
 	`CREATE_X2TEMPLATE(class'CHEventListenerTemplate', Template, 'UniqueTraits_StrategyListeners');
 
+	// Events of the mod itself, not of one trait (the trait draw, the respec / stat ledger, the MEC conversion rule).
 	// Rank-ups only drive the per-rank stat scaling (Nerd, False Hope); the trait itself is drawn earlier, when a
 	// rookie becomes eligible to choose a class (mission: OnPostMission in the DLCInfo; covert action: the listener below).
 	// Priority 90: it runs BEFORE the other 'UnitRankUp' listeners of the mod (Mind over matter and Someone different, 40), whose syncs read marks that a respec has
@@ -39,53 +42,17 @@ static function CHEventListenerTemplate CreateStrategyListeners()
 	// ASSIGN_TRAIT_AT_RECRUITMENT: a new crew member (recruit, rescued rookie, LWOTC haven recruit...) and the soldiers of a new campaign get their trait at once.
 	Template.AddCHEvent('NewCrewNotification', OnNewRookie_RookieTrait, ELD_OnStateSubmitted, 50);
 	Template.AddCHEvent('OnNewGame', OnNewRookie_RookieTrait, ELD_OnStateSubmitted, 50);
-	// Optional soft dependency: only fires if the "Community Promotion Screen" mod is loaded. Priority 1 = runs AFTER
-	// every other listener (larger number runs first): a block is only a block if no later listener of another mod
-	// flips bCanPurchaseAbility back to true.
-	Template.AddCHEvent('CPS_OverrideCanPurchaseAbility', class'UT_Trait_JackOfAllTrades'.static.OnCPSOverrideCanPurchaseAbility_JackOfAllTrades, ELD_Immediate, 1);
-	Template.AddCHEvent('CPS_OverrideCanPurchaseAbility', class'UT_Trait_Swordsman'.static.OnCPSOverrideCanPurchaseAbility_Swordsman, ELD_Immediate, 1);
-	// Priority 50 (< LWOTC's own 90 for this event) so LWOTC's listener runs first and we add on top of its result
-	// rather than being overwritten by it.
-	Template.AddCHEvent('OverrideSupplyDrop', class'UT_Trait_Bribe'.static.OnOverrideSupplyDrop, ELD_Immediate, 50);
-	// Bribe: re-sync the region's displayed +supplies whenever a staff slot (incl. LWOTC's haven liaison slots) is filled or emptied.
-	Template.AddCHEvent('StaffUpdated', class'UT_Trait_Bribe'.static.OnStaffUpdated, ELD_OnStateSubmitted, 50);
-	Template.AddCHEvent('PreEndOfMonth', class'UT_Trait_Bribe'.static.OnPreEndOfMonth_Bribe, ELD_Immediate, 50);
-	// Born to be chief's officer-rank sync, strategy-layer points: month end, and whenever any personnel list finishes
-	// refreshing (display freshness only). The third one (mission start) is in the tactical listeners.
-	Template.AddCHEvent('PreEndOfMonth', class'UT_Trait_BornToBeChief'.static.OnPreEndOfMonth_BornToBeChief, ELD_Immediate, 50);
-	Template.AddCHEvent('UIPersonnel_OnSortFinished', class'UT_Trait_BornToBeChief'.static.OnUIPersonnelSortFinished, ELD_Immediate, 50);
-	// Support / Swordsman: hide (not just gray out) forbidden items from the Armory picker.
-	Template.AddCHEvent('OverrideShowItemInLockerList', class'UT_Trait_Support'.static.OnOverrideShowItemInLockerList_Support, ELD_Immediate, 50);
-	Template.AddCHEvent('OverrideShowItemInLockerList', class'UT_Trait_Swordsman'.static.OnOverrideShowItemInLockerList_Swordsman, ELD_Immediate, 50);
-	// Cyborg: only basic PCS can be equipped from the armory list, and a removed PCS is not lost.
-	// Priority 1 (runs AFTER every other listener, larger numbers run first): LWOTC's own listener for this event (X2EventListener_PCSFix_LW,
-	// priority 50) sets the result to true, which would undo our refusal.
-	Template.AddCHEvent('OverrideCanEquipImplant', class'UT_Trait_Cyborg'.static.OnOverrideCanEquipImplant_Cyborg, ELD_Immediate, 1);
-	Template.AddCHEvent('PCSApplied', class'UT_Trait_Cyborg'.static.OnPCSApplied_Cyborg, ELD_Immediate, 50);
-	Template.AddCHEvent('ItemRemovedFromSlot', class'UT_Trait_Cyborg'.static.OnItemRemovedFromSlot_Cyborg, ELD_Immediate, 50);
-	// Recruiter: at the end of the month, one more recruit in the recruitable pool (and sometimes a free rookie).
-	Template.AddCHEvent('PreEndOfMonth', class'UT_Trait_Recruiter'.static.OnPreEndOfMonth_Recruiter, ELD_Immediate, 50);
-	// Recruiter: tracks the time spent as haven adviser (a staff slot, incl. LWOTC's liaison slots, was filled or emptied).
-	Template.AddCHEvent('StaffUpdated', class'UT_Trait_Recruiter'.static.OnStaffUpdated_Recruiter, ELD_OnStateSubmitted, 50);
-	// Self-reinforcement: a staff slot (here: of a covert operation not launched yet) was filled or emptied -> resync the operation's duration (+50 % once) and the
-	// doubling of the stat boost reward of the holder's slot.
-	Template.AddCHEvent('StaffUpdated', class'UT_Trait_SelfReinforcement'.static.OnStaffUpdated_SelfReinforcement, ELD_OnStateSubmitted, 50);
 	// MEC conversion (optional mods Playable MEC Troopers / Ted MEC Troopers for LWOTC): the soldier whose conversion project just started loses his trait.
 	Template.AddCHEvent('StaffUpdated', class'UT_MecConversion'.static.OnStaffUpdated_MecConversion, ELD_OnStateSubmitted, 50);
-	// Mind over matter: permanent stats that follow the max Will. No hook exists on a max Will change: every known cause resyncs (rank-up,
-	// PCS equipped/removed, Gene Mod operation, ability bought), plus month end and personnel lists as safety nets. The mission-start sync
-	// is in the tactical listeners.
-	Template.AddCHEvent('UnitRankUp', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
-	Template.AddCHEvent('ItemAddedToSlot', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
-	Template.AddCHEvent('ItemRemovedFromSlot', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
-	Template.AddCHEvent('GeneModOperationCompleted', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
-	Template.AddCHEvent('AbilityPointsChange', class'UT_Trait_MindOverMatter'.static.OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
-	Template.AddCHEvent('PreEndOfMonth', class'UT_Trait_MindOverMatter'.static.OnPreEndOfMonth_MindOverMatter, ELD_Immediate, 50);
-	Template.AddCHEvent('UIPersonnel_OnSortFinished', class'UT_Trait_MindOverMatter'.static.OnUIPersonnelSortFinished_MindOverMatter, ELD_Immediate, 50);
-	// Someone different: its stats follow the rank and the number of evolutions bought. Rank-up and a respec made at the Training Center are synced here; the
-	// promotion screen closing (UIScreenListener_UT_PromotionMarks.OnRemoved: no event reports a purchase) and the mission start (tactical listeners) are the other points.
-	Template.AddCHEvent('UnitRankUp', class'UT_Trait_SomeoneDifferent'.static.OnStatsMayHaveChanged_SomeoneDifferent, ELD_OnStateSubmitted, 40);
-	Template.AddCHEvent('CompleteRespecSoldier', class'UT_Trait_SomeoneDifferent'.static.OnStatsMayHaveChanged_SomeoneDifferent, ELD_OnStateSubmitted, 40);
+
+	// The events of the traits: each trait of the pool that is not disabled registers its own (UT_TraitBase.OnCreateStrategyListeners).
+	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
+	{
+		TraitClass = class'UniqueTraits_TraitConfig'.static.GetActiveTraitClass(i);
+		if (TraitClass != none)
+			TraitClass.static.OnCreateStrategyListeners(Template);
+	}
+
 	Template.RegisterInStrategy = true;
 
 	return Template;
@@ -94,68 +61,20 @@ static function CHEventListenerTemplate CreateStrategyListeners()
 static function CHEventListenerTemplate CreateTacticalListeners()
 {
 	local CHEventListenerTemplate Template;
+	local class<UT_TraitBase> TraitClass;
+	local int i;
 
 	`CREATE_X2TEMPLATE(class'CHEventListenerTemplate', Template, 'UniqueTraits_TacticalListeners');
 
-	Template.AddCHEvent('OnGetItemRange', class'UT_Trait_AllInArms'.static.OnGetItemRange_AllInArms, ELD_Immediate, 50);
-	Template.AddCHEvent('OnGetItemRange', class'UT_Trait_Scout'.static.OnGetItemRange_Scout, ELD_Immediate, 50);
-	Template.AddCHEvent('OnGetItemRange', class'UT_Trait_BaseballPlayer'.static.OnGetItemRange_BaseballPlayer, ELD_Immediate, 50);
-	Template.AddCHEvent('ItemLooted', class'UT_Trait_Thief'.static.OnItemLooted, ELD_Immediate, 50);
-	Template.AddCHEvent('UnitBleedingOut', class'UT_Trait_QuickHealing'.static.OnUnitBleedingOut, ELD_Immediate, 50);
-	// Fired by the tactical rules when the mission is cleaned up, with the state submitted before the end-of-mission health adjustment.
-	Template.AddCHEvent('CleanupTacticalMission', class'UT_Trait_QuickHealing'.static.OnCleanupTacticalMission_QuickHealing, ELD_Immediate, 50);
-	// Give me more: same moment, Field Surgeon's mechanism (and the bleeding-out mark that makes it skip a soldier who bled out).
-	Template.AddCHEvent('CleanupTacticalMission', class'UT_Trait_GiveMeMore'.static.OnCleanupTacticalMission_GiveMeMore, ELD_Immediate, 50);
-	Template.AddCHEvent('UnitBleedingOut', class'UT_Trait_GiveMeMore'.static.OnUnitBleedingOut_GiveMeMore, ELD_Immediate, 50);
-	// Mind over matter: mission-start sync of its permanent stats, and the same wound mechanism with a wound scaled by a percentage.
-	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_MindOverMatter'.static.OnTacticalBeginPlay_MindOverMatter, ELD_Immediate, 50);
-	Template.AddCHEvent('CleanupTacticalMission', class'UT_Trait_MindOverMatter'.static.OnCleanupTacticalMission_MindOverMatter, ELD_Immediate, 50);
-	Template.AddCHEvent('UnitBleedingOut', class'UT_Trait_MindOverMatter'.static.OnUnitBleedingOut_MindOverMatter, ELD_Immediate, 50);
-	// 'AbilityActivated' fires more than once per ability: each handler starts with the interrupt-step early return.
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_Tactician'.static.OnAbilityActivated_Tactician, ELD_OnStateSubmitted, 50);
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_Smoker'.static.OnAbilityActivated_Smoker, ELD_OnStateSubmitted, 50);
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_StayFocus'.static.OnAbilityActivated_StayFocus, ELD_OnStateSubmitted, 50);
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_AlwaysReady'.static.OnAbilityActivated_AlwaysReady, ELD_OnStateSubmitted, 50);
-	Template.AddCHEvent('PlayerTurnEnded', class'UT_Trait_Smoker'.static.OnPlayerTurnEnded_Smoker, ELD_OnStateSubmitted, 50);
-	Template.AddCHEvent('PlayerTurnEnded', class'UT_Trait_Hunter'.static.OnPlayerTurnEnded_Hunter, ELD_OnStateSubmitted, 50);
-	// False Hope: priority -10 on purpose, it must run AFTER LWOTC's XP listener (which gives the mission experience), whose priority is 0: its ini section
-	// [LW_Overhaul.X2EventListener_XP] has no LISTENER_PRIORITY line, so the config int stays 0 instead of falling back on DEFAULT_LISTENER_PRIORITY (90).
-	Template.AddCHEvent('OnDistributeTacticalGameEndXp', class'UT_Trait_FalseHope'.static.OnDistributeTacticalGameEndXp, ELD_OnStateSubmitted, -10);
-	// Born to be chief: the sync point that actually *guarantees* the officer-rank bonus is correct in combat. Fires
-	// exactly ONCE, right as a mission's tactical state is built.
-	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_BornToBeChief'.static.OnTacticalBeginPlay, ELD_Immediate, 50);
-	// Bounty hunter: 20% of the kills without XP (fired once per kill that gives XP) and the tally of ALL the kills (supplies paid after the mission).
-	Template.AddCHEvent('OverrideKillXp', class'UT_Trait_BountyHunter'.static.OnOverrideKillXp_BountyHunter, ELD_Immediate, 50);
-	Template.AddCHEvent('UnitDied', class'UT_Trait_BountyHunter'.static.OnUnitDied_BountyHunter, ELD_Immediate, 50);
-	// Shredder: the acid on a target whose armor the holder's primary weapon just shredded.
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_Shredder'.static.OnAbilityActivated_Shredder, ELD_OnStateSubmitted, 50);
-	// Meat Tenderizer: the action point back, once the ability (and its cost) is over.
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_MeatTenderizer'.static.OnAbilityActivated_MeatTenderizer, ELD_OnStateSubmitted, 50);
-	// Nemesis: the permanent per-enemy-type kill tally (aim against, defense malus against).
-	Template.AddCHEvent('UnitDied', class'UT_Trait_Nemesis'.static.OnUnitDied_Nemesis, ELD_Immediate, 50);
-	// Young doctor: reduces the heals of its holder and rewards the first treatment of each soldier. ELD_Immediate: it works on the ability's own
-	// pending state, so the visualization shows the reduced heal.
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_YoungDoctor'.static.OnAbilityActivated_YoungDoctor, ELD_Immediate, 50);
-	// Chemist: the disease on the enemies a damage over time was just inflicted on. Laser designator: consumes the primed marker on the next primary
-	// shot / holotarget and marks the main target. Both react to a submitted ability state and apply their effect in a state of their own.
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_Chemist'.static.OnAbilityActivated_Chemist, ELD_OnStateSubmitted, 50);
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_LaserDesignator'.static.OnAbilityActivated_LaserDesignator, ELD_OnStateSubmitted, 50);
-	// Psychic Bond: the bondmate loses a share of the damage (once the damage is submitted, in a state of its own).
-	Template.AddCHEvent('UnitTakeEffectDamage', class'UT_Trait_PsychicBond'.static.OnUnitTakeEffectDamage_PsychicBond, ELD_OnStateSubmitted, 50);
-	// Security hacker: while the HOLDER hacks a security tower (from the ability that opens the hacking screen to the finalize / cancel ability), the
-	// tower's lock is raised by the force level (ELD_Immediate: inside the ability's pending state, before the screen reads it); if it succeeds, disables every security tower.
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_SecurityHacker'.static.OnAbilityActivated_SecurityHacker, ELD_Immediate, 50);
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_SecurityHacker'.static.OnAbilityActivated_SecurityHackerBacklash, ELD_OnStateSubmitted, 50);
-	// Security hacker: the XCOM ability points on top of the biggest reward of the tower (CHL #120, fired by AcquireHackRewards for each earned reward).
-	// Priority -100 on purpose: the listeners of this event can cancel the reward (Data[0].b = true, LWOTC's Failsafe does it for a bad reward); ours must run
-	// after all of them to see the final decision and give the points only for a reward that is really given.
-	Template.AddCHEvent('PreAcquiredHackReward', class'UT_Trait_SecurityHacker'.static.OnPreAcquiredHackReward_SecurityHacker, ELD_Immediate, -100);
-	// Someone different: mission-start sync of its permanent stats, and the collapse (unconscious) at the start of the Nth XCOM turn.
-	Template.AddCHEvent('OnTacticalBeginPlay', class'UT_Trait_SomeoneDifferent'.static.OnTacticalBeginPlay_SomeoneDifferent, ELD_Immediate, 50);
-	Template.AddCHEvent('PlayerTurnBegun', class'UT_Trait_SomeoneDifferent'.static.OnPlayerTurnBegun_SomeoneDifferent, ELD_OnStateSubmitted, 50);
-	// Pacifist: the marker "inflicted damage" (after the ability resolved), and its move to "previous turn" at the start of XCOM's turns.
-	Template.AddCHEvent('AbilityActivated', class'UT_Trait_Pacifist'.static.OnAbilityActivated_Pacifist, ELD_OnStateSubmitted, 50);
-	Template.AddCHEvent('PlayerTurnBegun', class'UT_Trait_Pacifist'.static.OnPlayerTurnBegun_Pacifist, ELD_OnStateSubmitted, 50);
+
+	// The events of the traits: each trait of the pool that is not disabled registers its own (UT_TraitBase.OnCreateTacticalListeners).
+	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
+	{
+		TraitClass = class'UniqueTraits_TraitConfig'.static.GetActiveTraitClass(i);
+		if (TraitClass != none)
+			TraitClass.static.OnCreateTacticalListeners(Template);
+	}
+
 	Template.RegisterInTactical = true;
 
 	return Template;
@@ -166,11 +85,20 @@ static function CHEventListenerTemplate CreateTacticalListeners()
 static function CHEventListenerTemplate CreateSharedListeners()
 {
 	local CHEventListenerTemplate Template;
+	local class<UT_TraitBase> TraitClass;
+	local int i;
 
 	`CREATE_X2TEMPLATE(class'CHEventListenerTemplate', Template, 'UniqueTraits_SharedListeners');
 
-	// Quality over quantity: -1 clip on the primary weapon (the armory shows the clip size too).
-	Template.AddCHEvent('OverrideClipSize', class'UT_Trait_QualityOverQuantity'.static.OnOverrideClipSize_QualityOverQuantity, ELD_Immediate, 50);
+
+	// The events of the traits: each trait of the pool that is not disabled registers its own (UT_TraitBase.OnCreateSharedListeners).
+	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
+	{
+		TraitClass = class'UniqueTraits_TraitConfig'.static.GetActiveTraitClass(i);
+		if (TraitClass != none)
+			TraitClass.static.OnCreateSharedListeners(Template);
+	}
+
 	Template.RegisterInStrategy = true;
 	Template.RegisterInTactical = true;
 
@@ -212,7 +140,7 @@ static function EventListenerReturn OnUnitRankUp(Object EventData, Object EventS
 	if (!class'X2DownloadableContentInfo_UniqueTraits'.static.GetAssignedTraitIndex(NewUnitState, TraitIndex))
 		return ELR_NoInterrupt;
 
-	TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].TraitID);
+	TraitClass = class'UniqueTraits_TraitConfig'.static.GetActiveTraitClass(TraitIndex);
 	if (TraitClass == none || !TraitClass.static.ShiftsStats())
 		return ELR_NoInterrupt;
 
@@ -253,7 +181,7 @@ static function EventListenerReturn OnArmoryMainMenuUpdate_StatsCheck(Object Eve
 	if (Unit == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.GetAssignedTraitIndex(Unit, TraitIndex))
 		return ELR_NoInterrupt;
 
-	TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].TraitID);
+	TraitClass = class'UniqueTraits_TraitConfig'.static.GetActiveTraitClass(TraitIndex);
 	if (TraitClass == none || !TraitClass.static.ShiftsStats() || !TraitClass.static.WasRespecSinceLastShift(Unit))
 		return ELR_NoInterrupt;
 
@@ -280,7 +208,7 @@ static function EventListenerReturn OnUnitRandomizedStats_StatsWiped(Object Even
 	if (Unit == none || !class'X2DownloadableContentInfo_UniqueTraits'.static.GetAssignedTraitIndex(Unit, TraitIndex))
 		return ELR_NoInterrupt;
 
-	TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].TraitID);
+	TraitClass = class'UniqueTraits_TraitConfig'.static.GetActiveTraitClass(TraitIndex);
 	if (TraitClass == none || !TraitClass.static.ShiftsStats())
 		return ELR_NoInterrupt;
 

@@ -20,6 +20,13 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateSharedListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateSharedListeners(CHEventListenerTemplate Template)
+{
+	// Quality over quantity: -1 clip on the primary weapon (the armory shows the clip size too).
+	Template.AddCHEvent('OverrideClipSize', OnOverrideClipSize_QualityOverQuantity, ELD_Immediate, 50);
+}
+
 static function X2AbilityTemplate QualityOverQuantity()
 {
 	local X2AbilityTemplate Template;

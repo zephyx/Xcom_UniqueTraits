@@ -27,6 +27,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateStrategyListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+	// Self-reinforcement: a staff slot (here: of a covert operation not launched yet) was filled or emptied -> resync the operation's duration (+50 % once) and the
+	// doubling of the stat boost reward of the holder's slot.
+	Template.AddCHEvent('StaffUpdated', OnStaffUpdated_SelfReinforcement, ELD_OnStateSubmitted, 50);
+}
+
 // Self-reinforcement: a bare passive, everything happens in OnStaffUpdated_SelfReinforcement.
 static function X2AbilityTemplate SelfReinforcement()
 {

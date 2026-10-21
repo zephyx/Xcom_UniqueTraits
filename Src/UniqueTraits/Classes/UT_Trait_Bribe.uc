@@ -17,6 +17,17 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateStrategyListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+	// Priority 50 (< LWOTC's own 90 for this event) so LWOTC's listener runs first and we add on top of its result
+	// rather than being overwritten by it.
+	Template.AddCHEvent('OverrideSupplyDrop', OnOverrideSupplyDrop, ELD_Immediate, 50);
+	// Bribe: re-sync the region's displayed +supplies whenever a staff slot (incl. LWOTC's haven liaison slots) is filled or emptied.
+	Template.AddCHEvent('StaffUpdated', OnStaffUpdated, ELD_OnStateSubmitted, 50);
+	Template.AddCHEvent('PreEndOfMonth', OnPreEndOfMonth_Bribe, ELD_Immediate, 50);
+}
+
 // Bribe: this passive is just the icon holder. The +20 monthly supplies bonus is implemented by
 // UT_Trait_Bribe.OnOverrideSupplyDrop (vanilla/CHL event, no LWOTC dependency).
 // The infiltration penalty is entirely LWOTC's own doing: Config/XComLW_InfiltrationSettings.ini

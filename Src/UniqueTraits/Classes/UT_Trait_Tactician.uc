@@ -19,6 +19,12 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_Tactician, ELD_OnStateSubmitted, 50);
+}
+
 // Tactician: -10 aim. The disorient on a missed shot is OnAbilityActivated_Tactician, since it needs to react to
 // arbitrary attack abilities missing rather than something attachable to this passive itself.
 static function X2AbilityTemplate Tactician()

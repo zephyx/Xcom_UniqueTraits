@@ -17,6 +17,12 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	Template.AddCHEvent('PlayerTurnEnded', OnPlayerTurnEnded_Hunter, ELD_OnStateSubmitted, 50);
+}
+
 // Hunter: enemy detection range grows (malus). The "hear the enemies" bonus is event-driven, see
 // UT_Trait_Hunter.OnPlayerTurnEnded_Hunter.
 static function X2AbilityTemplate Hunter()

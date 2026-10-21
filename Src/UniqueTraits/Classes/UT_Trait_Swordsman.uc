@@ -24,6 +24,17 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateStrategyListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+	// Optional soft dependency: only fires if the "Community Promotion Screen" mod is loaded. Priority 1 = runs AFTER
+	// every other listener (larger number runs first): a block is only a block if no later listener of another mod
+	// flips bCanPurchaseAbility back to true.
+	Template.AddCHEvent('CPS_OverrideCanPurchaseAbility', OnCPSOverrideCanPurchaseAbility_Swordsman, ELD_Immediate, 1);
+	// Support / Swordsman: hide (not just gray out) forbidden items from the Armory picker.
+	Template.AddCHEvent('OverrideShowItemInLockerList', OnOverrideShowItemInLockerList_Swordsman, ELD_Immediate, 50);
+}
+
 static function X2AbilityTemplate Swordsman()
 {
 	local X2AbilityTemplate Template;

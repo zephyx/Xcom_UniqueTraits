@@ -23,6 +23,13 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Psychic Bond: the bondmate loses a share of the damage (once the damage is submitted, in a state of its own).
+	Template.AddCHEvent('UnitTakeEffectDamage', OnUnitTakeEffectDamage_PsychicBond, ELD_OnStateSubmitted, 50);
+}
+
 static function X2AbilityTemplate PsychicBond()
 {
 	local X2AbilityTemplate Template;

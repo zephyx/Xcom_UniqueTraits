@@ -23,6 +23,13 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_Smoker, ELD_OnStateSubmitted, 50);
+	Template.AddCHEvent('PlayerTurnEnded', OnPlayerTurnEnded_Smoker, ELD_OnStateSubmitted, 50);
+}
+
 // Smoker: 2 free smoke grenades. "Doesn't end turn when thrown" is the effect X2Effect_UT_SmokeKeepsTurn (it gives back the points the throw took beyond its cost).
 // Regain Will when standing near the smoke grenade impact is OnAbilityActivated_Smoker and the fatigue-doubling malus is
 // UT_Trait_Smoker.OnPlayerTurnEnded_Smoker.

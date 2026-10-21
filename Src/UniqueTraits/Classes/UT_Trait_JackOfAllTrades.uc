@@ -21,6 +21,15 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateStrategyListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+	// Optional soft dependency: only fires if the "Community Promotion Screen" mod is loaded. Priority 1 = runs AFTER
+	// every other listener (larger number runs first): a block is only a block if no later listener of another mod
+	// flips bCanPurchaseAbility back to true.
+	Template.AddCHEvent('CPS_OverrideCanPurchaseAbility', OnCPSOverrideCanPurchaseAbility_JackOfAllTrades, ELD_Immediate, 1);
+}
+
 static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
 	MutableUnit.AbilityPoints += default.JACKOFALLTRADES_AP_BONUS;

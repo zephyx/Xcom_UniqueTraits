@@ -24,6 +24,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Pacifist: the marker "inflicted damage" (after the ability resolved), and its move to "previous turn" at the start of XCOM's turns.
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_Pacifist, ELD_OnStateSubmitted, 50);
+	Template.AddCHEvent('PlayerTurnBegun', OnPlayerTurnBegun_Pacifist, ELD_OnStateSubmitted, 50);
+}
+
 // The passive: the ban on overwatch is code (OnPostTemplatesCreated); it brings the active ability along (AdditionalAbilities, so a holder who already
 // existed before the ability was added gets it too).
 static function X2AbilityTemplate Pacifist()

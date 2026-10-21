@@ -26,6 +26,15 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateStrategyListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+	// Recruiter: at the end of the month, one more recruit in the recruitable pool (and sometimes a free rookie).
+	Template.AddCHEvent('PreEndOfMonth', OnPreEndOfMonth_Recruiter, ELD_Immediate, 50);
+	// Recruiter: tracks the time spent as haven adviser (a staff slot, incl. LWOTC's liaison slots, was filled or emptied).
+	Template.AddCHEvent('StaffUpdated', OnStaffUpdated_Recruiter, ELD_OnStateSubmitted, 50);
+}
+
 // Recruiter: -20 dodge (a plain stat effect, like Athlete's). The monthly recruits are OnPreEndOfMonth_Recruiter.
 static function X2AbilityTemplate Recruiter()
 {

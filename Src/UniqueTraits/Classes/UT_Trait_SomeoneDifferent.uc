@@ -47,6 +47,23 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Someone different: mission-start sync of its permanent stats, and the collapse (unconscious) at the start of the Nth XCOM turn.
+	Template.AddCHEvent('OnTacticalBeginPlay', OnTacticalBeginPlay_SomeoneDifferent, ELD_Immediate, 50);
+	Template.AddCHEvent('PlayerTurnBegun', OnPlayerTurnBegun_SomeoneDifferent, ELD_OnStateSubmitted, 50);
+}
+
+// Event registrations (X2EventListener_UniqueTraits.CreateStrategyListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+	// Someone different: its stats follow the rank and the number of evolutions bought. Rank-up and a respec made at the Training Center are synced here; the
+	// promotion screen closing (UIScreenListener_UT_PromotionMarks.OnRemoved: no event reports a purchase) and the mission start (tactical listeners) are the other points.
+	Template.AddCHEvent('UnitRankUp', OnStatsMayHaveChanged_SomeoneDifferent, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('CompleteRespecSoldier', OnStatsMayHaveChanged_SomeoneDifferent, ELD_OnStateSubmitted, 40);
+}
+
 // Given at the mutation (never in the ini's GrantedAbilities): the damage percentage; the stats are permanent changes (SyncStats).
 static function X2AbilityTemplate Mutant()
 {

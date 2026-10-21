@@ -18,6 +18,12 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	Template.AddCHEvent('OnGetItemRange', OnGetItemRange_BaseballPlayer, ELD_Immediate, 50);
+}
+
 // Baseball player: own explosives deal 2 less damage. The Salvo-like ability is granted separately via the ini (UT_BaseballSalvo).
 static function X2AbilityTemplate BaseballPlayer()
 {

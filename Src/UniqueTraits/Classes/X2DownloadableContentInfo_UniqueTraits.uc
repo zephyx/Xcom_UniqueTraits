@@ -28,7 +28,7 @@ static function bool AbilityTagExpandHandler_CH(string InString, out string OutS
 
 	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
 	{
-		TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[i].TraitID);
+		TraitClass = class'UniqueTraits_TraitConfig'.static.GetActiveTraitClass(i);
 		if (TraitClass != none && TraitClass.static.ExpandAbilityTag(InString, OutString, ParseObj, StrategyParseOb, GameState))
 			return true;
 	}
@@ -43,19 +43,62 @@ static function OnPreCreateTemplates()
 	class'UniqueTraits_MCMOptions'.static.ApplyOverrides();
 }
 
-// Every trait of the pool gets to patch the templates it does not own (UT_TraitBase.OnPostTemplatesCreated).
-// A trait taken out of the ini pool is no longer patched in.
+// Every trait of the pool that is not disabled gets to patch the templates it does not own (UT_TraitBase.OnPostTemplatesCreated). A trait taken out of the ini pool
+// is no longer patched in. The abilities of a DISABLED trait are made inert (MakeTraitInert): a soldier who still carries it is not affected.
 static event OnPostTemplatesCreated()
 {
 	local int i;
 	local class<UT_TraitBase> TraitClass;
+	local array<name> Done;
+	local name AbilityName;
 
 	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
 	{
+		if (class'UniqueTraits_TraitConfig'.static.IsTraitDisabled(i))
+		{
+			`log("UniqueTraits : trait" @ class'UniqueTraits_TraitConfig'.default.Traits[i].TraitID @ "is DISABLED: not drawn, no event registered, no template patched, abilities made inert",, 'UniqueTraits');
+			foreach class'UniqueTraits_TraitConfig'.default.Traits[i].GrantedAbilities(AbilityName)
+				MakeAbilityInert(AbilityName, Done);
+
+			continue;
+		}
+
 		TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[i].TraitID);
 		if (TraitClass != none)
 			TraitClass.static.OnPostTemplatesCreated();
 	}
+}
+
+// A disabled trait's own ability (this mod's "UT_" ones only: a base game ability that the trait grants is shared with the classes and is left alone) loses its effects and
+// gets a shooter condition that always fails; the abilities it adds (AdditionalAbilities, the hidden helpers) too. Every difficulty variant.
+static final function MakeAbilityInert(name AbilityName, out array<name> Done)
+{
+	local X2AbilityTemplateManager AbilityManager;
+	local array<X2AbilityTemplate> Templates;
+	local X2AbilityTemplate Template;
+	local array<name> SubAbilities;
+	local name SubAbility;
+
+	if (!(Left(string(AbilityName), 3) ~= "UT_") || Done.Find(AbilityName) != INDEX_NONE)
+		return;
+
+	Done.AddItem(AbilityName);
+
+	AbilityManager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
+	AbilityManager.FindAbilityTemplateAllDifficulties(AbilityName, Templates);
+	foreach Templates(Template)
+	{
+		Template.AbilityShooterEffects.Length = 0;
+		Template.AbilityTargetEffects.Length = 0;
+		Template.AbilityMultiTargetEffects.Length = 0;
+		Template.AbilityShooterConditions.AddItem(new class'X2Condition_UT_TraitDisabled');
+
+		foreach Template.AdditionalAbilities(SubAbility)
+			SubAbilities.AddItem(SubAbility);
+	}
+
+	foreach SubAbilities(SubAbility)
+		MakeAbilityInert(SubAbility, Done);
 }
 
 // Dispatches to the unit's own trait (UT_TraitBase.IsItemBlocked): Maniac explosive's primary weapon block, Swordsman's
@@ -67,7 +110,7 @@ static function bool CanAddItemToInventory_CH_Improved(out int bCanAddItem, cons
 
 	if (UnitState != none && GetAssignedTraitIndex(UnitState, TraitIndex))
 	{
-		TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].TraitID);
+		TraitClass = class'UniqueTraits_TraitConfig'.static.GetActiveTraitClass(TraitIndex);
 		if (TraitClass != none && TraitClass.static.IsItemBlocked(Slot, ItemTemplate, DisabledReason))
 		{
 			bCanAddItem = 0;
@@ -125,7 +168,7 @@ static event OnPostMission()
 	// Every trait that has something to do once a mission is over (UT_TraitBase.OnPostMission).
 	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
 	{
-		TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[i].TraitID);
+		TraitClass = class'UniqueTraits_TraitConfig'.static.GetActiveTraitClass(i);
 		if (TraitClass != none)
 			TraitClass.static.OnPostMission();
 	}
@@ -322,6 +365,12 @@ static final function bool SetUnitTrait(StateObjectReference UnitRef, name Trait
 	if (class'UniqueTraits_TraitConfig'.static.FindTraitIndexByID(TraitID) == INDEX_NONE)
 	{
 		`log("UniqueTraits [WARN] : SetUnitTrait -- unknown TraitID '" $ TraitID $ "', nothing changed",, 'UniqueTraits');
+		return false;
+	}
+
+	if (class'UniqueTraits_TraitConfig'.static.IsTraitDisabled(class'UniqueTraits_TraitConfig'.static.FindTraitIndexByID(TraitID)))
+	{
+		`log("UniqueTraits [WARN] : SetUnitTrait -- trait" @ TraitID @ "is disabled (Mod Config Menu or bDisabled in the ini), nothing changed",, 'UniqueTraits');
 		return false;
 	}
 

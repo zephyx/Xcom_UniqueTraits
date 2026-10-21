@@ -26,6 +26,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Chemist: the disease on the enemies a damage over time was just inflicted on. Laser designator: consumes the primed marker on the next primary
+	// shot / holotarget and marks the main target. Both react to a submitted ability state and apply their effect in a state of their own.
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_LaserDesignator, ELD_OnStateSubmitted, 50);
+}
+
 // The free ability: self-targeted, free action, cooldown. Its only effect is the "primed" marker, consumed by the next shot or holotarget.
 static function X2AbilityTemplate LaserDesignator()
 {

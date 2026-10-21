@@ -26,6 +26,13 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Shredder: the acid on a target whose armor the holder's primary weapon just shredded.
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_Shredder, ELD_OnStateSubmitted, 50);
+}
+
 // Shredder: the acid bonus and the malus against unarmored targets; the acid itself is OnAbilityActivated_Shredder.
 static function X2AbilityTemplate Shredder()
 {

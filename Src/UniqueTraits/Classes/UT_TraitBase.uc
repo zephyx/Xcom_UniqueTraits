@@ -51,6 +51,22 @@ static function OnStatsReset(XComGameState_Unit MutableUnit, XComGameState NewGa
 {
 }
 
+// Event registrations. X2EventListener_UniqueTraits.CreateStrategyListeners / CreateTacticalListeners / CreateSharedListeners call these on every trait of the pool that
+// is NOT disabled (UniqueTraits_TraitConfig.GetActiveTraitClass), with the template being built: a trait puts its own Template.AddCHEvent(...) here (a larger priority runs
+// first). A trait that needs an event in both layers (strategy and tactical) must use the shared hook, once: the same handler in both templates would run twice while both
+// are active. 'AbilityActivated' fires more than once per ability: each of its handlers starts with the interrupt-step early return.
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+}
+
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+}
+
+static function OnCreateSharedListeners(CHEventListenerTemplate Template)
+{
+}
+
 // CHL #419: called by X2DownloadableContentInfo_UniqueTraits.AbilityTagExpandHandler_CH for every trait of the pool when a description holds a tag <Ability:UT_...> that the
 // base game did not handle. A trait that has a tag of its own expands it here: fill OutString and return true. ParseObj is the XComGameState_Effect (buff display of a
 // passive), the XComGameState_Ability or the X2AbilityTemplate being described; StrategyParseObj is the unit in the Armory / promotion screens.

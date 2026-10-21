@@ -19,6 +19,12 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_StayFocus, ELD_OnStateSubmitted, 50);
+}
+
 // Stay focus: free action (STAYFOCUS_COOLDOWN-turn cooldown) that grants nearby allies (not
 // self) +10 Aim/+5 Crit until their next turn. The malus is a fixed Will loss for the user on every
 // use (OnAbilityActivated_StayFocus below).

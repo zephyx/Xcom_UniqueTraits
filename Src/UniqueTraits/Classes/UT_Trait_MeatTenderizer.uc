@@ -35,6 +35,13 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Meat Tenderizer: the action point back, once the ability (and its cost) is over.
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_MeatTenderizer, ELD_OnStateSubmitted, 50);
+}
+
 // UT_TraitBase.OnPostTemplatesCreated (called for every trait of the pool by X2DownloadableContentInfo_UniqueTraits).
 //
 // The ITEMS are patched in EVERY DIFFICULTY VARIANT. A template manager keeps one cache per campaign difficulty plus the "current"

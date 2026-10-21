@@ -19,6 +19,12 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_AlwaysReady, ELD_OnStateSubmitted, 50);
+}
+
 // Always ready: this passive is just the icon holder. The malus (chance to force a reload and
 // end the turn after acting with a weapon that isn't full) is handled separately by
 // UT_Trait_AlwaysReady.OnAbilityActivated_AlwaysReady, a reimplementation

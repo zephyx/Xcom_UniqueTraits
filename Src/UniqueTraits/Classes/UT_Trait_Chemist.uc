@@ -22,6 +22,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Chemist: the disease on the enemies a damage over time was just inflicted on. Laser designator: consumes the primed marker on the next primary
+	// shot / holotarget and marks the main target. Both react to a submitted ability state and apply their effect in a state of their own.
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_Chemist, ELD_OnStateSubmitted, 50);
+}
+
 // Chemist: the drawback (+1 damage from DoT ticks); the disease on the enemies is OnAbilityActivated_Chemist.
 static function X2AbilityTemplate Chemist()
 {

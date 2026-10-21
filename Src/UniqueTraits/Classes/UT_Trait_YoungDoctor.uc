@@ -29,6 +29,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Young doctor: reduces the heals of its holder and rewards the first treatment of each soldier. ELD_Immediate: it works on the ability's own
+	// pending state, so the visualization shows the reduced heal.
+	Template.AddCHEvent('AbilityActivated', OnAbilityActivated_YoungDoctor, ELD_Immediate, 50);
+}
+
 // Young doctor: a free medikit (utility slot, stacked on a medikit the holder already carries, like Smoker's grenades). The rest is
 // OnAbilityActivated_YoungDoctor.
 static function X2AbilityTemplate YoungDoctor()

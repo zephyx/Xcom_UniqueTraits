@@ -16,6 +16,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Give me more: same moment, Field Surgeon's mechanism (and the bleeding-out mark that makes it skip a soldier who bled out).
+	Template.AddCHEvent('CleanupTacticalMission', OnCleanupTacticalMission_GiveMeMore, ELD_Immediate, 50);
+	Template.AddCHEvent('UnitBleedingOut', OnUnitBleedingOut_GiveMeMore, ELD_Immediate, 50);
+}
+
 static function X2AbilityTemplate GiveMeMore()
 {
 	local X2AbilityTemplate Template;

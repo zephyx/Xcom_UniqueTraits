@@ -28,6 +28,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Bounty hunter: 20% of the kills without XP (fired once per kill that gives XP) and the tally of ALL the kills (supplies paid after the mission).
+	Template.AddCHEvent('OverrideKillXp', OnOverrideKillXp_BountyHunter, ELD_Immediate, 50);
+	Template.AddCHEvent('UnitDied', OnUnitDied_BountyHunter, ELD_Immediate, 50);
+}
+
 // EventData tuple: [0]=KillXp (float), [1]=BonusKillXp (float), [2]=KillAssistXp (float), [3]=WetWorkXp (int), [4]=Killer (the pending
 // XComGameState_Unit). EventSource is the killed unit.
 static function EventListenerReturn OnOverrideKillXp_BountyHunter(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)

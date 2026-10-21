@@ -29,6 +29,30 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// Mind over matter: mission-start sync of its permanent stats, and the same wound mechanism with a wound scaled by a percentage.
+	Template.AddCHEvent('OnTacticalBeginPlay', OnTacticalBeginPlay_MindOverMatter, ELD_Immediate, 50);
+	Template.AddCHEvent('CleanupTacticalMission', OnCleanupTacticalMission_MindOverMatter, ELD_Immediate, 50);
+	Template.AddCHEvent('UnitBleedingOut', OnUnitBleedingOut_MindOverMatter, ELD_Immediate, 50);
+}
+
+// Event registrations (X2EventListener_UniqueTraits.CreateStrategyListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateStrategyListeners(CHEventListenerTemplate Template)
+{
+	// Mind over matter: permanent stats that follow the max Will. No hook exists on a max Will change: every known cause resyncs (rank-up,
+	// PCS equipped/removed, Gene Mod operation, ability bought), plus month end and personnel lists as safety nets. The mission-start sync
+	// is in the tactical listeners.
+	Template.AddCHEvent('UnitRankUp', OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('ItemAddedToSlot', OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('ItemRemovedFromSlot', OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('GeneModOperationCompleted', OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('AbilityPointsChange', OnWillMayHaveChanged_MindOverMatter, ELD_OnStateSubmitted, 40);
+	Template.AddCHEvent('PreEndOfMonth', OnPreEndOfMonth_MindOverMatter, ELD_Immediate, 50);
+	Template.AddCHEvent('UIPersonnel_OnSortFinished', OnUIPersonnelSortFinished_MindOverMatter, ELD_Immediate, 50);
+}
+
 // A bare icon holder: the stats are permanent changes (SyncMindOverMatterStats), the recovery time a handler.
 static function X2AbilityTemplate MindOverMatter()
 {

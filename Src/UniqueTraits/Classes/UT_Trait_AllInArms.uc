@@ -17,6 +17,12 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	Template.AddCHEvent('OnGetItemRange', OnGetItemRange_AllInArms, ELD_Immediate, 50);
+}
+
 // All in arms: -2 mobility. The +5 hand-throw range bonus is handled by a global
 // 'OnGetItemRange_AllInArms' listener (X2EventListener_UniqueTraits) since that event fires on the
 // item, not through an effect on the unit, and needs to tell hand-thrown items (grenade

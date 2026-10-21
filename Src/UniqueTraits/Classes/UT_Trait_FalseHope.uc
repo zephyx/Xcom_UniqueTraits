@@ -26,6 +26,14 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
+static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
+{
+	// False Hope: priority -10 on purpose, it must run AFTER LWOTC's XP listener (which gives the mission experience), whose priority is 0: its ini section
+	// [LW_Overhaul.X2EventListener_XP] has no LISTENER_PRIORITY line, so the config int stays 0 instead of falling back on DEFAULT_LISTENER_PRIORITY (90).
+	Template.AddCHEvent('OnDistributeTacticalGameEndXp', OnDistributeTacticalGameEndXp, ELD_OnStateSubmitted, -10);
+}
+
 static function bool ShiftsStats()
 {
 	return true;

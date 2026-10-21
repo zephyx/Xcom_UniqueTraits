@@ -11,6 +11,9 @@
 //           - A trait with a Probability= of its own in the mod's ini (Someone different, 2): it starts on its number (2) and the setting stays empty while
 //             it is there (so a change of the ini reaches the player); choosing "Default" stores the marker -1 (= the default weight instead of the ini's
 //             number, see UniqueTraits_TraitConfig.GetTraitProbability); choosing another number stores it; choosing the ini's number again erases the setting.
+//           - The first option of every trait's spinner (before "Default (N)") is "Disabled": the trait is switched OFF for real (UniqueTraits_TraitConfig.IsTraitDisabled:
+//             never drawn, no event registered, no template patched, abilities inert), applied at the next launch; stored as the key D_<TraitID> (1 = off, 0 = on although the
+//             ini's bDisabled says off), only when it differs from the ini; the weight stored for the trait is left alone.
 //           - Every label ends with "(?)": MCM has no icon, the description is the hover tooltip of the whole row.
 //           - Save: for the two general settings only what the player CHANGED is stored (UniqueTraits_MCMSettings.StoreValue: a value equal to the mod's ini goes
 //             back to "follows the ini"); the trait spinners are stored as explained above.
@@ -27,6 +30,7 @@ var localized string TabDraw, TitleDraw, GroupGeneral, GroupProbabilities;
 var localized string AssignLabel, AssignTip, DefaultLabel, DefaultTip, TraitTip, ProbabilityHelp, OptionDefault, TipModDefault, TipOn, TipOff;
 
 var localized string TabAdvanced, TitleAdvanced, GroupAdvancedInfo, AdvancedInfoLabel, AdvancedInfoTip, NoteRestart, NotePermanent, NoteStats;
+var localized string OptionDisabled;
 
 // The Advanced page: one slider per option of UniqueTraits_MCMOptions (parallel arrays).
 var array<MCM_API_Slider> OptSliders;
@@ -43,6 +47,7 @@ var array<bool> TraitFollowsGlobal;         // true: the trait gives no Probabil
 var array<int> TraitExtra;                  // the player's value when it is not in GetStandardValues (kept in the list), else -1
 var array<int> TraitOwn;                    // the trait's own weight from the mod's ini (it starts on that number), else -1
 var array<string> TraitDefaultLabel;        // the text of the "Default (N)" option as it is now (the default weight)
+var array<bool> DisabledInitial;            // true: the trait was on the option "Disabled" when the page was built / last saved
 var bool AssignInitial;
 var int DefaultInitial;
 
@@ -79,6 +84,7 @@ simulated function ClientModCallback(MCM_API_Instance ConfigAPI, int GameMode)
 	TraitExtra.Length = 0;
 	TraitOwn.Length = 0;
 	TraitDefaultLabel.Length = 0;
+	DisabledInitial.Length = 0;
 
 	Page = ConfigAPI.NewSettingsPage(TabDraw);
 	Page.SetPageTitle(TitleDraw);
@@ -146,6 +152,11 @@ simulated function ClientModCallback(MCM_API_Instance ConfigAPI, int GameMode)
 				Selection = string(PlayerValue);
 			}
 		}
+
+		// A disabled trait (the player's choice, else the ini's bDisabled) starts on "Disabled".
+		DisabledInitial.AddItem(class'UniqueTraits_TraitConfig'.static.IsTraitDisabled(i));
+		if (DisabledInitial[DisabledInitial.Length - 1])
+			Selection = OptionDisabled;
 
 		Spinner = Group.AddSpinner(name("UT_P_" $ class'UniqueTraits_TraitConfig'.default.Traits[i].TraitID), TraitLabel $ HELP_MARK, Tip, BuildOptions(Extra, Own, DefaultOption), Selection);
 
@@ -363,7 +374,7 @@ simulated function InsertValue(out array<int> Values, int Value)
 	Values.InsertItem(Position, Value);
 }
 
-// The options of a trait's spinner: DefaultOption (none when empty: a trait with its own weight), then the usual values and, in order, the player's own value
+// The options of a trait's spinner: "Disabled" (the trait is OFF for real, applies at the next launch), DefaultOption (none when empty: a trait with its own weight), then the usual values and, in order, the player's own value
 // (ExtraValue) and the trait's own weight (OwnValue) when they are not among them.
 simulated function array<string> BuildOptions(int ExtraValue, int OwnValue, string DefaultOption)
 {
@@ -375,6 +386,7 @@ simulated function array<string> BuildOptions(int ExtraValue, int OwnValue, stri
 	InsertValue(Values, ExtraValue);
 	InsertValue(Values, OwnValue);
 
+	Options.AddItem(OptionDisabled);
 	if (DefaultOption != "")
 		Options.AddItem(DefaultOption);
 
@@ -421,7 +433,7 @@ simulated function SaveButtonClicked(MCM_API_SettingsPage Page)
 	local int i, Value;
 	local bool bChecked;
 	local string Selection;
-	local name Key;
+	local name Key, DisabledKey;
 
 	bChecked = AssignCheckbox.GetValue();
 	if (bChecked != AssignInitial)
@@ -441,7 +453,16 @@ simulated function SaveButtonClicked(MCM_API_SettingsPage Page)
 	for (i = 0; i < TraitSpinners.Length; ++i)
 	{
 		Key = class'UniqueTraits_TraitConfig'.static.GetTraitProbabilityKey(TraitIndices[i]);
+		DisabledKey = class'UniqueTraits_TraitConfig'.static.GetTraitDisabledKey(TraitIndices[i]);
 		Selection = TraitSpinners[i].GetValue();
+
+		// "Disabled": the trait is OFF (applies at the next launch); stored only if the mod's ini does not already say so. The weight the player had stays stored for the
+		// day he enables the trait again. Any other option: enabled (stored only if the ini says disabled).
+		class'UniqueTraits_MCMSettings'.static.StoreValue(DisabledKey, Selection == OptionDisabled ? 1 : 0, class'UniqueTraits_TraitConfig'.static.IsTraitDisabledByIni(TraitIndices[i]) ? 1 : 0);
+		DisabledInitial[i] = Selection == OptionDisabled;
+		if (Selection == OptionDisabled)
+			continue;
+
 		if (Selection == TraitDefaultLabel[i] && !TraitFollowsGlobal[i])
 		{
 			// "Default" on a trait that has a weight of its own in the mod's ini: the player wants the default weight instead of the ini's number: marker -1.
@@ -480,6 +501,8 @@ simulated function ResetButtonClicked(MCM_API_SettingsPage Page)
 		// stays in the list).
 		DefaultOption = DefaultOptionLabel(class'UniqueTraits_TraitConfig'.static.GetIniDefaultTraitProbability());
 		Selection = TraitFollowsGlobal[i] ? DefaultOption : string(TraitOwn[i]);
+		if (class'UniqueTraits_TraitConfig'.static.IsTraitDisabledByIni(TraitIndices[i]))
+			Selection = OptionDisabled;
 		TraitSpinners[i].SetOptions(BuildOptions(-1, TraitOwn[i], DefaultOption), Selection, true);
 		TraitExtra[i] = -1;
 		TraitDefaultLabel[i] = DefaultOption;
