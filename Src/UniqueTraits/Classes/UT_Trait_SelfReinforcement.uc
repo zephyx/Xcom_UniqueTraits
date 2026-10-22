@@ -16,7 +16,8 @@
 class UT_Trait_SelfReinforcement extends UT_TraitBase config(UniqueTraits);
 
 var config int SELFREINFORCEMENT_DURATION_PCT;
-var config int SELFREINFORCEMENT_STAT_MULT;
+// A multiplier with decimals (1.5 = +50 %): a boost, a whole number, is multiplied and rounded (Round(b * m)); giving it back, Round(b / m) finds the original again (m > 1).
+var config float SELFREINFORCEMENT_STAT_MULT;
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -76,13 +77,13 @@ static final function XComGameState_BaseObject GetMutableObject(out XComGameStat
 }
 
 // Writes the two marks of a pair (ID + amount) on a unit; ID 0 clears the pair.
-static final function SetMarks(out XComGameState NewGameState, int UnitID, name IDName, name AmountName, int MarkID, int Amount)
+static final function SetMarks(out XComGameState NewGameState, int UnitID, name IDName, name AmountName, int MarkID, float Amount)
 {
 	local XComGameState_Unit MutableUnit;
 
 	MutableUnit = XComGameState_Unit(GetMutableObject(NewGameState, class'XComGameState_Unit', UnitID));
 	MutableUnit.SetUnitFloatValue(IDName, float(MarkID), eCleanup_Never);
-	MutableUnit.SetUnitFloatValue(AmountName, float(Amount), eCleanup_Never);
+	MutableUnit.SetUnitFloatValue(AmountName, Amount, eCleanup_Never);
 }
 
 // The soldier that carries the mark IDName == MarkID, or none.
@@ -112,7 +113,8 @@ static final function SyncCovertAction(XComGameState_CovertAction Action)
 	local XComGameState_CovertAction MutableAction;
 	local XComGameState NewGameState;
 	local array<int> HolderIDs;
-	local int i, j, Mult, AppliedMult, ItemID, Hours;
+	local int i, j, ItemID, Hours;
+	local float Mult, AppliedMult;
 
 	History = `XCOMHISTORY;
 	XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
@@ -120,7 +122,7 @@ static final function SyncCovertAction(XComGameState_CovertAction Action)
 		return;
 
 	Soldiers = XComHQ.GetSoldiers();
-	Mult = Max(1, default.SELFREINFORCEMENT_STAT_MULT);
+	Mult = FMax(1.0, default.SELFREINFORCEMENT_STAT_MULT);
 	DurationOwner = FindMarkedSoldier(Soldiers, 'UT_SR_ActionID', Action.ObjectID);
 
 	for (i = 0; i < Action.StaffSlots.Length; i++)
@@ -157,11 +159,11 @@ static final function SyncCovertAction(XComGameState_CovertAction Action)
 		if (Holder != none && ItemDoubler == none)
 		{
 			// A holder takes the slot: double the boosts.
-			if (Mult > 1)
+			if (Mult > 1.0)
 			{
 				MutableItem = XComGameState_Item(GetMutableObject(NewGameState, class'XComGameState_Item', ItemID));
 				for (j = 0; j < MutableItem.StatBoosts.Length; j++)
-					MutableItem.StatBoosts[j].Boost = MutableItem.StatBoosts[j].Boost * Mult;
+					MutableItem.StatBoosts[j].Boost = Round(float(MutableItem.StatBoosts[j].Boost) * Mult);
 
 				SetMarks(NewGameState, Holder.ObjectID, 'UT_SR_ItemID', 'UT_SR_ItemMult', ItemID, Mult);
 			}
@@ -169,12 +171,12 @@ static final function SyncCovertAction(XComGameState_CovertAction Action)
 		else if (Holder == none && ItemDoubler != none)
 		{
 			// The holder left the slot: give the boosts back, with the multiplier that was really applied.
-			AppliedMult = Max(1, int(GetUnitFloat(ItemDoubler, 'UT_SR_ItemMult', 1)));
-			if (AppliedMult > 1)
+			AppliedMult = FMax(1.0, GetUnitFloat(ItemDoubler, 'UT_SR_ItemMult', 1.0));
+			if (AppliedMult > 1.0)
 			{
 				MutableItem = XComGameState_Item(GetMutableObject(NewGameState, class'XComGameState_Item', ItemID));
 				for (j = 0; j < MutableItem.StatBoosts.Length; j++)
-					MutableItem.StatBoosts[j].Boost = MutableItem.StatBoosts[j].Boost / AppliedMult;
+					MutableItem.StatBoosts[j].Boost = Round(float(MutableItem.StatBoosts[j].Boost) / AppliedMult);
 			}
 
 			SetMarks(NewGameState, ItemDoubler.ObjectID, 'UT_SR_ItemID', 'UT_SR_ItemMult', 0, 0);
@@ -182,7 +184,7 @@ static final function SyncCovertAction(XComGameState_CovertAction Action)
 		else if (Holder != none && ItemDoubler != none && Holder.ObjectID != ItemDoubler.ObjectID)
 		{
 			// Still doubled, by a unit that is no longer there: the new holder takes the mark over.
-			AppliedMult = int(GetUnitFloat(ItemDoubler, 'UT_SR_ItemMult', 1));
+			AppliedMult = GetUnitFloat(ItemDoubler, 'UT_SR_ItemMult', 1.0);
 			SetMarks(NewGameState, ItemDoubler.ObjectID, 'UT_SR_ItemID', 'UT_SR_ItemMult', 0, 0);
 			SetMarks(NewGameState, Holder.ObjectID, 'UT_SR_ItemID', 'UT_SR_ItemMult', ItemID, AppliedMult);
 		}

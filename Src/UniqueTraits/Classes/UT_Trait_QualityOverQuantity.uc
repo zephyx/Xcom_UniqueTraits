@@ -11,6 +11,13 @@ var config array<int> QUALITY_CRIT_BY_TIER;
 var config int QUALITY_CLIP_REDUCTION;
 var config int QUALITY_CLIP_MIN_FOR_REDUCTION;
 
+// The smallest clip that is reduced: QUALITY_CLIP_MIN_FOR_REDUCTION, but always more than the reduction itself (minimum clip - reduction >= 1), whatever the ini or the Mod
+// Config Menu give: the clip of a holder can never reach 0. The Mod Config Menu page keeps the two sliders in that relation (UniqueTraits_MCMScreen.EnforceClipRule).
+static final function int GetMinClipForReduction()
+{
+	return Max(default.QUALITY_CLIP_MIN_FOR_REDUCTION, default.QUALITY_CLIP_REDUCTION + 1);
+}
+
 static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
@@ -55,7 +62,7 @@ static function EventListenerReturn OnOverrideClipSize_QualityOverQuantity(Objec
 	Tuple = XComLWTuple(EventData);
 	ItemState = XComGameState_Item(EventSource);
 	if (Tuple == none || ItemState == none || ItemState.InventorySlot != eInvSlot_PrimaryWeapon
-		|| Tuple.Data[0].i < default.QUALITY_CLIP_MIN_FOR_REDUCTION)
+		|| Tuple.Data[0].i < GetMinClipForReduction())
 		return ELR_NoInterrupt;
 
 	OwnerUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(ItemState.OwnerStateObject.ObjectID));

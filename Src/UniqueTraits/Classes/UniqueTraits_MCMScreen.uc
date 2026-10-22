@@ -261,7 +261,7 @@ simulated function BuildAdvancedPage(MCM_API_Instance ConfigAPI)
 			else if (Flags == "S")
 				Tip $= "\n" $ NoteStats;
 
-			Slider = Group.AddSlider(name("UT_O_" $ Key), Label $ HELP_MARK, Tip, float(Min(OptMin, Current)) / float(Scale), float(Max(OptMax, Current)) / float(Scale), float(OptStep) / float(Scale), float(Current) / float(Scale));
+			Slider = Group.AddSlider(name("UT_O_" $ Key), Label $ HELP_MARK, Tip, float(Min(OptMin, Current)) / float(Scale), float(Max(OptMax, Current)) / float(Scale), float(OptStep) / float(Scale), float(Current) / float(Scale), , AdvancedSliderChanged);
 			if (Scale == 100)
 				Slider.SetValueDisplayFilter(FormatDecimal);
 			else
@@ -298,11 +298,36 @@ simulated function string FormatDecimal(float Value)
 	return Sign $ (Hundredths / 100) $ "." $ Fraction;
 }
 
+// Quality over quantity: the minimum clip for the reduction must exceed the reduction (minimum - reduction >= 1), or a holder's clip could reach 0. The slider of the minimum
+// is pushed up to reduction + 1 when the player lowers it below that or raises the reduction (UT_Trait_QualityOverQuantity.GetMinClipForReduction applies the same rule at run
+// time, whatever is stored).
+simulated function EnforceClipRule()
+{
+	local int ReductionIndex, MinIndex, Needed;
+
+	ReductionIndex = OptKeys.Find('QUALITY_CLIP_REDUCTION');
+	MinIndex = OptKeys.Find('QUALITY_CLIP_MIN_FOR_REDUCTION');
+	if (ReductionIndex == INDEX_NONE || MinIndex == INDEX_NONE)
+		return;
+
+	Needed = Round(OptSliders[ReductionIndex].GetValue()) + 1;
+	if (Round(OptSliders[MinIndex].GetValue()) < Needed)
+		OptSliders[MinIndex].SetValue(float(Needed), true);
+}
+
+// Change handler of every slider of the Advanced page (only fired by the player): keeps the clip rule above.
+simulated function AdvancedSliderChanged(MCM_API_Setting Setting, float Value)
+{
+	EnforceClipRule();
+}
+
 // Saves what changed on the Advanced page (a value equal to the mod's ini is not stored), then applies it at once: the values read when used change now, the ones
 // baked into the abilities (marked *) at the next launch.
 simulated function AdvancedSaveClicked(MCM_API_SettingsPage Page)
 {
 	local int i, Value;
+
+	EnforceClipRule();
 
 	for (i = 0; i < OptSliders.Length; ++i)
 	{
