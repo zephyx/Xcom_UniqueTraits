@@ -6,7 +6,8 @@
 //           - GetRows: one line per option, "KEY|TRAIT|min|max|step|scale|flags" (values in scaled units: a float is stored x100, scale 100). flags: R = the value is
 //             baked into the ability templates when the game starts, so it applies at the next launch; P = a permanent change made when the trait is given, soldiers
 //             who already have the trait keep the old value; S = a permanent stat change kept in step with the target (ledger of UT_TraitBase), soldiers who already
-//             have the trait are adjusted at their next promotion, mission start or month end.
+//             have the trait are adjusted at their next promotion, mission start or month end; B = a boolean (a checkbox, stored 0 / 1; the page tests the flag with InStr, so it
+//             can follow another one, e.g. RB).
 //           - GetCurrent / SetCurrent: the value now in the class default, scaled to an int.
 //           - ApplyOverrides: puts into every default the player's value, or the mod's ini value (cached the first time, before anything is applied) when he has none.
 //             Called by OnPreCreateTemplates (CHL #412, before any X2DataSet is built, so even the values baked into the templates are the player's) and when the page is saved.
@@ -62,6 +63,14 @@ static final function array<string> GetRows()
 	Rows.AddItem("SELFREINFORCEMENT_STAT_MULT|UT_SelfReinforcement|100|500|50|100|-");
 	Rows.AddItem("RELIABLE_CRIT_TO_AIM_DIVISOR|UT_Reliable|1|4|1|1|-");
 	Rows.AddItem("RELIABLE_DODGE_REDUCTION_PCT|UT_Reliable|0|200|10|1|-");
+	Rows.AddItem("APOTHECARY_HP_MALUS|UT_Apothecary|0|5|1|1|P");
+	Rows.AddItem("APOTHECARY_MIN_HP|UT_Apothecary|1|10|1|1|P");
+	Rows.AddItem("APOTHECARY_RECOVERY_PCT|UT_Apothecary|0|100|5|1|-");
+	Rows.AddItem("APOTHECARY_TOXIN_TURNS|UT_Apothecary|1|6|1|1|R");
+	Rows.AddItem("APOTHECARY_TOXIN_AIM_MALUS|UT_Apothecary|0|40|1|1|R");
+	Rows.AddItem("APOTHECARY_TOXIN_MOBILITY_MALUS|UT_Apothecary|0|8|1|1|R");
+	Rows.AddItem("APOTHECARY_TOXIN_SIGHT_MALUS|UT_Apothecary|0|8|1|1|R");
+	Rows.AddItem("APOTHECARY_TOXIN_REMOVES_SQUADSIGHT|UT_Apothecary|0|1|1|1|RB");
 	Rows.AddItem("SMOKER_WILL_REGEN|UT_Smoker|0|30|1|1|-");
 	Rows.AddItem("SMOKER_FATIGUE_INTERVAL_NORMAL|UT_Smoker|1|8|1|1|-");
 	Rows.AddItem("SMOKER_FATIGUE_INTERVAL_TIRED|UT_Smoker|1|8|1|1|-");
@@ -241,6 +250,14 @@ static final function int GetCurrent(name Key)
 		case 'SELFREINFORCEMENT_STAT_MULT': return Round(class'UT_Trait_SelfReinforcement'.default.SELFREINFORCEMENT_STAT_MULT * 100.0);
 		case 'RELIABLE_CRIT_TO_AIM_DIVISOR': return class'UT_Trait_Reliable'.default.RELIABLE_CRIT_TO_AIM_DIVISOR;
 		case 'RELIABLE_DODGE_REDUCTION_PCT': return class'UT_Trait_Reliable'.default.RELIABLE_DODGE_REDUCTION_PCT;
+		case 'APOTHECARY_HP_MALUS': return class'UT_Trait_Apothecary'.default.APOTHECARY_HP_MALUS;
+		case 'APOTHECARY_MIN_HP': return class'UT_Trait_Apothecary'.default.APOTHECARY_MIN_HP;
+		case 'APOTHECARY_RECOVERY_PCT': return class'UT_Trait_Apothecary'.default.APOTHECARY_RECOVERY_PCT;
+		case 'APOTHECARY_TOXIN_TURNS': return class'UT_Trait_Apothecary'.default.APOTHECARY_TOXIN_TURNS;
+		case 'APOTHECARY_TOXIN_AIM_MALUS': return class'UT_Trait_Apothecary'.default.APOTHECARY_TOXIN_AIM_MALUS;
+		case 'APOTHECARY_TOXIN_MOBILITY_MALUS': return class'UT_Trait_Apothecary'.default.APOTHECARY_TOXIN_MOBILITY_MALUS;
+		case 'APOTHECARY_TOXIN_SIGHT_MALUS': return class'UT_Trait_Apothecary'.default.APOTHECARY_TOXIN_SIGHT_MALUS;
+		case 'APOTHECARY_TOXIN_REMOVES_SQUADSIGHT': if (class'UT_Trait_Apothecary'.default.APOTHECARY_TOXIN_REMOVES_SQUADSIGHT) return 1; return 0;
 		case 'SMOKER_WILL_REGEN': return class'UT_Trait_Smoker'.default.SMOKER_WILL_REGEN;
 		case 'SMOKER_FATIGUE_INTERVAL_NORMAL': return class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_NORMAL;
 		case 'SMOKER_FATIGUE_INTERVAL_TIRED': return class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_TIRED;
@@ -421,6 +438,14 @@ static final function SetCurrent(name Key, int Value)
 		case 'SELFREINFORCEMENT_STAT_MULT': class'UT_Trait_SelfReinforcement'.default.SELFREINFORCEMENT_STAT_MULT = float(Value) / 100.0; break;
 		case 'RELIABLE_CRIT_TO_AIM_DIVISOR': class'UT_Trait_Reliable'.default.RELIABLE_CRIT_TO_AIM_DIVISOR = Value; break;
 		case 'RELIABLE_DODGE_REDUCTION_PCT': class'UT_Trait_Reliable'.default.RELIABLE_DODGE_REDUCTION_PCT = Value; break;
+		case 'APOTHECARY_HP_MALUS': class'UT_Trait_Apothecary'.default.APOTHECARY_HP_MALUS = Value; break;
+		case 'APOTHECARY_MIN_HP': class'UT_Trait_Apothecary'.default.APOTHECARY_MIN_HP = Value; break;
+		case 'APOTHECARY_RECOVERY_PCT': class'UT_Trait_Apothecary'.default.APOTHECARY_RECOVERY_PCT = Value; break;
+		case 'APOTHECARY_TOXIN_TURNS': class'UT_Trait_Apothecary'.default.APOTHECARY_TOXIN_TURNS = Value; break;
+		case 'APOTHECARY_TOXIN_AIM_MALUS': class'UT_Trait_Apothecary'.default.APOTHECARY_TOXIN_AIM_MALUS = Value; break;
+		case 'APOTHECARY_TOXIN_MOBILITY_MALUS': class'UT_Trait_Apothecary'.default.APOTHECARY_TOXIN_MOBILITY_MALUS = Value; break;
+		case 'APOTHECARY_TOXIN_SIGHT_MALUS': class'UT_Trait_Apothecary'.default.APOTHECARY_TOXIN_SIGHT_MALUS = Value; break;
+		case 'APOTHECARY_TOXIN_REMOVES_SQUADSIGHT': class'UT_Trait_Apothecary'.default.APOTHECARY_TOXIN_REMOVES_SQUADSIGHT = (Value != 0); break;
 		case 'SMOKER_WILL_REGEN': class'UT_Trait_Smoker'.default.SMOKER_WILL_REGEN = Value; break;
 		case 'SMOKER_FATIGUE_INTERVAL_NORMAL': class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_NORMAL = Value; break;
 		case 'SMOKER_FATIGUE_INTERVAL_TIRED': class'UT_Trait_Smoker'.default.SMOKER_FATIGUE_INTERVAL_TIRED = Value; break;

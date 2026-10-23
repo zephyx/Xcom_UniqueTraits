@@ -38,6 +38,10 @@ var array<name> OptKeys;
 var array<int> OptScales;                   // 1 for a whole number, 100 for a number with decimals (stored x100)
 var array<int> OptInitial;                  // the value (scaled) the slider had when the page was built / last saved
 var array<int> OptIni;                      // the mod's ini value (scaled)
+var array<MCM_API_Checkbox> OptChecks;     // the boolean options (flag B): a checkbox each, parallel to the three arrays below
+var array<name> OptCheckKeys;
+var array<int> OptCheckInitial;             // 1 / 0: the value the checkbox had when the page was built / last saved
+var array<int> OptCheckIni;                 // the mod's ini value, 1 / 0
 
 var MCM_API_Checkbox AssignCheckbox;
 var MCM_API_Slider DefaultSlider;
@@ -182,18 +186,24 @@ simulated function BuildAdvancedPage(MCM_API_Instance ConfigAPI)
 	local MCM_API_SettingsPage Page;
 	local MCM_API_SettingsGroup Group;
 	local MCM_API_Slider Slider;
+	local MCM_API_Checkbox OptCheck;
 	local X2AbilityTemplateManager AbilityMgr;
 	local X2AbilityTemplate AbilityTemplate;
 	local array<string> Rows, Parts;
 	local name TraitID, Key;
 	local string TraitName, Label, Tip, Flags;
 	local int t, r, OptMin, OptMax, OptStep, Scale, Current;
+	local bool bBoolean;
 
 	OptSliders.Length = 0;
 	OptKeys.Length = 0;
 	OptScales.Length = 0;
 	OptInitial.Length = 0;
 	OptIni.Length = 0;
+	OptChecks.Length = 0;
+	OptCheckKeys.Length = 0;
+	OptCheckInitial.Length = 0;
+	OptCheckIni.Length = 0;
 
 	// Makes sure the ini values are cached (they normally are, from OnPreCreateTemplates).
 	class'UniqueTraits_MCMOptions'.static.ApplyOverrides();
@@ -248,18 +258,30 @@ simulated function BuildAdvancedPage(MCM_API_Instance ConfigAPI)
 			Current = class'UniqueTraits_MCMOptions'.static.GetCurrent(Key);
 			Label = Localize("UT_MCM_Options", string(Key) $ "_Label", "UniqueTraits");
 			Tip = Localize("UT_MCM_Options", string(Key) $ "_Tip", "UniqueTraits");
-			if (Flags == "R")
+			bBoolean = InStr(Flags, "B") != INDEX_NONE;
+			if (InStr(Flags, "R") != INDEX_NONE)
 			{
 				Label $= " *";
 				Tip $= "\n" $ NoteRestart;
 			}
-			else if (Flags == "P")
+			else if (InStr(Flags, "P") != INDEX_NONE)
 			{
 				Label $= " **";
 				Tip $= "\n" $ NotePermanent;
 			}
-			else if (Flags == "S")
+			else if (InStr(Flags, "S") != INDEX_NONE)
 				Tip $= "\n" $ NoteStats;
+
+			// A boolean option (flag B): a checkbox, stored as 0 / 1.
+			if (bBoolean)
+			{
+				OptCheck = Group.AddCheckbox(name("UT_O_" $ Key), Label $ HELP_MARK, Tip, Current != 0);
+				OptChecks.AddItem(OptCheck);
+				OptCheckKeys.AddItem(Key);
+				OptCheckInitial.AddItem(Current);
+				OptCheckIni.AddItem(class'UniqueTraits_MCMSettings'.static.GetIniCached(Key));
+				continue;
+			}
 
 			Slider = Group.AddSlider(name("UT_O_" $ Key), Label $ HELP_MARK, Tip, float(Min(OptMin, Current)) / float(Scale), float(Max(OptMax, Current)) / float(Scale), float(OptStep) / float(Scale), float(Current) / float(Scale), , AdvancedSliderChanged);
 			if (Scale == 100)
@@ -339,6 +361,18 @@ simulated function AdvancedSaveClicked(MCM_API_SettingsPage Page)
 		OptInitial[i] = Value;
 	}
 
+	for (i = 0; i < OptChecks.Length; ++i)
+	{
+		Value = 0;
+		if (OptChecks[i].GetValue())
+			Value = 1;
+		if (Value == OptCheckInitial[i])
+			continue;
+
+		class'UniqueTraits_MCMSettings'.static.StoreValue(OptCheckKeys[i], Value, OptCheckIni[i]);
+		OptCheckInitial[i] = Value;
+	}
+
 	class'UniqueTraits_MCMSettings'.static.Commit();
 	class'UniqueTraits_MCMOptions'.static.ApplyOverrides();
 }
@@ -350,6 +384,9 @@ simulated function AdvancedResetClicked(MCM_API_SettingsPage Page)
 
 	for (i = 0; i < OptSliders.Length; ++i)
 		OptSliders[i].SetValue(float(OptIni[i]) / float(OptScales[i]), true);
+
+	for (i = 0; i < OptChecks.Length; ++i)
+		OptChecks[i].SetValue(OptCheckIni[i] != 0, true);
 }
 
 // "Default (N)" (the first option of a trait's spinner).

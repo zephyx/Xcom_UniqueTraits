@@ -1,8 +1,8 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_MindOverMatter.uc
-//  PURPOSE: Mind over matter: -3 HP, -2 mobility, -6 aim and a wound recovery 45% longer, each offset by a percentage of the holder's
-//           MAX Will: +7% (HP), +4% (mobility), +15% (aim) of the Will as stat points (rounded), and -120% of the Will as recovery
-//           time %. The numbers are tuned (ini) so that the trait is neutral around 37 Will, punishing below and rewarding above.
+//  PURPOSE: Mind over matter: -3 HP, -2 mobility, -6 aim and wounds 45% worse, each offset by a percentage of the holder's
+//           MAX Will: +7% (HP), +4% (mobility), +15% (aim) of the Will as stat points (rounded), and -120% of the Will as wound severity %
+//           (more or fewer HP lost; the healing time follows the wound, NOT by the same percentage). The numbers are tuned (ini) so that the trait is neutral around 37 Will, punishing below and rewarding above.
 //           The stats are PERMANENT changes of the soldier (ShiftStat, like Nerd / Born to be chief), so they also show in the Armory. A rookie gets them at once
 //           (see UT_TraitBase); the removal takes back the LEDGER of ShiftStat (RevertShifts) and a respec is absorbed by OnStatsReset.
 //           What was added is the LEDGER of UT_TraitBase (per stat, the net amount currently applied),
