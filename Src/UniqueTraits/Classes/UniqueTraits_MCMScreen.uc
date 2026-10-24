@@ -30,7 +30,7 @@ var localized string TabDraw, TitleDraw, GroupGeneral, GroupProbabilities;
 var localized string AssignLabel, AssignTip, DefaultLabel, DefaultTip, TraitTip, ProbabilityHelp, OptionDefault, TipModDefault, TipOn, TipOff;
 
 var localized string TabAdvanced, TitleAdvanced, GroupAdvancedInfo, AdvancedInfoLabel, AdvancedInfoTip, NoteRestart, NotePermanent, NoteStats;
-var localized string OptionDisabled;
+var localized string OptionDisabled, GroupAIHazardFix;
 
 // The Advanced page: one slider per option of UniqueTraits_MCMOptions (parallel arrays).
 var array<MCM_API_Slider> OptSliders;
@@ -181,19 +181,17 @@ simulated function ClientModCallback(MCM_API_Instance ConfigAPI, int GameMode)
 // built into the abilities when the game starts (applies at the next launch), "**" that it only changes what is done when the trait is given.
 // No mark for the flag "S" (permanent stat changes of Nerd, False Hope, Born to be chief): the tooltip says that the soldiers who already have the trait are
 // adjusted at their next promotion, mission start or month end.
+// After the traits, one more group for the options that belong to no trait (the AI hazard fix: rows whose group id is AIHazardFix).
 simulated function BuildAdvancedPage(MCM_API_Instance ConfigAPI)
 {
 	local MCM_API_SettingsPage Page;
 	local MCM_API_SettingsGroup Group;
-	local MCM_API_Slider Slider;
-	local MCM_API_Checkbox OptCheck;
 	local X2AbilityTemplateManager AbilityMgr;
 	local X2AbilityTemplate AbilityTemplate;
 	local array<string> Rows, Parts;
-	local name TraitID, Key;
-	local string TraitName, Label, Tip, Flags;
-	local int t, r, OptMin, OptMax, OptStep, Scale, Current;
-	local bool bBoolean;
+	local name TraitID;
+	local string TraitName;
+	local int t, r;
 
 	OptSliders.Length = 0;
 	OptKeys.Length = 0;
@@ -248,56 +246,83 @@ simulated function BuildAdvancedPage(MCM_API_Instance ConfigAPI)
 				Group = Page.AddGroup(name("UT_A_" $ TraitID), TraitName);
 			}
 
-			Key = name(Parts[0]);
-			OptMin = int(Parts[2]);
-			OptMax = int(Parts[3]);
-			OptStep = int(Parts[4]);
-			Scale = int(Parts[5]);
-			Flags = Parts[6];
-
-			Current = class'UniqueTraits_MCMOptions'.static.GetCurrent(Key);
-			Label = Localize("UT_MCM_Options", string(Key) $ "_Label", "UniqueTraits");
-			Tip = Localize("UT_MCM_Options", string(Key) $ "_Tip", "UniqueTraits");
-			bBoolean = InStr(Flags, "B") != INDEX_NONE;
-			if (InStr(Flags, "R") != INDEX_NONE)
-			{
-				Label $= " *";
-				Tip $= "\n" $ NoteRestart;
-			}
-			else if (InStr(Flags, "P") != INDEX_NONE)
-			{
-				Label $= " **";
-				Tip $= "\n" $ NotePermanent;
-			}
-			else if (InStr(Flags, "S") != INDEX_NONE)
-				Tip $= "\n" $ NoteStats;
-
-			// A boolean option (flag B): a checkbox, stored as 0 / 1.
-			if (bBoolean)
-			{
-				OptCheck = Group.AddCheckbox(name("UT_O_" $ Key), Label $ HELP_MARK, Tip, Current != 0);
-				OptChecks.AddItem(OptCheck);
-				OptCheckKeys.AddItem(Key);
-				OptCheckInitial.AddItem(Current);
-				OptCheckIni.AddItem(class'UniqueTraits_MCMSettings'.static.GetIniCached(Key));
-				continue;
-			}
-
-			Slider = Group.AddSlider(name("UT_O_" $ Key), Label $ HELP_MARK, Tip, float(Min(OptMin, Current)) / float(Scale), float(Max(OptMax, Current)) / float(Scale), float(OptStep) / float(Scale), float(Current) / float(Scale), , AdvancedSliderChanged);
-			if (Scale == 100)
-				Slider.SetValueDisplayFilter(FormatDecimal);
-			else
-				Slider.SetValueDisplayFilter(FormatWeight);
-
-			OptSliders.AddItem(Slider);
-			OptKeys.AddItem(Key);
-			OptScales.AddItem(Scale);
-			OptInitial.AddItem(Current);
-			OptIni.AddItem(class'UniqueTraits_MCMSettings'.static.GetIniCached(Key));
+			AddAdvancedOption(Group, Parts);
 		}
 	}
 
+	// The options that belong to no trait: the group of the AI hazard fix (its rows carry the group id AIHazardFix where a trait id would be).
+	Group = none;
+	for (r = 0; r < Rows.Length; ++r)
+	{
+		ParseStringIntoArray(Rows[r], Parts, "|", false);
+		if (name(Parts[1]) != 'AIHazardFix')
+			continue;
+
+		if (Group == none)
+			Group = Page.AddGroup('UT_A_AIHazardFix', GroupAIHazardFix);
+
+		AddAdvancedOption(Group, Parts);
+	}
+
 	Page.ShowSettings();
+}
+
+// One option of the Advanced page, in the group Group; Parts = the fields of its GetRows line (KEY|group|min|max|step|scale|flags). A number is a slider, a boolean (flag B) a checkbox.
+simulated function AddAdvancedOption(MCM_API_SettingsGroup Group, array<string> Parts)
+{
+	local MCM_API_Slider Slider;
+	local MCM_API_Checkbox OptCheck;
+	local name Key;
+	local string Label, Tip, Flags;
+	local int OptMin, OptMax, OptStep, Scale, Current;
+	local bool bBoolean;
+
+	Key = name(Parts[0]);
+	OptMin = int(Parts[2]);
+	OptMax = int(Parts[3]);
+	OptStep = int(Parts[4]);
+	Scale = int(Parts[5]);
+	Flags = Parts[6];
+
+	Current = class'UniqueTraits_MCMOptions'.static.GetCurrent(Key);
+	Label = Localize("UT_MCM_Options", string(Key) $ "_Label", "UniqueTraits");
+	Tip = Localize("UT_MCM_Options", string(Key) $ "_Tip", "UniqueTraits");
+	bBoolean = InStr(Flags, "B") != INDEX_NONE;
+	if (InStr(Flags, "R") != INDEX_NONE)
+	{
+		Label $= " *";
+		Tip $= "\n" $ NoteRestart;
+	}
+	else if (InStr(Flags, "P") != INDEX_NONE)
+	{
+		Label $= " **";
+		Tip $= "\n" $ NotePermanent;
+	}
+	else if (InStr(Flags, "S") != INDEX_NONE)
+		Tip $= "\n" $ NoteStats;
+
+	// A boolean option (flag B): a checkbox, stored as 0 / 1.
+	if (bBoolean)
+	{
+		OptCheck = Group.AddCheckbox(name("UT_O_" $ Key), Label $ HELP_MARK, Tip, Current != 0);
+		OptChecks.AddItem(OptCheck);
+		OptCheckKeys.AddItem(Key);
+		OptCheckInitial.AddItem(Current);
+		OptCheckIni.AddItem(class'UniqueTraits_MCMSettings'.static.GetIniCached(Key));
+		return;
+	}
+
+	Slider = Group.AddSlider(name("UT_O_" $ Key), Label $ HELP_MARK, Tip, float(Min(OptMin, Current)) / float(Scale), float(Max(OptMax, Current)) / float(Scale), float(OptStep) / float(Scale), float(Current) / float(Scale), , AdvancedSliderChanged);
+	if (Scale == 100)
+		Slider.SetValueDisplayFilter(FormatDecimal);
+	else
+		Slider.SetValueDisplayFilter(FormatWeight);
+
+	OptSliders.AddItem(Slider);
+	OptKeys.AddItem(Key);
+	OptScales.AddItem(Scale);
+	OptInitial.AddItem(Current);
+	OptIni.AddItem(class'UniqueTraits_MCMSettings'.static.GetIniCached(Key));
 }
 
 // A slider that shows a number with two decimals (1.25).
