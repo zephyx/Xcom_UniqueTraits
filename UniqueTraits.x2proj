@@ -98,7 +98,8 @@
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Disease.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_DoTVulnerability.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_BondStats.uc" />
-    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_LaserMark.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Suppression.uc" />
+    <Content Include="Src\UniqueTraits\Classes\XComGameState_Effect_UT_Suppression.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_PsiAdept.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_GiveMeMore.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_MindOverMatter.uc" />

@@ -7,8 +7,8 @@
 //           and GAINS LASERDESIGNATOR_DODGE_BONUS dodge. If the enemy is holotargeted, the designator's cooldown is reduced by LASERDESIGNATOR_HOLOTARGET_COOLDOWN_REDUCTION.
 //           - UT_LaserDesignator: the active ability; its effect is the "primed" marker (effect UT_LaserDesignator_Primed on the holder).
 //           - OnAbilityActivated_LaserDesignator ('AbilityActivated', ELD_OnStateSubmitted): consumes the marker and applies the mark, in a
-//             change container of its own (effect of the hidden ability UT_LaserDesignatorMark; effect 1 of it restores Shadowstep when the
-//             mark ends, see X2Effect_UT_LaserMark).
+//             change container of its own (effect of the hidden ability UT_LaserDesignatorMark; when the mark ends, the Shadowstep it took off
+//             comes back as the very same effect of the ability that provided it, see X2Effect_UT_Suppression).
 //---------------------------------------------------------------------------------------
 class UT_Trait_LaserDesignator extends UT_TraitBase config(UniqueTraits);
 
@@ -79,59 +79,26 @@ static function X2AbilityTemplate LaserDesignator()
 	return Template;
 }
 
-// Holder of the mark (effect 0) and of the effect that gives Shadowstep back when the mark ends (effect 1): hidden, never granted.
+// Holder of the mark (effect 0): hidden, never granted.
 static function X2AbilityTemplate LaserDesignatorMark()
 {
 	local X2AbilityTemplate Template;
-	local X2Effect_UT_LaserMark MarkEffect;
-	local X2Effect_Persistent RestoreEffect;
+	local X2Effect_UT_Suppression MarkEffect;
 	local name SuppressedName;
 
 	Template = HiddenEffectHolder('UT_LaserDesignatorMark');
 	Template.Hostility = eHostility_Offensive;
 
-	MarkEffect = new class'X2Effect_UT_LaserMark';
+	MarkEffect = new class'X2Effect_UT_Suppression';
 	MarkEffect.EffectName = 'UT_LaserDesignator_Mark';
 	foreach default.LASERDESIGNATOR_SUPPRESSED_EFFECTS(SuppressedName)
 		MarkEffect.EffectNamesToSuppress.AddItem(SuppressedName);
-	MarkEffect.RestoreAbilityName = 'UT_LaserDesignatorMark';
-	MarkEffect.RestoreEffectIndex = 1;
 	MarkEffect.BuildPersistentEffect(default.LASERDESIGNATOR_MARK_TURNS, false, true, false, eGameRule_PlayerTurnBegin);
 	MarkEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, true,, Template.AbilitySourceName);
 	MarkEffect.AddPersistentStatChange(eStat_Dodge, default.LASERDESIGNATOR_DODGE_BONUS);
 	Template.AddTargetEffect(MarkEffect);
 
-	// The vanilla Shadowstep (a plain persistent effect with that name, which the game tests by name), given back when the mark ends.
-	RestoreEffect = new class'X2Effect_Persistent';
-	RestoreEffect.EffectName = 'Shadowstep';
-	RestoreEffect.DuplicateResponse = eDupe_Ignore;
-	RestoreEffect.BuildPersistentEffect(1, true, false);
-	Template.AddTargetEffect(RestoreEffect);
-
 	return Template;
-}
-
-// The restored Shadowstep must be listed when the unit is inspected: the UI lists the persistent effects that have display info (bDisplayInUI), which
-// the plain effect of LaserDesignatorMark() lacks. Copied from the real Shadowstep template once every template exists (so another mod's changes to its
-// text or icon are followed).
-static function OnPostTemplatesCreated()
-{
-	local X2AbilityTemplateManager Manager;
-	local X2AbilityTemplate ShadowstepTemplate, MarkTemplate;
-	local X2Effect_Persistent RestoreEffect;
-
-	Manager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
-	ShadowstepTemplate = Manager.FindAbilityTemplate('Shadowstep');
-	MarkTemplate = Manager.FindAbilityTemplate('UT_LaserDesignatorMark');
-	if (ShadowstepTemplate == none || MarkTemplate == none || MarkTemplate.AbilityTargetEffects.Length < 2)
-	{
-		`log("UniqueTraits [WARN] : Laser designator -- Shadowstep or UT_LaserDesignatorMark template not found, the restored Shadowstep will not be listed in the unit inspection",, 'UniqueTraits');
-		return;
-	}
-
-	RestoreEffect = X2Effect_Persistent(MarkTemplate.AbilityTargetEffects[1]);
-	if (RestoreEffect != none)
-		RestoreEffect.SetDisplayInfo(ePerkBuff_Passive, ShadowstepTemplate.LocFriendlyName, ShadowstepTemplate.GetMyLongDescription(), ShadowstepTemplate.IconImage,,, ShadowstepTemplate.AbilitySourceName);
 }
 
 static final function bool IsHolotargeted(XComGameState_Unit Target)

@@ -4,7 +4,8 @@
 //           APOTHECARY_MIN_HP because of the trait) and wounds APOTHECARY_RECOVERY_PCT % worse (more HP lost: the healing time follows the wound, but NOT by that percentage).
 //           - The toxin is a debuff of its own, added to the poison (the poison effects are never touched, so nothing of other mods is patched): for APOTHECARY_TOXIN_TURNS turn(s) the enemy has
 //             -APOTHECARY_TOXIN_AIM_MALUS Aim, -APOTHECARY_TOXIN_MOBILITY_MALUS Mobility, -APOTHECARY_TOXIN_SIGHT_MALUS sight radius and (APOTHECARY_TOXIN_REMOVES_SQUADSIGHT, an MCM checkbox) LOSES its squadsight, which comes back when the toxin ends
-//             (the effect named Squadsight is removed and given back, as the Laser designator's mark does with Shadowstep: see X2Effect_UT_LaserMark).
+//             (the effect named Squadsight is removed and the very same effect, the one of the ability that provided it, is applied again when the toxin ends, as the Laser designator's
+//             mark does with Shadowstep: see X2Effect_UT_Suppression; the Advent Sniper, for one, has an ability of its own for it).
 //           - The toxin is INDEPENDENT of the poison: an effect of its own (name, state, duration), neither tied to the poison's state nor to the holder staying alive. Only an ability the HOLDER
 //             activates can apply or renew it: a poison from a soldier without the trait never does, even on an enemy the holder poisoned earlier.
 //           - Detection: 'AbilityActivated' (ELD_OnStateSubmitted), like Chemist: the persistent effect states of an activation of the holder, on an enemy, that this activation created or renewed
@@ -52,24 +53,20 @@ static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
 // The toxin
 //---------------------------------------------------------------------------------------
 
-// Holder of the toxin (effect 0) and of the effect that gives Squadsight back when it ends (effect 1): hidden, never granted.
+// Holder of the toxin (effect 0): hidden, never granted.
 static function X2AbilityTemplate ApothecaryToxin()
 {
 	local X2AbilityTemplate Template;
-	local X2Effect_UT_LaserMark ToxinEffect;
-	local X2Effect_Squadsight RestoreEffect;
+	local X2Effect_UT_Suppression ToxinEffect;
 
 	Template = HiddenEffectHolder('UT_ApothecaryToxin');
 	Template.Hostility = eHostility_Offensive;
 
-	// The same effect class as the Laser designator's mark, with its own name for the remembered suppression (a unit can carry both).
-	ToxinEffect = new class'X2Effect_UT_LaserMark';
+	// The same effect class as the Laser designator's mark (it keeps what it suppressed in its own effect state, so a unit can carry both).
+	ToxinEffect = new class'X2Effect_UT_Suppression';
 	ToxinEffect.EffectName = 'UT_Apothecary_Toxin';
-	ToxinEffect.SuppressedValueName = 'UT_Toxin_Suppressed';
 	if (default.APOTHECARY_TOXIN_REMOVES_SQUADSIGHT)
 		ToxinEffect.EffectNamesToSuppress.AddItem('Squadsight');
-	ToxinEffect.RestoreAbilityName = 'UT_ApothecaryToxin';
-	ToxinEffect.RestoreEffectIndex = 1;
 	// A new poison of the holder on the same unit renews the toxin (duration back to the full value).
 	ToxinEffect.DuplicateResponse = eDupe_Refresh;
 	// Ticks at the start of XCOM's turns (the effect is bound to the holder's player), as Chemist's disease: applied during XCOM's turn, TOXIN_TURNS = 2 means two enemy phases.
@@ -85,36 +82,7 @@ static function X2AbilityTemplate ApothecaryToxin()
 		ToxinEffect.AddPersistentStatChange(eStat_SightRadius, -default.APOTHECARY_TOXIN_SIGHT_MALUS);
 	Template.AddTargetEffect(ToxinEffect);
 
-	// The vanilla Squadsight (XComGameState_Unit.HasSquadsight looks for this very effect on the unit), given back when the toxin ends.
-	// The holder is its source in the history (UT_EffectHelpers.ApplyAbilityEffect), so it must NOT be removed when the holder dies: the enemy would lose its squadsight for good.
-	RestoreEffect = new class'X2Effect_Squadsight';
-	RestoreEffect.DuplicateResponse = eDupe_Ignore;
-	RestoreEffect.BuildPersistentEffect(1, true, false, true);
-	Template.AddTargetEffect(RestoreEffect);
-
 	return Template;
-}
-
-// The restored Squadsight must be listed when the unit is inspected: the UI lists the persistent effects that have display info, which the plain effect of ApothecaryToxin() lacks.
-// Copied from the real Squadsight template once every template exists (so another mod's changes to its text or icon are followed). Same fix as the Laser designator's Shadowstep.
-static function OnPostTemplatesCreated()
-{
-	local X2AbilityTemplateManager Manager;
-	local X2AbilityTemplate SquadsightTemplate, ToxinTemplate;
-	local X2Effect_Persistent RestoreEffect;
-
-	Manager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
-	SquadsightTemplate = Manager.FindAbilityTemplate('Squadsight');
-	ToxinTemplate = Manager.FindAbilityTemplate('UT_ApothecaryToxin');
-	if (SquadsightTemplate == none || ToxinTemplate == none || ToxinTemplate.AbilityTargetEffects.Length < 2)
-	{
-		`log("UniqueTraits [WARN] : Apothecary -- Squadsight or UT_ApothecaryToxin template not found, the restored Squadsight will not be listed in the unit inspection",, 'UniqueTraits');
-		return;
-	}
-
-	RestoreEffect = X2Effect_Persistent(ToxinTemplate.AbilityTargetEffects[1]);
-	if (RestoreEffect != none)
-		RestoreEffect.SetDisplayInfo(ePerkBuff_Passive, SquadsightTemplate.LocFriendlyName, SquadsightTemplate.GetMyLongDescription(), SquadsightTemplate.IconImage,,, SquadsightTemplate.AbilitySourceName);
 }
 
 // UT_TraitBase.ExpandAbilityTag: <Ability:UT_ApothecaryToxin/> = the toxin's effects with the CURRENT values (ini or Mod Config Menu), e.g. "-10 Aim, -2 Mobility, -3 sight radius,
