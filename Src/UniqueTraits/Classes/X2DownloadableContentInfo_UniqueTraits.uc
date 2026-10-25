@@ -296,6 +296,9 @@ static final function AssignTraitToEligibleRookie(XComGameState_Unit MutableUnit
 		if (!class'UniqueTraits_TraitConfig'.static.IsTraitEligible(i))
 			continue;
 
+		if (!class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[i].TraitID).static.IsEligibleForUnit(UnitState))
+			continue;
+
 		AvailableIndices.AddItem(i);
 		Weights.AddItem(class'UniqueTraits_TraitConfig'.static.GetTraitProbability(i));
 		TotalWeight += Weights[Weights.Length - 1];
@@ -377,6 +380,9 @@ static final function bool RemoveUnitTrait(StateObjectReference UnitRef, string 
 // Gives the unit the trait TraitID, replacing the one it has (if any). False if TraitID is unknown or the unit cannot be modified.
 static final function bool SetUnitTrait(StateObjectReference UnitRef, name TraitID, string Reason)
 {
+	local class<UT_TraitBase> TraitClass;
+	local XComGameState_Unit Unit;
+
 	if (class'UniqueTraits_TraitConfig'.static.FindTraitIndexByID(TraitID) == INDEX_NONE)
 	{
 		`log("UniqueTraits [WARN] : SetUnitTrait -- unknown TraitID '" $ TraitID $ "', nothing changed",, 'UniqueTraits');
@@ -386,6 +392,14 @@ static final function bool SetUnitTrait(StateObjectReference UnitRef, name Trait
 	if (class'UniqueTraits_TraitConfig'.static.IsTraitDisabled(class'UniqueTraits_TraitConfig'.static.FindTraitIndexByID(TraitID)))
 	{
 		`log("UniqueTraits [WARN] : SetUnitTrait -- trait" @ TraitID @ "is disabled (Mod Config Menu or bDisabled in the ini), nothing changed",, 'UniqueTraits');
+		return false;
+	}
+
+	TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(TraitID);
+	Unit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(UnitRef.ObjectID));
+	if (TraitClass != none && Unit != none && !TraitClass.static.IsEligibleForUnit(Unit))
+	{
+		`log("UniqueTraits [WARN] : SetUnitTrait -- trait" @ TraitID @ "cannot be given to" @ Unit.GetFullName() @ "(not eligible for this unit), nothing changed",, 'UniqueTraits');
 		return false;
 	}
 
@@ -509,6 +523,18 @@ exec function UTHazardFix(optional string Mode)
 		class'UT_AIHazardFix'.static.SetEnabled(false);
 	else
 		class'UT_AIHazardFix'.static.SetEnabled(!class'UT_AIHazardFix'.static.IsApplied());
+}
+
+// Console command: "UTPredestinedMarks behind" / "corner" (or 0 / 1) picks where the symbols of Predestined are drawn on the promotion screen (UT_PromotionMarks): behind the icon or
+// small in its corner. The open promotion screen rebuilds them at once; the ini value is PREDESTINED_MARK_MODE. Without argument it switches.
+exec function UTPredestinedMarks(optional string Mode)
+{
+	if (Mode ~= "behind" || Mode == "0")
+		class'UT_PromotionMarks'.default.PREDESTINED_MARK_MODE = 0;
+	else if (Mode ~= "corner" || Mode == "1")
+		class'UT_PromotionMarks'.default.PREDESTINED_MARK_MODE = 1;
+	else
+		class'UT_PromotionMarks'.default.PREDESTINED_MARK_MODE = 1 - class'UT_PromotionMarks'.default.PREDESTINED_MARK_MODE;
 }
 
 // Console command, the way to test a trait: gives the soldier shown in the Armory the trait TraitID, replacing the one they have.

@@ -5,7 +5,7 @@
 //           of the other mods is.
 //           - OnInit: puts a UT_PromotionMarks panel on the screen (the diamonds behind the evolutions of Someone different).
 //           - OnRemoved: the screen is where abilities are bought and no event reports a purchase, so Someone different's stats (which follow the number
-//             of evolutions bought) are synced when it closes. Independent of PROMOTION_MARKS_ENABLED.
+//             of evolutions bought) and Predestined's (points, stats) are synced when it closes. Independent of PROMOTION_MARKS_ENABLED.
 //---------------------------------------------------------------------------------------
 class UIScreenListener_UT_PromotionMarks extends UIScreenListener;
 
@@ -23,7 +23,10 @@ event OnRemoved(UIScreen Screen)
 
 	PromotionScreen = UIArmory_PromotionHero(Screen);
 	if (PromotionScreen != none)
+	{
 		class'UT_Trait_SomeoneDifferent'.static.SyncUnit(PromotionScreen.GetUnitRef());
+		class'UT_Trait_Predestined'.static.SyncUnit(PromotionScreen.GetUnitRef());
+	}
 }
 
 defaultproperties

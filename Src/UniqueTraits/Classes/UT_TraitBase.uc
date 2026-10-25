@@ -18,6 +18,13 @@ static function bool IsEligible()
 	return true;
 }
 
+// Eligibility of this trait for one given unit (the draw and SetUnitTrait / AddUniqueTrait ask it): a trait that cannot work on some soldiers returns false for them
+// (Predestined: a faction hero pays ability points for his class perks).
+static function bool IsEligibleForUnit(XComGameState_Unit Unit)
+{
+	return true;
+}
+
 // Called by GrantTraitToUnit once the TraitID is in AcquiredTraits, BEFORE the generic AWCAbilities grant.
 static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
