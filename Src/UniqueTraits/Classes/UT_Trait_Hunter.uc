@@ -1,10 +1,13 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_Hunter.uc
-//  PURPOSE: Hunter: detection malus here; the 'hear the enemies' bonus is the 'PlayerTurnEnded' listener.
+//  PURPOSE: Hunter: enemies detect this soldier from farther away (detection malus on the ability), and while the soldier is CONCEALED he gets
+//           +HUNTER_CONCEALED_SIGHT_BONUS Sight Radius (the raw stat, like the Scout's malus; the stat is in meters and a tile is 1.5 m). The sight bonus is an effect of the hidden ability UT_HunterVision applied "by hand"
+//           (UT_EffectHelpers) when the soldier is concealed at the start of the mission ('StartOfMatchConcealment') or enters concealment later
+//           ('UnitConcealmentEntered'); bRemoveWhenTargetConcealmentBroken takes it off when the concealment breaks (like the officer's Lightning Strike).
 //---------------------------------------------------------------------------------------
 class UT_Trait_Hunter extends UT_TraitBase config(UniqueTraits);
 
-var config int HUNTER_HEARING_INTERVAL;
+var config int HUNTER_CONCEALED_SIGHT_BONUS;
 
 var config float HUNTER_DETECTION_MODIFIER;
 
@@ -13,6 +16,7 @@ static function array<X2DataTemplate> CreateTemplates()
 	local array<X2DataTemplate> Templates;
 
 	Templates.AddItem(Hunter());
+	Templates.AddItem(HunterVision());
 
 	return Templates;
 }
@@ -20,11 +24,11 @@ static function array<X2DataTemplate> CreateTemplates()
 // Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
 static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
 {
-	Template.AddCHEvent('PlayerTurnEnded', OnPlayerTurnEnded_Hunter, ELD_OnStateSubmitted, 50);
+	Template.AddCHEvent('StartOfMatchConcealment', OnStartOfMatchConcealment_Hunter, ELD_OnStateSubmitted, 50);
+	Template.AddCHEvent('UnitConcealmentEntered', OnUnitConcealmentEntered_Hunter, ELD_OnStateSubmitted, 50);
 }
 
-// Hunter: enemy detection range grows (malus). The "hear the enemies" bonus is event-driven, see
-// UT_Trait_Hunter.OnPlayerTurnEnded_Hunter.
+// Hunter: enemy detection range grows (malus). The sight bonus while concealed is HunterVision, applied by the listeners below.
 static function X2AbilityTemplate Hunter()
 {
 	local X2AbilityTemplate Template;
@@ -44,58 +48,87 @@ static function X2AbilityTemplate Hunter()
 	return Template;
 }
 
-// Hunter: while a Hunter is alive on the mission, the squad "hears" the nearest enemy pod every
-// HUNTER_HEARING_INTERVAL turns without having seen an enemy => vanilla's own hidden-movement
-// indicator (X2Action_HiddenMovement), which normally only starts after TurnsUntilIndicator (a
-// GameCore.ini value) such turns. Skipped once vanilla's own indicator is active so it never plays
-// twice in one turn-end. Which soldier the camera/sound centre on is vanilla's native choice (the
-// human closest to the pods), not necessarily the Hunter.
-static function EventListenerReturn OnPlayerTurnEnded_Hunter(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
+// Hidden ability (never granted): holds the sight bonus while concealed.
+static function X2AbilityTemplate HunterVision()
+{
+	local X2AbilityTemplate Template;
+	local X2Effect_PersistentStatChange StatEffect;
+
+	Template = HiddenEffectHolder('UT_HunterVision');
+
+	StatEffect = new class'X2Effect_PersistentStatChange';
+	StatEffect.EffectName = 'UT_Hunter_Vision';
+	StatEffect.DuplicateResponse = eDupe_Ignore;
+	StatEffect.BuildPersistentEffect(1, true, true, false, eGameRule_PlayerTurnEnd);
+	StatEffect.bRemoveWhenTargetConcealmentBroken = true;
+	StatEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), "img:///UniqueTraits_Icons.UT_Hunter", true,, Template.AbilitySourceName);
+	StatEffect.AddPersistentStatChange(eStat_SightRadius, default.HUNTER_CONCEALED_SIGHT_BONUS);
+	Template.AddTargetEffect(StatEffect);
+
+	return Template;
+}
+
+// 'StartOfMatchConcealment' (EventSource = the XCOM player, ELD_OnStateSubmitted: the units are concealed in the history by now): every Hunter of the squad.
+static function EventListenerReturn OnStartOfMatchConcealment_Hunter(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
 {
 	local XComGameState_Player PlayerState;
 	local XComGameState_HeadquartersXCom XComHQ;
 	local StateObjectReference SquadRef;
-	local XComGameState_Unit SquadUnit;
-	local XComGameState NewGameState;
-	local bool bHunterAlive;
+	local array<int> UnitIDs;
+	local int UnitID;
 
-	PlayerState = XComGameState_Player(EventData);
+	PlayerState = XComGameState_Player(EventSource);
 	if (PlayerState == none || PlayerState.GetTeam() != eTeam_XCom)
-		return ELR_NoInterrupt;
-
-	if (default.HUNTER_HEARING_INTERVAL <= 0
-		|| PlayerState.TurnsSinceEnemySeen <= 0
-		|| PlayerState.TurnsSinceEnemySeen % default.HUNTER_HEARING_INTERVAL != 0
-		|| PlayerState.TurnsSinceEnemySeen >= class'X2Action_HiddenMovement'.default.TurnsUntilIndicator)
 		return ELR_NoInterrupt;
 
 	XComHQ = XComGameState_HeadquartersXCom(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
 	if (XComHQ == none)
 		return ELR_NoInterrupt;
 
+	// The ids first: submitting a state while walking a list of the history is not safe.
 	foreach XComHQ.Squad(SquadRef)
-	{
-		SquadUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(SquadRef.ObjectID));
-		if (SquadUnit != none && SquadUnit.IsAlive() && !SquadUnit.bRemovedFromPlay
-			&& class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(SquadUnit, 'UT_Hunter'))
-		{
-			bHunterAlive = true;
-			break;
-		}
-	}
-	if (!bHunterAlive)
-		return ELR_NoInterrupt;
+		UnitIDs.AddItem(SquadRef.ObjectID);
 
-	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: Hunter hearing");
-	// A game state with no modified object can be dropped before its visualization is built.
-	NewGameState.ModifyStateObject(class'XComGameState_Player', PlayerState.ObjectID);
-	XComGameStateContext_ChangeContainer(NewGameState.GetContext()).BuildVisualizationFn = BuildVisualization_HunterHearing;
-	`GAMERULES.SubmitGameState(NewGameState);
+	foreach UnitIDs(UnitID)
+		GrantConcealedSight(UnitID);
 
 	return ELR_NoInterrupt;
 }
 
-static function BuildVisualization_HunterHearing(XComGameState VisualizeGameState)
+// 'UnitConcealmentEntered' (EventSource = the unit): a Hunter that gets concealed again (Shadow, Phantom...).
+static function EventListenerReturn OnUnitConcealmentEntered_Hunter(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
 {
-	class'X2Action_HiddenMovement'.static.AddHiddenMovementActionToBlock(VisualizeGameState);
+	local XComGameState_Unit Unit;
+
+	Unit = XComGameState_Unit(EventSource);
+	if (Unit != none)
+		GrantConcealedSight(Unit.ObjectID);
+
+	return ELR_NoInterrupt;
+}
+
+// Gives the sight bonus to the unit if it holds the trait, is concealed and does not have the bonus yet (both events can fire for the same unit).
+static function GrantConcealedSight(int UnitID)
+{
+	local XComGameStateHistory History;
+	local XComGameState_Unit Unit, MutableUnit;
+	local XComGameState NewGameState;
+
+	History = `XCOMHISTORY;
+	Unit = XComGameState_Unit(History.GetGameStateForObjectID(UnitID));
+	if (Unit == none || !Unit.IsAlive() || Unit.bRemovedFromPlay || !Unit.IsConcealed() || Unit.IsUnitAffectedByEffectName('UT_Hunter_Vision')
+		|| !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(Unit, 'UT_Hunter'))
+		return;
+
+	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: Hunter concealed sight");
+	MutableUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitID));
+	if (class'UT_EffectHelpers'.static.ApplyAbilityEffect('UT_HunterVision', 0, MutableUnit, MutableUnit, NewGameState) != 'AA_Success')
+	{
+		History.CleanupPendingGameState(NewGameState);
+		return;
+	}
+
+	// The sight radius changed: the visibility of the map must be recomputed.
+	MutableUnit.bRequiresVisibilityUpdate = true;
+	`XCOMGAME.GameRuleset.SubmitGameState(NewGameState);
 }

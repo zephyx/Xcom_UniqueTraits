@@ -102,7 +102,7 @@ static final function array<string> GetRows()
 	Rows.AddItem("SWORDSMAN_MELEE_BONUS_BY_TIER_3|UT_Swordsman|0|6|1|1|R");
 	Rows.AddItem("SWORDSMAN_MELEE_BONUS_BY_TIER_4|UT_Swordsman|0|6|1|1|R");
 	Rows.AddItem("SWORDSMAN_FIREARM_DAMAGE_REDUCTION|UT_Swordsman|0|5|1|1|R");
-	Rows.AddItem("HUNTER_HEARING_INTERVAL|UT_Hunter|1|6|1|1|-");
+	Rows.AddItem("HUNTER_CONCEALED_SIGHT_BONUS|UT_Hunter|0|15|1|1|R");
 	Rows.AddItem("HUNTER_DETECTION_MODIFIER|UT_Hunter|-100|0|5|100|R");
 	Rows.AddItem("FALSEHOPE_XP_REDUCTION_PCT|UT_FalseHope|0|100|1|1|-");
 	Rows.AddItem("FALSEHOPE_AIM_BASE|UT_FalseHope|0|30|1|1|S");
@@ -305,7 +305,7 @@ static final function int GetCurrent(name Key)
 		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_3': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 3) return 0; return class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[3];
 		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_4': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 4) return 0; return class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[4];
 		case 'SWORDSMAN_FIREARM_DAMAGE_REDUCTION': return class'UT_Trait_Swordsman'.default.SWORDSMAN_FIREARM_DAMAGE_REDUCTION;
-		case 'HUNTER_HEARING_INTERVAL': return class'UT_Trait_Hunter'.default.HUNTER_HEARING_INTERVAL;
+		case 'HUNTER_CONCEALED_SIGHT_BONUS': return class'UT_Trait_Hunter'.default.HUNTER_CONCEALED_SIGHT_BONUS;
 		case 'HUNTER_DETECTION_MODIFIER': return Round(class'UT_Trait_Hunter'.default.HUNTER_DETECTION_MODIFIER * 100.0);
 		case 'FALSEHOPE_XP_REDUCTION_PCT': return class'UT_Trait_FalseHope'.default.FALSEHOPE_XP_REDUCTION_PCT;
 		case 'FALSEHOPE_AIM_BASE': return class'UT_Trait_FalseHope'.default.FALSEHOPE_AIM_BASE;
@@ -509,7 +509,7 @@ static final function SetCurrent(name Key, int Value)
 		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_3': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 3) break; class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[3] = Value; break;
 		case 'SWORDSMAN_MELEE_BONUS_BY_TIER_4': if (class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER.Length <= 4) break; class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER[4] = Value; break;
 		case 'SWORDSMAN_FIREARM_DAMAGE_REDUCTION': class'UT_Trait_Swordsman'.default.SWORDSMAN_FIREARM_DAMAGE_REDUCTION = Value; break;
-		case 'HUNTER_HEARING_INTERVAL': class'UT_Trait_Hunter'.default.HUNTER_HEARING_INTERVAL = Value; break;
+		case 'HUNTER_CONCEALED_SIGHT_BONUS': class'UT_Trait_Hunter'.default.HUNTER_CONCEALED_SIGHT_BONUS = Value; break;
 		case 'HUNTER_DETECTION_MODIFIER': class'UT_Trait_Hunter'.default.HUNTER_DETECTION_MODIFIER = float(Value) / 100.0; break;
 		case 'FALSEHOPE_XP_REDUCTION_PCT': class'UT_Trait_FalseHope'.default.FALSEHOPE_XP_REDUCTION_PCT = Value; break;
 		case 'FALSEHOPE_AIM_BASE': class'UT_Trait_FalseHope'.default.FALSEHOPE_AIM_BASE = Value; break;

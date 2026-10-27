@@ -310,7 +310,7 @@ static function bool GetValue(string Key, out string OutString)
 		case 'BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK': OutString = string(class'UT_Trait_BornToBeChief'.default.BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK); return true;
 		case 'SWORDSMAN_MELEE_BONUS_BY_TIER': OutString = JoinInts(class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER, "+"); return true;
 		case 'SWORDSMAN_FIREARM_DAMAGE_REDUCTION': OutString = string(class'UT_Trait_Swordsman'.default.SWORDSMAN_FIREARM_DAMAGE_REDUCTION); return true;
-		case 'HUNTER_HEARING_INTERVAL': OutString = string(class'UT_Trait_Hunter'.default.HUNTER_HEARING_INTERVAL); return true;
+		case 'HUNTER_CONCEALED_SIGHT_BONUS': OutString = string(class'UT_Trait_Hunter'.default.HUNTER_CONCEALED_SIGHT_BONUS); return true;
 		case 'HUNTER_DETECTION_MODIFIER': OutString = string(Round(-class'UT_Trait_Hunter'.default.HUNTER_DETECTION_MODIFIER * 10.0)); return true;
 		case 'FALSEHOPE_XP_REDUCTION_PCT': OutString = string(class'UT_Trait_FalseHope'.default.FALSEHOPE_XP_REDUCTION_PCT); return true;
 		case 'FALSEHOPE_AIM_BASE': OutString = string(class'UT_Trait_FalseHope'.default.FALSEHOPE_AIM_BASE); return true;
