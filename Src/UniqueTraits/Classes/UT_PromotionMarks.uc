@@ -233,7 +233,7 @@ simulated function MarkColumn(UIArmory_PromotionHero PromotionScreen, XComGameSt
 simulated function EnsureSymbols(UIArmory_PromotionHeroColumn Column, int ColumnIndex, int ColumnCount)
 {
 	local float Side, IconX, IconY;
-	local int IconIndex, IconCount, Slot, Box;
+	local int IconIndex, IconCount, Slot, BoxIndex;
 	local bool bBehind;
 
 	if (SymbolReady.Length < ColumnCount)
@@ -274,10 +274,10 @@ simulated function EnsureSymbols(UIArmory_PromotionHeroColumn Column, int Column
 			SymbolCY[Slot] = IconY + default.MARKS_CORNER_INSET + default.MARKS_CORNER_OFFSET_Y;
 		}
 
-		for (Box = 0; Box < BOXES_PER_SLOT; ++Box)
+		for (BoxIndex = 0; BoxIndex < BOXES_PER_SLOT; ++BoxIndex)
 		{
-			SymbolBoxes[Slot * BOXES_PER_SLOT + Box] = Column.Spawn(class'UIBGBox', Column).InitBG(, SymbolCX[Slot], SymbolCY[Slot], 1, 1);
-			SymbolBoxes[Slot * BOXES_PER_SLOT + Box].Hide();
+			SymbolBoxes[Slot * BOXES_PER_SLOT + BoxIndex] = Column.Spawn(class'UIBGBox', Column).InitBG(, SymbolCX[Slot], SymbolCY[Slot], 1, 1);
+			SymbolBoxes[Slot * BOXES_PER_SLOT + BoxIndex].Hide();
 		}
 
 		SymbolKind[Slot] = 0;
@@ -361,7 +361,7 @@ simulated function ApplySymbol(int Slot, int Kind)
 {
 	local float CX, CY, D, Wide, Thick, Edge, Border;
 	local bool bBehind;
-	local int Box;
+	local int BoxIndex;
 
 	bBehind = default.PREDESTINED_MARK_MODE == 0;
 	D = bBehind ? float(default.MARKS_ICON_SIZE) : float(default.MARKS_CORNER_SIZE);
@@ -369,10 +369,10 @@ simulated function ApplySymbol(int Slot, int Kind)
 	CX = SymbolCX[Slot];
 	CY = SymbolCY[Slot];
 
-	for (Box = 0; Box < BOXES_PER_SLOT; ++Box)
+	for (BoxIndex = 0; BoxIndex < BOXES_PER_SLOT; ++BoxIndex)
 	{
-		SymbolBoxes[Slot * BOXES_PER_SLOT + Box].SetRotationDegrees(0);
-		SymbolBoxes[Slot * BOXES_PER_SLOT + Box].Hide();
+		SymbolBoxes[Slot * BOXES_PER_SLOT + BoxIndex].SetRotationDegrees(0);
+		SymbolBoxes[Slot * BOXES_PER_SLOT + BoxIndex].Hide();
 	}
 
 	if (Kind == class'UT_Trait_Predestined'.const.SYMBOL_DIAMOND)

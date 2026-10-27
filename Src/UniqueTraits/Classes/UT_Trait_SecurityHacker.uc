@@ -52,6 +52,28 @@ static function array<X2DataTemplate> CreateTemplates()
 	return Templates;
 }
 
+// UT_TextTags.ReplaceTokens: {SECURITYHACKER_AP_MIN} / {SECURITYHACKER_AP_MAX} = the smallest and the largest number of XCOM ability points the difficulty table can give (not the
+// late one, which has its own placeholder), with the CURRENT values (ini or Mod Config Menu).
+static function bool GetTextValue(string Key, out string OutString)
+{
+	local int i, Lowest, Highest;
+
+	if (!(Key ~= "SECURITYHACKER_AP_MIN") && !(Key ~= "SECURITYHACKER_AP_MAX"))
+		return false;
+
+	Lowest = default.SECURITYHACKER_AP_TOP;
+	Highest = default.SECURITYHACKER_AP_TOP;
+	for (i = 0; i < default.SECURITYHACKER_AP_MAX_DIFFICULTY.Length && i < default.SECURITYHACKER_AP_BY_DIFFICULTY.Length; ++i)
+	{
+		Lowest = Min(Lowest, default.SECURITYHACKER_AP_BY_DIFFICULTY[i]);
+		Highest = Max(Highest, default.SECURITYHACKER_AP_BY_DIFFICULTY[i]);
+	}
+
+	OutString = string((Key ~= "SECURITYHACKER_AP_MIN") ? Lowest : Highest);
+
+	return true;
+}
+
 // Event registrations (X2EventListener_UniqueTraits.CreateTacticalListeners calls this for every trait of the pool that is not disabled).
 static function OnCreateTacticalListeners(CHEventListenerTemplate Template)
 {

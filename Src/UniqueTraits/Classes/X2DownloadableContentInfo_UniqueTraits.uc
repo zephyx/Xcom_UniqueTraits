@@ -64,6 +64,9 @@ static event OnPostTemplatesCreated()
 	local array<name> Done;
 	local name AbilityName;
 
+	// The {VARIABLE} placeholders of the ability texts become the current values (ini or Mod Config Menu); UT_TextTags.PatchTemplates runs again when the Advanced page is saved.
+	class'UT_TextTags'.static.PatchTemplates();
+
 	// AI hazard fix (UT_AIHazardFix): the behavior class of the enemies, for the hazard cover move (nothing happens when the option is off).
 	class'UT_AIHazardFix'.static.UseHazardBehaviorClass();
 

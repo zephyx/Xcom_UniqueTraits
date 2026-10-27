@@ -59,6 +59,93 @@ static function X2AbilityTemplate MindOverMatter()
 	return PurePassive('UT_MindOverMatter', "img:///UniqueTraits_Icons.UT_MindOverMatter", true);
 }
 
+// The two examples of the description (max Will of a weak and of a strong soldier).
+const EXAMPLE_LOW_WILL = 23;
+const EXAMPLE_HIGH_WILL = 60;
+
+// UT_TextTags.ReplaceTokens: the {MOM_...} placeholders of the description, i.e. the numbers that come out of the formulas, with the CURRENT values (ini or Mod Config Menu).
+// MOM_NEUTRAL_WILL = the Will at which the wound severity is neutral, MOM_MOBILITY_LAST_WILL = the last Will with a Mobility penalty,
+// MOM_WILL_LOW / _HIGH = the example Wills, MOM_<HP|MOB|AIM|WOUND>_<LOW|HIGH> = the net change at that Will (signed; the wound severity in %).
+static function bool GetTextValue(string Key, out string OutString)
+{
+	if (!(Left(Key, 4) ~= "MOM_"))
+		return false;
+
+	switch (name(Key))
+	{
+		case 'MOM_NEUTRAL_WILL':
+			if (default.MINDOVERMATTER_RECOVERY_PCT_OF_WILL > 0.0)
+				OutString = string(int(float(default.MINDOVERMATTER_RECOVERY_MALUS_PCT) * 100.0 / default.MINDOVERMATTER_RECOVERY_PCT_OF_WILL));
+			else
+				OutString = "0";
+			return true;
+		case 'MOM_MOBILITY_LAST_WILL':
+			OutString = string(LastWillWithMalus(default.MINDOVERMATTER_MOBILITY_PCT_OF_WILL, default.MINDOVERMATTER_MOBILITY_MALUS));
+			return true;
+		case 'MOM_WILL_LOW':
+			OutString = string(EXAMPLE_LOW_WILL);
+			return true;
+		case 'MOM_WILL_HIGH':
+			OutString = string(EXAMPLE_HIGH_WILL);
+			return true;
+		case 'MOM_HP_LOW':
+			OutString = ChangeAt(EXAMPLE_LOW_WILL, default.MINDOVERMATTER_HP_PCT_OF_WILL, default.MINDOVERMATTER_HP_MALUS);
+			return true;
+		case 'MOM_MOB_LOW':
+			OutString = ChangeAt(EXAMPLE_LOW_WILL, default.MINDOVERMATTER_MOBILITY_PCT_OF_WILL, default.MINDOVERMATTER_MOBILITY_MALUS);
+			return true;
+		case 'MOM_AIM_LOW':
+			OutString = ChangeAt(EXAMPLE_LOW_WILL, default.MINDOVERMATTER_AIM_PCT_OF_WILL, default.MINDOVERMATTER_AIM_MALUS);
+			return true;
+		case 'MOM_WOUND_LOW':
+			OutString = WoundPercentAt(EXAMPLE_LOW_WILL);
+			return true;
+		case 'MOM_HP_HIGH':
+			OutString = ChangeAt(EXAMPLE_HIGH_WILL, default.MINDOVERMATTER_HP_PCT_OF_WILL, default.MINDOVERMATTER_HP_MALUS);
+			return true;
+		case 'MOM_MOB_HIGH':
+			OutString = ChangeAt(EXAMPLE_HIGH_WILL, default.MINDOVERMATTER_MOBILITY_PCT_OF_WILL, default.MINDOVERMATTER_MOBILITY_MALUS);
+			return true;
+		case 'MOM_AIM_HIGH':
+			OutString = ChangeAt(EXAMPLE_HIGH_WILL, default.MINDOVERMATTER_AIM_PCT_OF_WILL, default.MINDOVERMATTER_AIM_MALUS);
+			return true;
+		case 'MOM_WOUND_HIGH':
+			OutString = WoundPercentAt(EXAMPLE_HIGH_WILL);
+			return true;
+	}
+
+	return false;
+}
+
+// The same formula as GetTargetChange, for a given Will, signed.
+static final function string ChangeAt(int Will, float PctOfWill, int Malus)
+{
+	return class'UT_TextTags'.static.SignedInt(Round(float(Will) * PctOfWill / 100.0) - Malus);
+}
+
+// The same formula as the wound of OnCleanupTacticalMission_MindOverMatter, for a given Will, signed: + = worse wounds.
+static final function string WoundPercentAt(int Will)
+{
+	return class'UT_TextTags'.static.SignedInt(Round(float(default.MINDOVERMATTER_RECOVERY_MALUS_PCT) - float(Will) * default.MINDOVERMATTER_RECOVERY_PCT_OF_WILL / 100.0));
+}
+
+// The highest Will whose net change is still negative (the bonus Round(Will * PctOfWill / 100) is below the malus).
+static final function int LastWillWithMalus(float PctOfWill, int Malus)
+{
+	local int Will;
+
+	if (Malus <= 0 || PctOfWill <= 0.0)
+		return 0;
+
+	for (Will = 1; Will <= 1000; ++Will)
+	{
+		if (Round(float(Will) * PctOfWill / 100.0) >= Malus)
+			return Will - 1;
+	}
+
+	return 1000;
+}
+
 //---------------------------------------------------------------------------------------
 // Stats
 //---------------------------------------------------------------------------------------

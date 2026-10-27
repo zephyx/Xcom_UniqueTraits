@@ -400,6 +400,8 @@ simulated function AdvancedSaveClicked(MCM_API_SettingsPage Page)
 
 	class'UniqueTraits_MCMSettings'.static.Commit();
 	class'UniqueTraits_MCMOptions'.static.ApplyOverrides();
+	// The numbers of the ability texts follow, except the ones of the options marked * (they keep the value they have until the next launch).
+	class'UT_TextTags'.static.PatchTemplates();
 }
 
 // Every slider back to the mod's ini value (saving then erases the player's choices).
