@@ -33,6 +33,7 @@ var config int SOMEONEDIFFERENT_KNOCKOUT_TURN, SOMEONEDIFFERENT_BASEGAME_CLASS_R
 var config array<int> SOMEONEDIFFERENT_PCT_LOW;                // percentage by number of evolutions chosen, out of the evolution columns, 7 with LWOTC and 6 in the base game (index 0, 1, 2...)
 var config array<int> SOMEONEDIFFERENT_PCT_HIGH;               // percentage by number of evolutions NOT chosen, out of the evolution columns (index 0, 1...)
 var localized string SOMEONEDIFFERENT_FLYOVER_SICK, SOMEONEDIFFERENT_FLYOVER_RECOVER;
+var localized string SOMEONEDIFFERENT_POPUP_TITLE, SOMEONEDIFFERENT_POPUP_TEXT;   // %LOW / %HIGH = the lowest and the highest mutation percentage (signed)
 
 const MAX_EVOLUTION_COLUMNS = 16;
 
@@ -97,6 +98,24 @@ static function X2AbilityTemplate SomeoneDifferentKnockout()
 	Template.AddTargetEffect(KnockoutEffect);
 
 	return Template;
+}
+
+// UT_TraitBase.OnPostTemplatesCreated: the unconscious effect is applied by hand by the holder to himself, with no ability behind it, so it needs no target condition.
+// The mod "No Unconscious AI" (workshop 2761606669, OnPostTemplatesCreated) adds to EVERY unconscious effect of EVERY ability template an X2Condition_UnitProperty
+// (IsPlayerControlled) left with ExcludeFriendlyToSource = true, plus a stun effect for the enemies: applied by the holder to himself the effect answered
+// 'AA_UnitIsFriendly' and the collapse never happened. Taking every condition off, after the other mods had their turn
+// (our mod runs last), makes the collapse independent of what any mod adds to unconscious effects. The stun that mod appended (effect 1) is never applied: only index 0 is.
+static function OnPostTemplatesCreated()
+{
+	local X2AbilityTemplate Template;
+	local X2Effect Effect;
+
+	Template = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager().FindAbilityTemplate('UT_SomeoneDifferentKnockout');
+	if (Template == none)
+		return;
+
+	foreach Template.AbilityTargetEffects(Effect)
+		Effect.TargetConditions.Length = 0;
 }
 
 //---------------------------------------------------------------------------------------
@@ -570,6 +589,7 @@ static final function ClearTraitValues(XComGameState_Unit MutableUnit)
 
 	MutableUnit.ClearUnitValue('UT_SD_Mutated');
 	MutableUnit.ClearUnitValue('UT_SD_Knocked');
+	MutableUnit.ClearUnitValue('UT_SD_PopupSeen');
 	for (Column = 1; Column <= MAX_EVOLUTION_COLUMNS; ++Column)
 		MutableUnit.ClearUnitValue(name("UT_SD_Evo_" $ Column));
 }
@@ -791,6 +811,7 @@ static final function MutateUnit(XComGameState_Unit MutableUnit, XComGameState N
 
 	// 3. One random evolution per column but the squaddie one, among the CLASS rows of the tree as it is AFTER the respec (see GetClassRowCount).
 	MutableUnit.SetUnitFloatValue('UT_SD_Mutated', 1, eCleanup_Never);
+	MutableUnit.ClearUnitValue('UT_SD_PopupSeen');   // the explanation is shown again for a new mutation
 	for (Column = 1; Column <= MAX_EVOLUTION_COLUMNS; ++Column)
 		MutableUnit.ClearUnitValue(name("UT_SD_Evo_" $ Column));
 
@@ -815,6 +836,36 @@ static final function MutateUnit(XComGameState_Unit MutableUnit, XComGameState N
 
 	// 5. Nothing bought yet: the stats start at the lowest percentage.
 	SyncStats(MutableUnit);
+}
+
+// Called by UIScreenListener_UT_PromotionMarks.OnInit for every promotion screen: the first time the screen of a MUTATED holder opens (the first one he can open after the
+// collapse, since the mutation happens at the end of that mission), a popup explains what the mutation did. Once per mutation: UnitValue UT_SD_PopupSeen (set before the popup is
+// shown, in a state of its own).
+static function ShowMutationPopup(UIScreen Screen, StateObjectReference UnitRef)
+{
+	local XComGameState_Unit Unit, MutableUnit;
+	local XComGameState NewGameState;
+	local TDialogueBoxData DialogData;
+	local string Text;
+
+	Unit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(UnitRef.ObjectID));
+	if (Unit == none || !IsMutated(Unit) || GetUnitFloat(Unit, 'UT_SD_PopupSeen') > 0
+		|| !class'X2DownloadableContentInfo_UniqueTraits'.static.UnitHasTrait(Unit, 'UT_SomeoneDifferent'))
+		return;
+
+	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: Someone different popup seen");
+	MutableUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitRef.ObjectID));
+	MutableUnit.SetUnitFloatValue('UT_SD_PopupSeen', 1, eCleanup_Never);
+	`GAMERULES.SubmitGameState(NewGameState);
+
+	Text = Repl(default.SOMEONEDIFFERENT_POPUP_TEXT, "%LOW", class'UT_TextTags'.static.SignedInt(class'UT_TextTags'.static.IntAt(default.SOMEONEDIFFERENT_PCT_LOW, 0)));
+	Text = Repl(Text, "%HIGH", class'UT_TextTags'.static.SignedInt(class'UT_TextTags'.static.IntAt(default.SOMEONEDIFFERENT_PCT_HIGH, 0)));
+
+	DialogData.eType = eDialog_Normal;
+	DialogData.strTitle = default.SOMEONEDIFFERENT_POPUP_TITLE;
+	DialogData.strText = Text;
+	DialogData.strAccept = class'UIUtilities_Text'.default.m_strGenericConfirm;
+	Screen.Movie.Pres.UIRaiseDialog(DialogData);
 }
 
 // Respec of the soldier's abilities, keeping his rank and his stats. Without LWOTC: the base game's respec (X2 XComGameStateContext_HeadquartersOrder.
