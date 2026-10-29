@@ -254,13 +254,18 @@ static function bool GetValue(string Key, out string OutString)
 		return true;
 	if (class'UT_Trait_SecurityHacker'.static.GetTextValue(Key, OutString))
 		return true;
+	if (class'UT_Trait_Athlete'.static.GetTextValue(Key, OutString))
+		return true;
 
 	switch (name(Key))
 	{
-		case 'ATHLETE_MOBILITY': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY); return true;
-		case 'ATHLETE_DODGE': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_DODGE); return true;
-		case 'ATHLETE_AIM': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_AIM); return true;
-		case 'ATHLETE_CRIT': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_CRIT); return true;
+		case 'ATHLETE_MOBILITY_BASE': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_BASE); return true;
+		case 'ATHLETE_MOBILITY_STEP_1': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_1); return true;
+		case 'ATHLETE_MOBILITY_STEP_1_RANK': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_1_RANK); return true;
+		case 'ATHLETE_MOBILITY_STEP_2': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_2); return true;
+		case 'ATHLETE_MOBILITY_STEP_2_RANK': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_2_RANK); return true;
+		case 'ATHLETE_COVER_AIM_BASE': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_COVER_AIM_BASE); return true;
+		case 'ATHLETE_COVER_AIM_PER_RANK': OutString = string(class'UT_Trait_Athlete'.default.ATHLETE_COVER_AIM_PER_RANK); return true;
 		case 'NERD_HACKING_BASE': OutString = string(class'UT_Trait_Nerd'.default.NERD_HACKING_BASE); return true;
 		case 'NERD_HACKING_PER_RANK': OutString = string(class'UT_Trait_Nerd'.default.NERD_HACKING_PER_RANK); return true;
 		case 'NERD_WILL_BASE': OutString = string(class'UT_Trait_Nerd'.default.NERD_WILL_BASE); return true;

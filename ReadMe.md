@@ -19,10 +19,10 @@ When a soldier with a trait dies or is dismissed, their trait becomes available 
 
 ## Some Examples
 
-- **Athlete:** +3 Mobility, +15 Dodge, -5 Aim, -10 Critical Chance.
+- **Athlete:** +3 Mobility, +15 Dodge, -5 Aim, -10 Critical Chance. => new version to update
 - **Pacifist:** Gains a new ability, *Stay Covered*. This free action activates if the soldier inflicted no damage during the previous turn. Allies within 6 tiles gain +10 Defense and +5 Dodge until the next turn. The soldier loses all Overwatch abilities.
 - **Acrobat:** Gains the Skirmisher Grapple ability. Suffers -10 Aim and -10 Critical Chance when attacking targets below their elevation.
-- **Briber:** Generates +20 Supplies per month for the haven they advise. Increases squad infiltration time when deployed. **[LWOTC only; disabled without LWOTC]**
+- **Bribe:** Generates +20 Supplies per month for the haven they advise. Increases squad infiltration time when deployed. **[LWOTC only; disabled without LWOTC]**
 - **Thief:** Picking up loot during the XCOM turn grants one bonus movement point, once per turn. Has a 20% chance to secretly keep the item, meaning you lose the corresponding reward.
 - **Cyborg:** Can only equip basic PCS. Replaced PCS are retained. Upon mission victory, has a 30% chance to upgrade the equipped PCS by one tier.
 - ...

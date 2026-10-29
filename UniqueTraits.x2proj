@@ -133,6 +133,7 @@
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_DamageTakenMult.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_PrimaryWeaponMalus.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_ManiacBreak.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_AthleteCover.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_ManiacBreakWorld.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakPrimaryWeapons.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_AcrobatMalus.uc" />

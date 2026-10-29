@@ -20,10 +20,13 @@ static final function array<string> GetRows()
 {
 	local array<string> Rows;
 
-	Rows.AddItem("ATHLETE_MOBILITY|UT_Athlete|0|10|1|1|R");
-	Rows.AddItem("ATHLETE_DODGE|UT_Athlete|0|50|1|1|R");
-	Rows.AddItem("ATHLETE_AIM|UT_Athlete|0|30|1|1|R");
-	Rows.AddItem("ATHLETE_CRIT|UT_Athlete|0|30|1|1|R");
+	Rows.AddItem("ATHLETE_MOBILITY_BASE|UT_Athlete|0|5|1|1|S");
+	Rows.AddItem("ATHLETE_MOBILITY_STEP_1|UT_Athlete|0|5|1|1|S");
+	Rows.AddItem("ATHLETE_MOBILITY_STEP_1_RANK|UT_Athlete|1|8|1|1|S");
+	Rows.AddItem("ATHLETE_MOBILITY_STEP_2|UT_Athlete|0|5|1|1|S");
+	Rows.AddItem("ATHLETE_MOBILITY_STEP_2_RANK|UT_Athlete|1|8|1|1|S");
+	Rows.AddItem("ATHLETE_COVER_AIM_BASE|UT_Athlete|0|20|1|1|-");
+	Rows.AddItem("ATHLETE_COVER_AIM_PER_RANK|UT_Athlete|0|10|1|1|-");
 	Rows.AddItem("NERD_HACKING_BASE|UT_Nerd|0|30|1|1|S");
 	Rows.AddItem("NERD_HACKING_PER_RANK|UT_Nerd|0|10|1|1|S");
 	Rows.AddItem("NERD_WILL_BASE|UT_Nerd|0|20|1|1|S");
@@ -235,10 +238,13 @@ static final function int GetCurrent(name Key)
 {
 	switch (Key)
 	{
-		case 'ATHLETE_MOBILITY': return class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY;
-		case 'ATHLETE_DODGE': return class'UT_Trait_Athlete'.default.ATHLETE_DODGE;
-		case 'ATHLETE_AIM': return class'UT_Trait_Athlete'.default.ATHLETE_AIM;
-		case 'ATHLETE_CRIT': return class'UT_Trait_Athlete'.default.ATHLETE_CRIT;
+		case 'ATHLETE_MOBILITY_BASE': return class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_BASE;
+		case 'ATHLETE_MOBILITY_STEP_1': return class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_1;
+		case 'ATHLETE_MOBILITY_STEP_1_RANK': return class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_1_RANK;
+		case 'ATHLETE_MOBILITY_STEP_2': return class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_2;
+		case 'ATHLETE_MOBILITY_STEP_2_RANK': return class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_2_RANK;
+		case 'ATHLETE_COVER_AIM_BASE': return class'UT_Trait_Athlete'.default.ATHLETE_COVER_AIM_BASE;
+		case 'ATHLETE_COVER_AIM_PER_RANK': return class'UT_Trait_Athlete'.default.ATHLETE_COVER_AIM_PER_RANK;
 		case 'NERD_HACKING_BASE': return class'UT_Trait_Nerd'.default.NERD_HACKING_BASE;
 		case 'NERD_HACKING_PER_RANK': return class'UT_Trait_Nerd'.default.NERD_HACKING_PER_RANK;
 		case 'NERD_WILL_BASE': return class'UT_Trait_Nerd'.default.NERD_WILL_BASE;
@@ -451,10 +457,13 @@ static final function SetCurrent(name Key, int Value)
 {
 	switch (Key)
 	{
-		case 'ATHLETE_MOBILITY': class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY = Value; break;
-		case 'ATHLETE_DODGE': class'UT_Trait_Athlete'.default.ATHLETE_DODGE = Value; break;
-		case 'ATHLETE_AIM': class'UT_Trait_Athlete'.default.ATHLETE_AIM = Value; break;
-		case 'ATHLETE_CRIT': class'UT_Trait_Athlete'.default.ATHLETE_CRIT = Value; break;
+		case 'ATHLETE_MOBILITY_BASE': class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_BASE = Value; break;
+		case 'ATHLETE_MOBILITY_STEP_1': class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_1 = Value; break;
+		case 'ATHLETE_MOBILITY_STEP_1_RANK': class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_1_RANK = Value; break;
+		case 'ATHLETE_MOBILITY_STEP_2': class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_2 = Value; break;
+		case 'ATHLETE_MOBILITY_STEP_2_RANK': class'UT_Trait_Athlete'.default.ATHLETE_MOBILITY_STEP_2_RANK = Value; break;
+		case 'ATHLETE_COVER_AIM_BASE': class'UT_Trait_Athlete'.default.ATHLETE_COVER_AIM_BASE = Value; break;
+		case 'ATHLETE_COVER_AIM_PER_RANK': class'UT_Trait_Athlete'.default.ATHLETE_COVER_AIM_PER_RANK = Value; break;
 		case 'NERD_HACKING_BASE': class'UT_Trait_Nerd'.default.NERD_HACKING_BASE = Value; break;
 		case 'NERD_HACKING_PER_RANK': class'UT_Trait_Nerd'.default.NERD_HACKING_PER_RANK = Value; break;
 		case 'NERD_WILL_BASE': class'UT_Trait_Nerd'.default.NERD_WILL_BASE = Value; break;
