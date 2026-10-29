@@ -36,6 +36,14 @@ static function OnClear(XComGameState_Unit MutableUnit, XComGameState NewGameSta
 {
 }
 
+// Called by MigrateTraits (X2DownloadableContentInfo_UniqueTraits) for a holder whose stamped version is older than the trait's Version in the ini (UniqueTraitDefinition.Version),
+// once for each version step: FromVersion is the version the soldier is at, the step brings him to FromVersion + 1. Same pending state conventions as OnGrant: MutableUnit is a
+// modified object of NewGameState, a change container of the caller's own. Nothing to do for a change that the rest of the machinery already repairs (the abilities granted and the
+// retired ones are reconciled by MigrateTraits, the permanent stats by their ledger); this is for what only the trait knows how to bring up to date.
+static function OnMigrate(XComGameState_Unit MutableUnit, int FromVersion, XComGameState NewGameState)
+{
+}
+
 // True for the traits that change the BASE stats of their holder for good (ShiftStat): Nerd, False Hope, Born to be chief, Mind over matter, Support,
 // Someone different. Only those take part in the "stats rebuilt" handling below (OnStatsReset) and in the rank-up sync (OnRankUp).
 static function bool ShiftsStats()

@@ -8,10 +8,13 @@
 //---------------------------------------------------------------------------------------
 class X2DownloadableContentInfo_UniqueTraits extends X2DownloadableContentInfo;
 
-// With ASSIGN_TRAIT_AT_RECRUITMENT: the rookies already in the roster of a loaded save (also those of a game started before the option was turned on).
-// Does nothing otherwise: the normal draw happens after a mission / covert action.
+// First the soldiers who carry a trait of an older version are brought up to date (MigrateTraits). Then, with ASSIGN_TRAIT_AT_RECRUITMENT: the rookies already in the roster of a
+// loaded save (also those of a game started before the option was turned on). The draw does nothing otherwise: it happens after a mission / covert action.
+// Only a save loaded straight into the strategy layer comes here. A save loaded in the middle of a mission is migrated by OnPostMission, when the mission is over.
 static event OnLoadedSavedGameToStrategy()
 {
+	MigrateTraits();
+
 	if (class'UniqueTraits_TraitConfig'.static.ShouldAssignAtRecruitment())
 		AssignTraitsToEligibleRookies();
 }
@@ -180,6 +183,9 @@ static event OnPostMission()
 {
 	local int i;
 	local class<UT_TraitBase> TraitClass;
+
+	// A save loaded in the middle of a mission never went through OnLoadedSavedGameToStrategy, and coming back to the strategy layer is no load: this is where its soldiers are migrated.
+	MigrateTraits();
 
 	AssignTraitsToEligibleRookies();
 
@@ -351,6 +357,9 @@ static final function GrantTraitToUnit(XComGameState_Unit MutableUnit, XComGameS
 
 	MutableUnit.AcquiredTraits.AddItem(TraitID);
 
+	// The version of the trait's definition this soldier gets it with (see MigrateTraits).
+	MutableUnit.SetUnitFloatValue('UT_TraitVersion', class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].Version, eCleanup_Never);
+
 	// The trait's own one-time side effects (stat changes, gear strip, AP...), BEFORE the ability grant below.
 	TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(TraitID);
 	if (TraitClass != none)
@@ -476,7 +485,7 @@ exec function RemoveUniqueTrait()
 // Strips a unit's assigned trait, inside the caller's pending state (use RemoveUnitTrait / SetUnitTrait to do it as a transaction).
 static final function bool ClearAssignedTrait(XComGameState_Unit MutableUnit, XComGameState NewGameState)
 {
-	local int TraitIndex, i, AWCIdx;
+	local int TraitIndex, i;
 	local name TraitID, AbilityName;
 	local class<UT_TraitBase> TraitClass;
 	local bool bClearedAnything;
@@ -486,6 +495,7 @@ static final function bool ClearAssignedTrait(XComGameState_Unit MutableUnit, XC
 		TraitID = class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].TraitID;
 
 		MutableUnit.AcquiredTraits.RemoveItem(TraitID);
+		MutableUnit.ClearUnitValue('UT_TraitVersion');
 
 		// Reverses the trait's own one-time side effects (see GrantTraitToUnit).
 		TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(TraitID);
@@ -496,23 +506,238 @@ static final function bool ClearAssignedTrait(XComGameState_Unit MutableUnit, XC
 		`log("UniqueTraits : cleared trait" @ TraitID @ "from" @ MutableUnit.GetFullName(),, 'UniqueTraits');
 	}
 
+	// Whatever any trait grants, or used to grant (RetiredAbilities).
 	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
 	{
 		foreach class'UniqueTraits_TraitConfig'.default.Traits[i].GrantedAbilities(AbilityName)
 		{
-			for (AWCIdx = MutableUnit.AWCAbilities.Length - 1; AWCIdx >= 0; AWCIdx--)
-			{
-				if (MutableUnit.AWCAbilities[AWCIdx].AbilityType.AbilityName == AbilityName)
-				{
-					`log("UniqueTraits : RemoveUniqueTrait sweep -- removing AWCAbilities entry" @ AbilityName @ "from" @ MutableUnit.GetFullName(),, 'UniqueTraits');
-					MutableUnit.AWCAbilities.Remove(AWCIdx, 1);
-					bClearedAnything = true;
-				}
-			}
+			if (RemoveAWCEntries(MutableUnit, AbilityName))
+				bClearedAnything = true;
+		}
+		foreach class'UniqueTraits_TraitConfig'.default.Traits[i].RetiredAbilities(AbilityName)
+		{
+			if (RemoveAWCEntries(MutableUnit, AbilityName))
+				bClearedAnything = true;
 		}
 	}
 
 	return bClearedAnything;
+}
+
+// Takes every AWCAbilities entry named AbilityName off the unit (a pending copy). True if there was one.
+static final function bool RemoveAWCEntries(XComGameState_Unit MutableUnit, name AbilityName)
+{
+	local int AWCIdx;
+	local bool bRemoved;
+
+	for (AWCIdx = MutableUnit.AWCAbilities.Length - 1; AWCIdx >= 0; AWCIdx--)
+	{
+		if (MutableUnit.AWCAbilities[AWCIdx].AbilityType.AbilityName == AbilityName)
+		{
+			`log("UniqueTraits : RemoveUniqueTrait sweep -- removing AWCAbilities entry" @ AbilityName @ "from" @ MutableUnit.GetFullName(),, 'UniqueTraits');
+			MutableUnit.AWCAbilities.Remove(AWCIdx, 1);
+			bRemoved = true;
+		}
+	}
+
+	return bRemoved;
+}
+
+// ---- Migration of the soldiers who carry an older version of a trait. Why: the abilities a trait grants are written into the soldier's AWCAbilities when he gets it, so a change of
+// what a trait grants (an ability dropped or renamed, a new one) does not reach the soldiers of a saved game.
+// Two layers, both run by MigrateTraits: (1) a RECONCILIATION of the abilities, always, with no version needed: the obsolete entries go (RetiredAbilities of the ini, or a "UT_" ability
+// whose template does not exist any more), the abilities the trait grants now and the soldier lacks are added, a "UT_" trait that is not in the pool any more is taken off;
+// (2) the VERSIONED steps of UniqueTraitDefinition.Version: UT_TraitBase.OnMigrate(unit, v) for each v from the soldier's stamped version up to the trait's version - 1, then the stamp.
+
+// An ability that no trait grants any more and that a trait used to grant (UniqueTraitDefinition.RetiredAbilities).
+static final function bool IsRetiredAbility(name AbilityName)
+{
+	local int i;
+	local bool bRetired;
+
+	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
+	{
+		if (class'UniqueTraits_TraitConfig'.default.Traits[i].GrantedAbilities.Find(AbilityName) != INDEX_NONE)
+			return false;
+		if (class'UniqueTraits_TraitConfig'.default.Traits[i].RetiredAbilities.Find(AbilityName) != INDEX_NONE)
+			bRetired = true;
+	}
+
+	return bRetired;
+}
+
+// An AWCAbilities entry that must go: a retired ability, or one of this mod's ("UT_") whose template does not exist any more.
+static final function bool IsObsoleteAbility(name AbilityName)
+{
+	if (IsRetiredAbility(AbilityName))
+		return true;
+
+	return Left(string(AbilityName), 3) ~= "UT_" && class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager().FindAbilityTemplate(AbilityName) == none;
+}
+
+// A trait of this mod ("UT_") that is not in the pool any more.
+static final function bool IsGhostTrait(name TraitID)
+{
+	return Left(string(TraitID), 3) ~= "UT_" && class'UniqueTraits_TraitConfig'.static.FindTraitIndexByID(TraitID) == INDEX_NONE;
+}
+
+static final function bool HasAWCEntry(XComGameState_Unit Unit, name AbilityName)
+{
+	local ClassAgnosticAbility AWCAbility;
+
+	foreach Unit.AWCAbilities(AWCAbility)
+	{
+		if (AWCAbility.AbilityType.AbilityName == AbilityName)
+			return true;
+	}
+
+	return false;
+}
+
+// The version of the trait's definition the soldier was last brought to: 1 when there is no stamp (a soldier who got the trait before the stamp existed).
+static final function int GetStampedVersion(XComGameState_Unit Unit)
+{
+	return int(class'UT_TraitBase'.static.GetUnitFloat(Unit, 'UT_TraitVersion', 1.0));
+}
+
+// Read only: does MigrateUnit have something to do for this soldier?
+static final function bool UnitNeedsMigration(XComGameState_Unit Unit)
+{
+	local ClassAgnosticAbility AWCAbility;
+	local name TraitName, AbilityName;
+	local int TraitIndex;
+
+	foreach Unit.AWCAbilities(AWCAbility)
+	{
+		if (IsObsoleteAbility(AWCAbility.AbilityType.AbilityName))
+			return true;
+	}
+
+	foreach Unit.AcquiredTraits(TraitName)
+	{
+		if (IsGhostTrait(TraitName))
+			return true;
+	}
+
+	if (!GetAssignedTraitIndex(Unit, TraitIndex))
+		return false;
+
+	if (GetStampedVersion(Unit) < class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].Version)
+		return true;
+
+	foreach class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].GrantedAbilities(AbilityName)
+	{
+		if (!HasAWCEntry(Unit, AbilityName))
+			return true;
+	}
+
+	return false;
+}
+
+// Brings one soldier up to date. MutableUnit is a modified object of NewGameState (a change container of the caller's own).
+static final function MigrateUnit(XComGameState_Unit MutableUnit, XComGameState NewGameState)
+{
+	local ClassAgnosticAbility AWCAbility;
+	local class<UT_TraitBase> TraitClass;
+	local name AbilityName;
+	local int i, TraitIndex, FromVersion, ToVersion;
+
+	for (i = MutableUnit.AWCAbilities.Length - 1; i >= 0; --i)
+	{
+		AbilityName = MutableUnit.AWCAbilities[i].AbilityType.AbilityName;
+		if (IsObsoleteAbility(AbilityName))
+		{
+			`log("UniqueTraits : MigrateTraits --" @ MutableUnit.GetFullName() @ "-- removing the obsolete ability" @ AbilityName,, 'UniqueTraits');
+			MutableUnit.AWCAbilities.Remove(i, 1);
+		}
+	}
+
+	for (i = MutableUnit.AcquiredTraits.Length - 1; i >= 0; --i)
+	{
+		if (IsGhostTrait(MutableUnit.AcquiredTraits[i]))
+		{
+			`log("UniqueTraits : MigrateTraits --" @ MutableUnit.GetFullName() @ "-- removing the trait" @ MutableUnit.AcquiredTraits[i] @ "(not in the pool any more)",, 'UniqueTraits');
+			MutableUnit.AcquiredTraits.Remove(i, 1);
+			MutableUnit.ClearUnitValue('UT_TraitVersion');
+		}
+	}
+
+	if (!GetAssignedTraitIndex(MutableUnit, TraitIndex))
+		return;
+
+	FromVersion = GetStampedVersion(MutableUnit);
+	ToVersion = class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].Version;
+	TraitClass = class'UniqueTraits_TraitConfig'.static.GetTraitClass(class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].TraitID);
+
+	for (i = FromVersion; i < ToVersion; ++i)
+	{
+		`log("UniqueTraits : MigrateTraits --" @ MutableUnit.GetFullName() @ "-- trait" @ class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].TraitID @ "from version" @ i @ "to" @ (i + 1),, 'UniqueTraits');
+		if (TraitClass != none)
+			TraitClass.static.OnMigrate(MutableUnit, i, NewGameState);
+	}
+
+	foreach class'UniqueTraits_TraitConfig'.default.Traits[TraitIndex].GrantedAbilities(AbilityName)
+	{
+		if (HasAWCEntry(MutableUnit, AbilityName))
+			continue;
+
+		`log("UniqueTraits : MigrateTraits --" @ MutableUnit.GetFullName() @ "-- adding the ability" @ AbilityName,, 'UniqueTraits');
+		AWCAbility.AbilityType.AbilityName = AbilityName;
+		AWCAbility.AbilityType.ApplyToWeaponSlot = eInvSlot_Unknown;
+		AWCAbility.AbilityType.UtilityCat = '';
+		AWCAbility.iRank = 0;
+		AWCAbility.bUnlocked = true;
+		MutableUnit.AWCAbilities.AddItem(AWCAbility);
+	}
+
+	// A stamp higher than the trait's version (an older version of the mod loaded over a newer save) is left alone.
+	if (FromVersion < ToVersion)
+		MutableUnit.SetUnitFloatValue('UT_TraitVersion', ToVersion, eCleanup_Never);
+}
+
+// Checks every soldier of the roster and brings those who need it up to date, in one change container (none when nothing is needed). Run on a save loaded into the strategy layer
+// (OnLoadedSavedGameToStrategy) and after a mission (OnPostMission: a save loaded in the middle of a mission, and the return to the strategy layer is no load), and by the console
+// command UTMigrateTraits. Not during a mission: the abilities of a soldier are built when the mission starts. bReportOnly only logs who would be migrated.
+static final function MigrateTraits(optional bool bReportOnly = false)
+{
+	local XComGameState_HeadquartersXCom XComHQ;
+	local array<XComGameState_Unit> Soldiers;
+	local XComGameState_Unit Soldier, MutableUnit;
+	local array<int> UnitIDs;
+	local XComGameState NewGameState;
+	local int i;
+
+	XComHQ = XComGameState_HeadquartersXCom(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
+	if (XComHQ == none)
+		return;
+
+	Soldiers = XComHQ.GetSoldiers();
+	foreach Soldiers(Soldier)
+	{
+		if (UnitNeedsMigration(Soldier))
+		{
+			UnitIDs.AddItem(Soldier.ObjectID);
+			`log("UniqueTraits : MigrateTraits --" @ Soldier.GetFullName() @ "needs to be brought up to date",, 'UniqueTraits');
+		}
+	}
+
+	`log("UniqueTraits : MigrateTraits --" @ Soldiers.Length @ "soldier(s) checked," @ UnitIDs.Length @ "to bring up to date" @ (bReportOnly ? "(report only)" : ""),, 'UniqueTraits');
+	if (UnitIDs.Length == 0 || bReportOnly)
+		return;
+
+	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("UniqueTraits: Migrate traits");
+	for (i = 0; i < UnitIDs.Length; ++i)
+	{
+		MutableUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitIDs[i]));
+		MigrateUnit(MutableUnit, NewGameState);
+	}
+	`GAMERULES.SubmitGameState(NewGameState);
+}
+
+// Console command: "UTMigrateTraits" runs the migration of the soldiers now, "UTMigrateTraits check" only logs who would be migrated (Launch.log).
+exec function UTMigrateTraits(optional string Mode)
+{
+	MigrateTraits(Mode ~= "check");
 }
 
 // Console command: "UTHazardFix on" / "UTHazardFix off" switches the AI hazard fix (UT_AIHazardFix) in the running game, without argument it toggles. Meant for A/B tests on the

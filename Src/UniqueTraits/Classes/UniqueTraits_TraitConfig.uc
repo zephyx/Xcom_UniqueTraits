@@ -21,9 +21,17 @@ struct UniqueTraitDefinition
 	var bool bDisabled;                // true: the trait is OFF for real (see IsTraitDisabled): never drawn, no event registered, nothing patched, its abilities do nothing.
 	                                    // The player can switch it in the Mod Config Menu ("Disabled traits", applies at the next launch); that choice wins over this line.
 
+	var int Version;                   // the version of the DEFINITION of the trait: raise it when a change needs the soldiers who already carry the trait to be brought up to date
+	                                    // (what it grants, or what its state means for a soldier). Every grant stamps the unit with it (UnitValue UT_TraitVersion). A soldier who has
+	                                    // no stamp counts as version 1. On load and after a mission, MigrateTraits calls UT_TraitBase.OnMigrate(unit, v) for each v from the
+	                                    // soldier's version to this one minus 1. Omitted = 1.
+	var array<name> RetiredAbilities;  // abilities the trait used to grant and does not any more: MigrateTraits takes them out of the soldiers' AWCAbilities (unless another trait
+	                                    // grants them now). Also removed whenever a trait is cleared.
+
 	structdefaultproperties
 	{
 		Probability=-1
+		Version=1
 	}
 };
 
