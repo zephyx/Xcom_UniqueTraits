@@ -1,32 +1,38 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_ManiacExplosive.uc
-//  PURPOSE: Maniac explosive. UT_ManiacExplosive carries the malus (the primary weapon's BASE damage is reduced by
-//           MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT%, before any other damage modifier: X2Effect_UT_PrimaryWeaponMalus, pre-default hook);
-//           the +3 grenade pockets are the UT_ManiacExtraPockets CHItemSlot template
-//           (CreateExtraPocketsSlot below, registered by X2ItemSlot_UniqueTraits.uc). Its second ability, UT_ManiacImproviseGrenade,
-//           is a limited-use activated ability that conjures a free explosive grenade, frag or plasma (if researched), added
-//           permanently to the holder's inventory for the rest of the mission.
+//  PURPOSE: Maniac explosive. UT_ManiacExplosive carries the malus of the PRIMARY weapon by weapon tier (X2Effect_UT_PrimaryWeaponMalus: flat BASE damage
+//           and critical chance, indexed by X2WeaponTemplate.WeaponTech through MANIAC_WEAPON_TECHS); the +1 grenade pocket is the UT_ManiacExtraPockets
+//           CHItemSlot template (CreateExtraPocketsSlot below, registered by X2ItemSlot_UniqueTraits.uc).
+//           Its second ability, UT_ManiacBreak ("Break!"), is a free action with a cooldown that puts X2Effect_UT_ManiacBreak on the holder until the
+//           end of the turn: his grenades deal more damage to units (per rank) and more environment damage (a base amount plus an amount per rank,
+//           added to the grenade's own environment damage events by X2Effect_UT_ManiacBreakWorld, which OnPostTemplatesCreated below appends to the
+//           effects of every grenade). If the holder caused no environment damage during that turn the cooldown is shortened
+//           (X2Effect_UT_ManiacBreak.OnEffectRemoved).
 //---------------------------------------------------------------------------------------
 class UT_Trait_ManiacExplosive extends UT_TraitBase config(UniqueTraits);
 
 var config int MANIAC_EXTRA_GRENADE_POCKETS;
 var localized string ManiacPocketsSlotName, ManiacPocketsSlotLetter;
 
-// Malus on the BASE damage of the primary weapon, before any other modifier (X2Effect_UT_PrimaryWeaponMalus).
-var config int MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT;
-var config name MANIAC_IMPROVISE_GRENADE_ITEM_NAME;
-// Better grenade once a research is done (first match wins): parallel lists, see X2Effect_UT_TemporaryItem.ResearchProjectNames.
-var config array<name> MANIAC_IMPROVISE_GRENADE_RESEARCH_PROJECTS;
-var config array<name> MANIAC_IMPROVISE_GRENADE_RESEARCH_ITEMS;
-var config int MANIAC_IMPROVISE_CHARGES;
-var config int MANIAC_IMPROVISE_COOLDOWN;
+// Malus of the primary weapon by tier: parallel lists, line N of the techs pairs with line N of the damage and the critical malus. A weapon whose
+// WeaponTech is not listed (another mod's) takes the LAST line.
+var config array<name> MANIAC_WEAPON_TECHS;
+var config array<int> MANIAC_PRIMARY_DAMAGE_MALUS;
+var config array<int> MANIAC_PRIMARY_CRIT_MALUS;
+
+// Break!
+var config int MANIAC_BREAK_COOLDOWN;
+var config int MANIAC_BREAK_COOLDOWN_REFUND;
+var config int MANIAC_BREAK_ENV_BASE;
+var config int MANIAC_BREAK_ENV_PER_RANK;
+var config float MANIAC_BREAK_DAMAGE_PER_RANK;
 
 static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
 
 	Templates.AddItem(ManiacExplosive());
-	Templates.AddItem(ManiacImproviseGrenade());
+	Templates.AddItem(ManiacBreak());
 
 	return Templates;
 }
@@ -40,7 +46,9 @@ static function X2AbilityTemplate ManiacExplosive()
 
 	MalusEffect = new class'X2Effect_UT_PrimaryWeaponMalus';
 	MalusEffect.EffectName = 'UT_ManiacExplosive_PrimaryWeaponMalus';
-	MalusEffect.DamageReductionPct = default.MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT;
+	MalusEffect.WeaponTechs = default.MANIAC_WEAPON_TECHS;
+	MalusEffect.DamageByTier = default.MANIAC_PRIMARY_DAMAGE_MALUS;
+	MalusEffect.CritByTier = default.MANIAC_PRIMARY_CRIT_MALUS;
 	MalusEffect.BuildPersistentEffect(1, true, false);
 	MalusEffect.SetDisplayInfo(ePerkBuff_Penalty, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(MalusEffect);
@@ -48,18 +56,16 @@ static function X2AbilityTemplate ManiacExplosive()
 	return Template;
 }
 
-static function X2AbilityTemplate ManiacImproviseGrenade()
+static function X2AbilityTemplate ManiacBreak()
 {
 	local X2AbilityTemplate Template;
 	local X2AbilityCost_ActionPoints ActionPointCost;
-	local X2AbilityCost_Charges ChargeCost;
-	local X2AbilityCharges Charges;
 	local X2AbilityCooldown Cooldown;
-	local X2Effect_UT_TemporaryItem GrenadeEffect;
+	local X2Effect_UT_ManiacBreak BreakEffect;
 
-	`CREATE_X2ABILITY_TEMPLATE(Template, 'UT_ManiacImproviseGrenade');
+	`CREATE_X2ABILITY_TEMPLATE(Template, 'UT_ManiacBreak');
 
-	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_fraggrenade";
+	Template.IconImage = "img:///UniqueTraits_Icons.UT_ManiacExplosive_Break";
 	Template.AbilitySourceName = 'eAbilitySource_Perk';
 	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
 	Template.Hostility = eHostility_Neutral;
@@ -71,37 +77,24 @@ static function X2AbilityTemplate ManiacImproviseGrenade()
 	Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
 	Template.AddShooterEffectExclusions();
 
+	// A free action: iNumPoints 1 AND bFreeCost, so it needs an action point left but takes none.
 	ActionPointCost = new class'X2AbilityCost_ActionPoints';
 	ActionPointCost.iNumPoints = 1;
-	ActionPointCost.bConsumeAllPoints = true;
+	ActionPointCost.bFreeCost = true;
 	Template.AbilityCosts.AddItem(ActionPointCost);
 
-	Charges = new class'X2AbilityCharges';
-	Charges.InitialCharges = default.MANIAC_IMPROVISE_CHARGES;
-	Template.AbilityCharges = Charges;
-
-	ChargeCost = new class'X2AbilityCost_Charges';
-	ChargeCost.NumCharges = 1;
-	Template.AbilityCosts.AddItem(ChargeCost);
-
 	Cooldown = new class'X2AbilityCooldown';
-	Cooldown.iNumTurns = default.MANIAC_IMPROVISE_COOLDOWN;
+	Cooldown.iNumTurns = default.MANIAC_BREAK_COOLDOWN;
 	Template.AbilityCooldown = Cooldown;
 
-	GrenadeEffect = new class'X2Effect_UT_TemporaryItem';
-	GrenadeEffect.EffectName = 'UT_ManiacImproviseGrenade_Item';
-	GrenadeEffect.ItemName = default.MANIAC_IMPROVISE_GRENADE_ITEM_NAME;
-	GrenadeEffect.ItemInventorySlot = eInvSlot_Utility;
-	GrenadeEffect.ResearchProjectNames = default.MANIAC_IMPROVISE_GRENADE_RESEARCH_PROJECTS;
-	GrenadeEffect.ResearchItemNames = default.MANIAC_IMPROVISE_GRENADE_RESEARCH_ITEMS;
-	GrenadeEffect.bUseHighestAvailableUpgrade = true;
-	GrenadeEffect.bStackOnExisting = true;
-	// Each use adds one more grenade: the default eDupe_Ignore would reject every use after the first
-	// (same EffectName already on the unit).
-	GrenadeEffect.DuplicateResponse = eDupe_Allow;
-	GrenadeEffect.BuildPersistentEffect(1, true, false);
-	GrenadeEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage,,, Template.AbilitySourceName);
-	Template.AddTargetEffect(GrenadeEffect);
+	BreakEffect = new class'X2Effect_UT_ManiacBreak';
+	BreakEffect.EffectName = 'UT_ManiacBreak_Active';
+	BreakEffect.DamagePerRank = default.MANIAC_BREAK_DAMAGE_PER_RANK;
+	BreakEffect.CooldownRefund = default.MANIAC_BREAK_COOLDOWN_REFUND;
+	// Until the end of the holder's turn.
+	BreakEffect.BuildPersistentEffect(1, false, true, false, eGameRule_PlayerTurnEnd);
+	BreakEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, true,, Template.AbilitySourceName);
+	Template.AddTargetEffect(BreakEffect);
 
 	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
@@ -111,11 +104,58 @@ static function X2AbilityTemplate ManiacImproviseGrenade()
 	return Template;
 }
 
+// UT_TraitBase.OnPostTemplatesCreated (called for every trait of the pool by X2DownloadableContentInfo_UniqueTraits).
+// Break!'s environment damage is an effect of the GRENADE: it is read from the item at activation time, in every difficulty variant of the item
+// (see UT_Trait_MeatTenderizer.OnPostTemplatesCreated for the reason), so one X2Effect_UT_ManiacBreakWorld is appended to the thrown and launched
+// effects of each grenade that has a damage effect. Appended, never inserted: the effects are looked up by their index. The effect does nothing for a
+// thrower that is not under Break!.
+static function OnPostTemplatesCreated()
+{
+	local X2ItemTemplateManager ItemManager;
+	local array<name> TemplateNames;
+	local array<X2DataTemplate> Variants;
+	local X2DataTemplate DataTemplate;
+	local X2GrenadeTemplate GrenadeTemplate;
+	local name TemplateName;
+
+	ItemManager = class'X2ItemTemplateManager'.static.GetItemTemplateManager();
+	ItemManager.GetTemplateNames(TemplateNames);
+	foreach TemplateNames(TemplateName)
+	{
+		Variants.Length = 0;
+		ItemManager.FindDataTemplateAllDifficulties(TemplateName, Variants);
+		foreach Variants(DataTemplate)
+		{
+			GrenadeTemplate = X2GrenadeTemplate(DataTemplate);
+			if (GrenadeTemplate == none)
+				continue;
+
+			AppendWorldEffect(GrenadeTemplate.ThrownGrenadeEffects);
+			AppendWorldEffect(GrenadeTemplate.LaunchedGrenadeEffects);
+		}
+	}
+}
+
+static final function AppendWorldEffect(out array<X2Effect> Effects)
+{
+	local X2Effect Effect;
+	local bool bHasDamage;
+
+	foreach Effects(Effect)
+	{
+		if (X2Effect_UT_ManiacBreakWorld(Effect) != none)
+			return;
+		if (X2Effect_ApplyWeaponDamage(Effect) != none)
+			bHasDamage = true;
+	}
+
+	if (bHasDamage)
+		Effects.AddItem(new class'X2Effect_UT_ManiacBreakWorld');
+}
+
 //---------------------------------------------------------------------------------------
-// Maniac explosive: +3 multi-item grenade pockets, holding any grenade (including rockets),
-// same as the vanilla Grenade Pocket. The primary weapon block for this trait is handled
-// separately, via CanAddItemToInventory_CH_Improved in X2DownloadableContentInfo_UniqueTraits
-// (eInvSlot_PrimaryWeapon is a vanilla slot, not a templated one, so it can't be gated here).
+// Maniac explosive: extra multi-item grenade pockets (MANIAC_EXTRA_GRENADE_POCKETS), holding any grenade (including rockets),
+// same as the vanilla Grenade Pocket.
 //---------------------------------------------------------------------------------------
 static function X2DataTemplate CreateExtraPocketsSlot()
 {
@@ -207,4 +247,3 @@ static function string ManiacGetDisplayLetter(CHItemSlot Slot)
 {
 	return default.ManiacPocketsSlotLetter;
 }
-

@@ -288,9 +288,13 @@ static function bool GetValue(string Key, out string OutString)
 		case 'SCOUT_SIGHT_RADIUS_PENALTY': OutString = string(class'UT_Trait_Scout'.default.SCOUT_SIGHT_RADIUS_PENALTY); return true;
 		case 'SUPPORT_MOBILITY_BONUS': OutString = string(class'UT_Trait_Support'.default.SUPPORT_MOBILITY_BONUS); return true;
 		case 'MANIAC_EXTRA_GRENADE_POCKETS': OutString = string(class'UT_Trait_ManiacExplosive'.default.MANIAC_EXTRA_GRENADE_POCKETS); return true;
-		case 'MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT': OutString = string(class'UT_Trait_ManiacExplosive'.default.MANIAC_PRIMARY_WEAPON_DAMAGE_REDUCTION_PCT); return true;
-		case 'MANIAC_IMPROVISE_COOLDOWN': OutString = string(class'UT_Trait_ManiacExplosive'.default.MANIAC_IMPROVISE_COOLDOWN); return true;
-		case 'MANIAC_IMPROVISE_CHARGES': OutString = string(class'UT_Trait_ManiacExplosive'.default.MANIAC_IMPROVISE_CHARGES); return true;
+		case 'MANIAC_PRIMARY_DAMAGE_MALUS': OutString = JoinInts(class'UT_Trait_ManiacExplosive'.default.MANIAC_PRIMARY_DAMAGE_MALUS, "-"); return true;
+		case 'MANIAC_PRIMARY_CRIT_MALUS': OutString = JoinInts(class'UT_Trait_ManiacExplosive'.default.MANIAC_PRIMARY_CRIT_MALUS, "-"); return true;
+		case 'MANIAC_BREAK_COOLDOWN': OutString = string(class'UT_Trait_ManiacExplosive'.default.MANIAC_BREAK_COOLDOWN); return true;
+		case 'MANIAC_BREAK_COOLDOWN_REFUND': OutString = string(class'UT_Trait_ManiacExplosive'.default.MANIAC_BREAK_COOLDOWN_REFUND); return true;
+		case 'MANIAC_BREAK_ENV_BASE': OutString = string(class'UT_Trait_ManiacExplosive'.default.MANIAC_BREAK_ENV_BASE); return true;
+		case 'MANIAC_BREAK_ENV_PER_RANK': OutString = string(class'UT_Trait_ManiacExplosive'.default.MANIAC_BREAK_ENV_PER_RANK); return true;
+		case 'MANIAC_BREAK_DAMAGE_PER_RANK': OutString = FormatFloat(class'UT_Trait_ManiacExplosive'.default.MANIAC_BREAK_DAMAGE_PER_RANK); return true;
 		case 'BRIBE_SUPPLY_BONUS': OutString = string(class'UT_Trait_Bribe'.default.BRIBE_SUPPLY_BONUS); return true;
 		case 'STAYFOCUS_WILL_LOSS': OutString = string(class'UT_Trait_StayFocus'.default.STAYFOCUS_WILL_LOSS); return true;
 		case 'STAYFOCUS_AIM_BONUS': OutString = string(class'UT_Trait_StayFocus'.default.STAYFOCUS_AIM_BONUS); return true;

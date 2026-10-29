@@ -880,9 +880,7 @@ static function OnAbilityPurchased_Predestined(XComGameState NewGameState, XComG
 	{
 		if (UnitState.m_SoldierProgressionAbilties[i].iRank >= 1)
 		{
-			`log("UniqueTraits [DIAG] : purchase hook -- history index" @ `XCOMHISTORY.GetCurrentHistoryIndex() @ "mobility" @ UnitState.GetCurrentStat(eStat_Mobility) @ "dodge" @ UnitState.GetCurrentStat(eStat_Dodge) @ "aim" @ UnitState.GetCurrentStat(eStat_Offense) @ "HP" @ UnitState.GetCurrentStat(eStat_HP),, 'UniqueTraits');
 			SyncState(UnitState);
-			`log("UniqueTraits [DIAG] : purchase hook done -- mobility" @ UnitState.GetCurrentStat(eStat_Mobility) @ "dodge" @ UnitState.GetCurrentStat(eStat_Dodge) @ "aim" @ UnitState.GetCurrentStat(eStat_Offense) @ "HP" @ UnitState.GetCurrentStat(eStat_HP),, 'UniqueTraits');
 			return;
 		}
 	}
@@ -966,8 +964,6 @@ static final function string BuildNote(Object ParseObj, Object StrategyParseObj)
 			switch (Symbol)
 			{
 				case SYMBOL_DIAMOND:
-					`log("UniqueTraits [DIAG] : Predestined diamond --" @ Unit.GetFullName() @ "class" @ Unit.GetSoldierClassTemplateName() @ "hero" @ Unit.IsResistanceHero() @ "rank" @ Unit.GetRank() @ "ComInt" @ int(Unit.ComInt) @ "column" @ Column
-						@ "class base AP" @ Unit.GetSoldierClassTemplate().BaseAbilityPointsPerPromotion @ "soldier AP" @ Unit.GetBaseSoldierAPAmount(Unit.ComInt) @ "level AP" @ GetLevelAP(Unit, Column) @ "diamond AP" @ GetDiamondAP(Unit, Column),, 'UniqueTraits');
 					Note =Repl(default.PREDESTINED_NOTE_DIAMOND, "%AP", string(GetDiamondAP(Unit, Column)));
 					break;
 				case SYMBOL_WAVES:

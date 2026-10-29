@@ -31,6 +31,7 @@
     <Content Include="Config\XComAI.ini" />
     <Content Include="Config\XComUniqueTraits.ini" />
     <Content Include="Config\XComLW_InfiltrationSettings.ini" />
+    <Content Include="Config\XComLW_Overhaul.ini" />
     <Content Include="Localization\XComGame.int" />
     <Content Include="Localization\XComGame.fra" />
     <Content Include="Localization\UniqueTraits.int" />
@@ -131,6 +132,8 @@
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakExplosives.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_DamageTakenMult.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_PrimaryWeaponMalus.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_ManiacBreak.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_ManiacBreakWorld.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakPrimaryWeapons.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_AcrobatMalus.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_TemporaryItem.uc" />

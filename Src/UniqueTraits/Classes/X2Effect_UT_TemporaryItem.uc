@@ -15,7 +15,7 @@ var int Quantity;
 var bool bUseHighestAvailableUpgrade;
 // If true and the unit already carries an item of the same template, add to that item's ammo
 // (what the engine's own MergeAmmoAsNeeded does at mission start for bMergeAmmo items => one icon,
-// quantity N) instead of creating a separate item. Used by Maniac explosive's Jury-Rig.
+// quantity N) instead of creating a separate item. Used by Smoker and Young doctor.
 var bool bStackOnExisting;
 
 // Checked BEFORE bUseHighestAvailableUpgrade, in order: the first entry whose research is done replaces the item. Needed because

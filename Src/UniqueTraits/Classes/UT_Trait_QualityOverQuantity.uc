@@ -6,7 +6,9 @@
 //---------------------------------------------------------------------------------------
 class UT_Trait_QualityOverQuantity extends UT_TraitBase config(UniqueTraits);
 
-// Indexed by X2WeaponTemplate.Tier (vanilla 0/2/4, LWOTC adds 1/3), clamped to the last entry.
+// Critical chance by weapon tier: line N of the techs pairs with line N of the bonuses. The tier is the weapon's WeaponTech (NOT its Tier, which LWOTC rewrites);
+// a tech that is not listed takes the last line.
+var config array<name> QUALITY_WEAPON_TECHS;
 var config array<int> QUALITY_CRIT_BY_TIER;
 var config int QUALITY_CLIP_REDUCTION;
 var config int QUALITY_CLIP_MIN_FOR_REDUCTION;
@@ -43,6 +45,7 @@ static function X2AbilityTemplate QualityOverQuantity()
 
 	CritEffect = new class'X2Effect_UT_QualityCrit';
 	CritEffect.EffectName = 'UT_QualityOverQuantity_Crit';
+	CritEffect.WeaponTechs = default.QUALITY_WEAPON_TECHS;
 	CritEffect.CritByTier = default.QUALITY_CRIT_BY_TIER;
 	CritEffect.BuildPersistentEffect(1, true, false);
 	CritEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);

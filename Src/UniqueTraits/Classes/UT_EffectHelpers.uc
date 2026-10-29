@@ -114,6 +114,28 @@ static function bool IsPrimaryWeaponAbility(XComGameState_Ability AbilityState)
 	return SourceWeapon != none && SourceWeapon.InventorySlot == eInvSlot_PrimaryWeapon;
 }
 
+// The tier of the PRIMARY weapon an ability was fired with, as the index of its X2WeaponTemplate.WeaponTech in WeaponTechs (conventional, laser_lw, magnetic,
+// coilgun_lw, beam: line N of the traits' ini lists). A tech that is not listed (another mod's weapon) gives the LAST index. INDEX_NONE when the ability was not
+// fired with the primary weapon or WeaponTechs is empty. X2WeaponTemplate.Tier is no use for this: LWOTC rewrites it from its ini (0 / 150 / 160 / 170 / 180).
+static function int GetPrimaryWeaponTechIndex(XComGameState_Ability AbilityState, const out array<name> WeaponTechs)
+{
+	local X2WeaponTemplate WeaponTemplate;
+	local int Index;
+
+	if (WeaponTechs.Length == 0 || !IsPrimaryWeaponAbility(AbilityState))
+		return INDEX_NONE;
+
+	WeaponTemplate = X2WeaponTemplate(AbilityState.GetSourceWeapon().GetMyTemplate());
+	if (WeaponTemplate == none)
+		return INDEX_NONE;
+
+	Index = WeaponTechs.Find(WeaponTemplate.WeaponTech);
+	if (Index == INDEX_NONE)
+		Index = WeaponTechs.Length - 1;
+
+	return Index;
+}
+
 // True when the UnitValue ValueName of UnitState is higher than in its previous version, ie: a counter that went up in the game state being
 // visualized. PreviousState is that previous version (may be none).
 static function bool ValueIncreased(XComGameState_Unit UnitState, name ValueName, out XComGameState_Unit PreviousState)

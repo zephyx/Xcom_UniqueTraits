@@ -136,7 +136,6 @@ simulated function bool SyncPredestined(UIArmory_PromotionHero PromotionScreen, 
 		return false;
 
 	LastSyncIndex = HistoryIndex;
-	`log("UniqueTraits [DIAG] : screen sync -- history index" @ HistoryIndex @ "mobility" @ Unit.GetCurrentStat(eStat_Mobility) @ "dodge" @ Unit.GetCurrentStat(eStat_Dodge) @ "aim" @ Unit.GetCurrentStat(eStat_Offense) @ "HP" @ Unit.GetCurrentStat(eStat_HP),, 'UniqueTraits');
 	if (!class'UT_Trait_Predestined'.static.SyncUnit(Unit.GetReference()))
 		return false;
 
