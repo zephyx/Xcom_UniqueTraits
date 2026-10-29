@@ -92,6 +92,7 @@
     <Content Include="Src\ModConfigMenuAPI\Classes\MCM_API_Slider.uc" />
     <Content Include="Src\ModConfigMenuAPI\Classes\MCM_API_Spinner.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Shredder.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Guard.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Nemesis.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_PercentHPDamage.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Tenderized.uc" />

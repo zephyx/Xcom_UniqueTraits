@@ -273,8 +273,8 @@ static function bool GetValue(string Key, out string OutString)
 		case 'NERD_WILL_BASE': OutString = string(class'UT_Trait_Nerd'.default.NERD_WILL_BASE); return true;
 		case 'NERD_WILL_PER_RANK': OutString = string(class'UT_Trait_Nerd'.default.NERD_WILL_PER_RANK); return true;
 		case 'NERD_MELEE_DAMAGE_TAKEN': OutString = string(class'UT_Trait_Nerd'.default.NERD_MELEE_DAMAGE_TAKEN); return true;
-		case 'GUARD_AIM': OutString = string(class'UT_Trait_Guard'.default.GUARD_AIM); return true;
-		case 'GUARD_OVERWATCH_AIM': OutString = string(class'UT_Trait_Guard'.default.GUARD_OVERWATCH_AIM); return true;
+		case 'GUARD_AIM_PER_RANK': OutString = string(class'UT_Trait_Guard'.default.GUARD_AIM_PER_RANK); return true;
+		case 'GUARD_OVERWATCH_AIM_PER_RANK': OutString = string(class'UT_Trait_Guard'.default.GUARD_OVERWATCH_AIM_PER_RANK); return true;
 		case 'PACIFIST_DEFENSE_BONUS': OutString = string(class'UT_Trait_Pacifist'.default.PACIFIST_DEFENSE_BONUS); return true;
 		case 'PACIFIST_DODGE_BONUS': OutString = string(class'UT_Trait_Pacifist'.default.PACIFIST_DODGE_BONUS); return true;
 		case 'PACIFIST_RADIUS_TILES': OutString = string(class'UT_Trait_Pacifist'.default.PACIFIST_RADIUS_TILES); return true;

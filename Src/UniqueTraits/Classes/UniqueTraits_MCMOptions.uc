@@ -32,8 +32,8 @@ static final function array<string> GetRows()
 	Rows.AddItem("NERD_WILL_BASE|UT_Nerd|0|20|1|1|S");
 	Rows.AddItem("NERD_WILL_PER_RANK|UT_Nerd|0|10|1|1|S");
 	Rows.AddItem("NERD_MELEE_DAMAGE_TAKEN|UT_Nerd|0|6|1|1|R");
-	Rows.AddItem("GUARD_AIM|UT_Guard|0|40|1|1|R");
-	Rows.AddItem("GUARD_OVERWATCH_AIM|UT_Guard|0|60|1|1|R");
+	Rows.AddItem("GUARD_AIM_PER_RANK|UT_Guard|0|10|1|1|R");
+	Rows.AddItem("GUARD_OVERWATCH_AIM_PER_RANK|UT_Guard|0|15|1|1|R");
 	Rows.AddItem("PACIFIST_DEFENSE_BONUS|UT_Pacifist|0|30|1|1|R");
 	Rows.AddItem("PACIFIST_DODGE_BONUS|UT_Pacifist|0|30|1|1|R");
 	Rows.AddItem("PACIFIST_RADIUS_TILES|UT_Pacifist|1|15|1|1|R");
@@ -252,8 +252,8 @@ static final function int GetCurrent(name Key)
 		case 'NERD_WILL_BASE': return class'UT_Trait_Nerd'.default.NERD_WILL_BASE;
 		case 'NERD_WILL_PER_RANK': return class'UT_Trait_Nerd'.default.NERD_WILL_PER_RANK;
 		case 'NERD_MELEE_DAMAGE_TAKEN': return class'UT_Trait_Nerd'.default.NERD_MELEE_DAMAGE_TAKEN;
-		case 'GUARD_AIM': return class'UT_Trait_Guard'.default.GUARD_AIM;
-		case 'GUARD_OVERWATCH_AIM': return class'UT_Trait_Guard'.default.GUARD_OVERWATCH_AIM;
+		case 'GUARD_AIM_PER_RANK': return class'UT_Trait_Guard'.default.GUARD_AIM_PER_RANK;
+		case 'GUARD_OVERWATCH_AIM_PER_RANK': return class'UT_Trait_Guard'.default.GUARD_OVERWATCH_AIM_PER_RANK;
 		case 'PACIFIST_DEFENSE_BONUS': return class'UT_Trait_Pacifist'.default.PACIFIST_DEFENSE_BONUS;
 		case 'PACIFIST_DODGE_BONUS': return class'UT_Trait_Pacifist'.default.PACIFIST_DODGE_BONUS;
 		case 'PACIFIST_RADIUS_TILES': return class'UT_Trait_Pacifist'.default.PACIFIST_RADIUS_TILES;
@@ -473,8 +473,8 @@ static final function SetCurrent(name Key, int Value)
 		case 'NERD_WILL_BASE': class'UT_Trait_Nerd'.default.NERD_WILL_BASE = Value; break;
 		case 'NERD_WILL_PER_RANK': class'UT_Trait_Nerd'.default.NERD_WILL_PER_RANK = Value; break;
 		case 'NERD_MELEE_DAMAGE_TAKEN': class'UT_Trait_Nerd'.default.NERD_MELEE_DAMAGE_TAKEN = Value; break;
-		case 'GUARD_AIM': class'UT_Trait_Guard'.default.GUARD_AIM = Value; break;
-		case 'GUARD_OVERWATCH_AIM': class'UT_Trait_Guard'.default.GUARD_OVERWATCH_AIM = Value; break;
+		case 'GUARD_AIM_PER_RANK': class'UT_Trait_Guard'.default.GUARD_AIM_PER_RANK = Value; break;
+		case 'GUARD_OVERWATCH_AIM_PER_RANK': class'UT_Trait_Guard'.default.GUARD_OVERWATCH_AIM_PER_RANK = Value; break;
 		case 'PACIFIST_DEFENSE_BONUS': class'UT_Trait_Pacifist'.default.PACIFIST_DEFENSE_BONUS = Value; break;
 		case 'PACIFIST_DODGE_BONUS': class'UT_Trait_Pacifist'.default.PACIFIST_DODGE_BONUS = Value; break;
 		case 'PACIFIST_RADIUS_TILES': class'UT_Trait_Pacifist'.default.PACIFIST_RADIUS_TILES = Value; break;
