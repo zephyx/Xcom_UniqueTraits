@@ -49,6 +49,7 @@ static final function array<string> GetRows()
 	Rows.AddItem("ALWAYSREADY_RELOAD_BASE_CHANCE_PCT|UT_AlwaysReady|0|100|1|1|-");
 	Rows.AddItem("ALWAYSREADY_RELOAD_WILL_FACTOR|UT_AlwaysReady|0|100|5|100|-");
 	Rows.AddItem("ALWAYSREADY_RELOAD_AMMO_FACTOR|UT_AlwaysReady|0|100|5|100|-");
+	Rows.AddItem("ALWAYSREADY_MENTAL_PROTECTION_COUNTERS|UT_AlwaysReady|0|1|1|1|B");
 	Rows.AddItem("QUICKHEALING_DAMAGE_TAKEN_MULT|UT_QuickHealing|100|300|5|100|R");
 	Rows.AddItem("THIEF_STEAL_CHANCE_PCT|UT_Thief|0|100|1|1|-");
 	Rows.AddItem("SUPPORT_MOBILITY_BONUS|UT_Support|0|5|1|1|R");
@@ -269,6 +270,7 @@ static final function int GetCurrent(name Key)
 		case 'ALWAYSREADY_RELOAD_BASE_CHANCE_PCT': return class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_BASE_CHANCE_PCT;
 		case 'ALWAYSREADY_RELOAD_WILL_FACTOR': return Round(class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_WILL_FACTOR * 100.0);
 		case 'ALWAYSREADY_RELOAD_AMMO_FACTOR': return Round(class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_AMMO_FACTOR * 100.0);
+		case 'ALWAYSREADY_MENTAL_PROTECTION_COUNTERS': if (class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_MENTAL_PROTECTION_COUNTERS) return 1; return 0;
 		case 'QUICKHEALING_DAMAGE_TAKEN_MULT': return Round(class'UT_Trait_QuickHealing'.default.QUICKHEALING_DAMAGE_TAKEN_MULT * 100.0);
 		case 'THIEF_STEAL_CHANCE_PCT': return class'UT_Trait_Thief'.default.THIEF_STEAL_CHANCE_PCT;
 		case 'SUPPORT_MOBILITY_BONUS': return class'UT_Trait_Support'.default.SUPPORT_MOBILITY_BONUS;
@@ -490,6 +492,7 @@ static final function SetCurrent(name Key, int Value)
 		case 'ALWAYSREADY_RELOAD_BASE_CHANCE_PCT': class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_BASE_CHANCE_PCT = Value; break;
 		case 'ALWAYSREADY_RELOAD_WILL_FACTOR': class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_WILL_FACTOR = float(Value) / 100.0; break;
 		case 'ALWAYSREADY_RELOAD_AMMO_FACTOR': class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_AMMO_FACTOR = float(Value) / 100.0; break;
+		case 'ALWAYSREADY_MENTAL_PROTECTION_COUNTERS': class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_MENTAL_PROTECTION_COUNTERS = (Value != 0); break;
 		case 'QUICKHEALING_DAMAGE_TAKEN_MULT': class'UT_Trait_QuickHealing'.default.QUICKHEALING_DAMAGE_TAKEN_MULT = float(Value) / 100.0; break;
 		case 'THIEF_STEAL_CHANCE_PCT': class'UT_Trait_Thief'.default.THIEF_STEAL_CHANCE_PCT = Value; break;
 		case 'SUPPORT_MOBILITY_BONUS': class'UT_Trait_Support'.default.SUPPORT_MOBILITY_BONUS = Value; break;

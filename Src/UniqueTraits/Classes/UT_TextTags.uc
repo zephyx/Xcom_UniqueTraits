@@ -256,6 +256,8 @@ static function bool GetValue(string Key, out string OutString)
 		return true;
 	if (class'UT_Trait_Athlete'.static.GetTextValue(Key, OutString))
 		return true;
+	if (class'UT_Trait_AlwaysReady'.static.GetTextValue(Key, OutString))
+		return true;
 	if (class'UT_Trait_Swordsman'.static.GetTextValue(Key, OutString))
 		return true;
 

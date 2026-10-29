@@ -1,13 +1,24 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_AlwaysReady.uc
 //  PURPOSE: Always ready: UT_AlwaysReady is the icon holder (the reload malus is a listener), UT_AlwaysReadyOverwatch is the bonus.
+//           The forced reload is a compulsion of the mind: a soldier protected against mental effects is spared it, the way the
+//           Gene Modding mod's Chaotic Mind is suppressed: UnitState.IsImmuneToDamage('Mental') (Mind Shield, Solace's aura, the Mitzruti gene mod Neural Damping...,
+//           anything that provides a damage immunity, native character immunities included). The damage types tested are in ALWAYSREADY_MENTAL_DAMAGE_TYPES.
+//           ONLY the forced reload (and its end of turn) is countered; the overwatch at the end of the turn always happens. The counter is switched by the Mod Config
+//           Menu checkbox ALWAYSREADY_MENTAL_PROTECTION_COUNTERS (default true), read when used; the ability texts follow it (ALWAYSREADY_MENTAL_LONG / _HELP).
 //---------------------------------------------------------------------------------------
 class UT_Trait_AlwaysReady extends UT_TraitBase config(UniqueTraits);
 
 var config int ALWAYSREADY_RELOAD_BASE_CHANCE_PCT;
 var config float ALWAYSREADY_RELOAD_WILL_FACTOR;
 var config float ALWAYSREADY_RELOAD_AMMO_FACTOR;
+// Damage types of the mental effects: a holder immune to ANY of them does not get the forced reload ('Mental' is the type Chaotic Mind tests).
+var config array<name> ALWAYSREADY_MENTAL_DAMAGE_TYPES;
+// false: mental protection changes nothing (the forced reload happens whatever the soldier carries).
+var config bool ALWAYSREADY_MENTAL_PROTECTION_COUNTERS;
 var localized string ALWAYSREADY_RELOAD_FLYOVER;
+// Pieces of the ability texts, used only while the counter is on (GetTextValue).
+var localized string ALWAYSREADY_MENTAL_LONG, ALWAYSREADY_MENTAL_HELP;
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -130,6 +141,13 @@ static function EventListenerReturn OnAbilityActivated_AlwaysReady(Object EventD
 	if (`SYNC_FRAND_STATIC() >= FinalChancePct / 100.0)
 		return ELR_NoInterrupt;
 
+	// Only checked once the roll succeeded (the immunity scan walks the unit's effects): a mind-protected holder is spared the compulsion, no reload, the turn goes on.
+	if (IsProtectedFromMentalEffects(SourceUnit))
+	{
+		`log("UniqueTraits : Always ready -- obsessive reload countered for" @ SourceUnit.GetFullName() @ "(immune to mental effects)",, 'UniqueTraits');
+		return ELR_NoInterrupt;
+	}
+
 	`log("UniqueTraits : Always ready -- obsessive reload roll triggered for" @ SourceUnit.GetFullName()
 		$ " (WillPercentMark=" $ WillPercentMark $ " MissingAmmoPercent=" $ MissingAmmoPercent
 		$ " FinalChancePct=" $ FinalChancePct $ ")",, 'UniqueTraits');
@@ -145,6 +163,36 @@ static function EventListenerReturn OnAbilityActivated_AlwaysReady(Object EventD
 	`log("UniqueTraits : Always ready -- obsessive reload triggered for" @ SourceUnit.GetFullName() $ ", weapon reloaded, turn ended",, 'UniqueTraits');
 
 	return ELR_NoInterrupt;
+}
+
+// Mind Shield, Solace, a gene mod... : the unit is immune to one of the mental damage types (the test Chaotic Mind uses).
+static final function bool IsProtectedFromMentalEffects(XComGameState_Unit Unit)
+{
+	local name DamageType;
+
+	if (!default.ALWAYSREADY_MENTAL_PROTECTION_COUNTERS)
+		return false;
+
+	foreach default.ALWAYSREADY_MENTAL_DAMAGE_TYPES(DamageType)
+	{
+		if (Unit.IsImmuneToDamage(DamageType))
+			return true;
+	}
+
+	return false;
+}
+
+// The pieces of the texts that mention the mental protection (UT_TextTags): empty while the option is off.
+static function bool GetTextValue(string Key, out string OutString)
+{
+	if (Key ~= "ALWAYSREADY_MENTAL_LONG")
+		OutString = default.ALWAYSREADY_MENTAL_PROTECTION_COUNTERS ? default.ALWAYSREADY_MENTAL_LONG : "";
+	else if (Key ~= "ALWAYSREADY_MENTAL_HELP")
+		OutString = default.ALWAYSREADY_MENTAL_PROTECTION_COUNTERS ? default.ALWAYSREADY_MENTAL_HELP : "";
+	else
+		return false;
+
+	return true;
 }
 
 // The forced reload plays vanilla's own reload (HL_Reload animation, the unit's reload voice line) plus the trait's flyover.
