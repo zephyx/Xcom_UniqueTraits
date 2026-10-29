@@ -256,6 +256,8 @@ static function bool GetValue(string Key, out string OutString)
 		return true;
 	if (class'UT_Trait_Athlete'.static.GetTextValue(Key, OutString))
 		return true;
+	if (class'UT_Trait_Swordsman'.static.GetTextValue(Key, OutString))
+		return true;
 
 	switch (name(Key))
 	{
@@ -317,7 +319,13 @@ static function bool GetValue(string Key, out string OutString)
 		case 'SMOKER_WILL_REGEN': OutString = string(class'UT_Trait_Smoker'.default.SMOKER_WILL_REGEN); return true;
 		case 'BORNTOBECHIEF_AIM_DODGE_WILL_BASE': OutString = string(class'UT_Trait_BornToBeChief'.default.BORNTOBECHIEF_AIM_DODGE_WILL_BASE); return true;
 		case 'BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK': OutString = string(class'UT_Trait_BornToBeChief'.default.BORNTOBECHIEF_AIM_DODGE_WILL_PER_RANK); return true;
-		case 'SWORDSMAN_MELEE_BONUS_BY_TIER': OutString = JoinInts(class'UT_Trait_Swordsman'.default.SWORDSMAN_MELEE_BONUS_BY_TIER, "+"); return true;
+		case 'SWORDSMAN_MOBILITY_BONUS': OutString = string(class'UT_Trait_Swordsman'.default.SWORDSMAN_MOBILITY_BONUS); return true;
+		case 'SWORDSMAN_PIERCE_BONUS': OutString = string(class'UT_Trait_Swordsman'.default.SWORDSMAN_PIERCE_BONUS); return true;
+		case 'SWORDSMAN_PIERCE_RANK': OutString = string(class'UT_Trait_Swordsman'.default.SWORDSMAN_PIERCE_RANK); return true;
+		case 'SWORDSMAN_MIN_DAMAGE_BONUS': OutString = string(class'UT_Trait_Swordsman'.default.SWORDSMAN_MIN_DAMAGE_BONUS); return true;
+		case 'SWORDSMAN_MIN_DAMAGE_RANK': OutString = string(class'UT_Trait_Swordsman'.default.SWORDSMAN_MIN_DAMAGE_RANK); return true;
+		case 'SWORDSMAN_DAMAGE_BONUS': OutString = string(class'UT_Trait_Swordsman'.default.SWORDSMAN_DAMAGE_BONUS); return true;
+		case 'SWORDSMAN_DAMAGE_RANK': OutString = string(class'UT_Trait_Swordsman'.default.SWORDSMAN_DAMAGE_RANK); return true;
 		case 'SWORDSMAN_FIREARM_DAMAGE_REDUCTION': OutString = string(class'UT_Trait_Swordsman'.default.SWORDSMAN_FIREARM_DAMAGE_REDUCTION); return true;
 		case 'HUNTER_CONCEALED_SIGHT_BONUS': OutString = string(class'UT_Trait_Hunter'.default.HUNTER_CONCEALED_SIGHT_BONUS); return true;
 		case 'HUNTER_DETECTION_MODIFIER': OutString = string(Round(-class'UT_Trait_Hunter'.default.HUNTER_DETECTION_MODIFIER * 10.0)); return true;

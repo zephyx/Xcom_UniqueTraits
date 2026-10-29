@@ -1,7 +1,9 @@
 //---------------------------------------------------------------------------------------
 //  FILE:   UT_Trait_Swordsman.uc
-//  PURPOSE: Swordsman [LWOTC ONLY]: melee damage and armor pierce scale with the melee weapon's Tier (see
-//           X2Effect_UT_Swordsman), -1 damage on firearms. LWOTC-only because the pistol restriction targets
+//  PURPOSE: Swordsman [LWOTC ONLY] (reworked 2026-10-30): +SWORDSMAN_MOBILITY_BONUS Mobility in missions (a plain stat effect, like Support's), then
+//           melee bonuses by RANK (see X2Effect_UT_Swordsman): armor pierce at SWORDSMAN_PIERCE_RANK (LWOTC 3, Corporal), a floor of (minimum + 1) on the melee roll
+//           at SWORDSMAN_MIN_DAMAGE_RANK (5, Staff Sergeant), +1 melee damage at SWORDSMAN_DAMAGE_RANK (7, Gunnery Sergeant). -1 damage on firearms while a melee
+//           weapon is carried in the primary or secondary slot. No pistol outside the primary slot. LWOTC-only because the pistol restriction targets
 //           LWOTC's own pistol slot (the slot block lives in
 //           X2DownloadableContentInfo_UniqueTraits.CanAddItemToInventory_CH_Improved, the CPS pistol row block
 //           in X2EventListener_UniqueTraits; OnGrant strips the pistol the unit already carries).
@@ -10,8 +12,13 @@ class UT_Trait_Swordsman extends UT_TraitBase config(UniqueTraits);
 
 var localized string SwordsmanNoPistolReason;
 
-var config array<int> SWORDSMAN_MELEE_BONUS_BY_TIER;
+var config int SWORDSMAN_MOBILITY_BONUS;
+var config int SWORDSMAN_PIERCE_BONUS, SWORDSMAN_PIERCE_RANK;
+var config int SWORDSMAN_MIN_DAMAGE_BONUS, SWORDSMAN_MIN_DAMAGE_RANK;
+var config int SWORDSMAN_DAMAGE_BONUS, SWORDSMAN_DAMAGE_RANK;
 var config int SWORDSMAN_FIREARM_DAMAGE_REDUCTION;
+// WeaponCats counted as "a melee weapon" for the firearm malus (swords, ripjack, claymore, gauntlets, knives, other melee).
+var config array<name> SWORDSMAN_MELEE_WEAPON_CATS;
 // WeaponCats counted as "pistol" for the pistol ban: 'pistol' (pistols, LWOTC's) and 'sidearm' (WOTC's automatic pistol).
 var config array<name> SWORDSMAN_BANNED_PISTOL_CATS;
 
@@ -39,18 +46,54 @@ static function X2AbilityTemplate Swordsman()
 {
 	local X2AbilityTemplate Template;
 	local X2Effect_UT_Swordsman SwordEffect;
+	local X2Effect_PersistentStatChange MobilityEffect;
 
 	Template = PurePassive('UT_Swordsman', "img:///UniqueTraits_Icons.UT_Swordsman", true);
 
 	SwordEffect = new class'X2Effect_UT_Swordsman';
 	SwordEffect.EffectName = 'UT_Swordsman_Effect';
-	SwordEffect.MeleeBonusByTier = default.SWORDSMAN_MELEE_BONUS_BY_TIER;
+	SwordEffect.PierceBonus = default.SWORDSMAN_PIERCE_BONUS;
+	SwordEffect.MinDamageBonus = default.SWORDSMAN_MIN_DAMAGE_BONUS;
+	SwordEffect.DamageBonus = default.SWORDSMAN_DAMAGE_BONUS;
 	SwordEffect.FirearmDamageReduction = default.SWORDSMAN_FIREARM_DAMAGE_REDUCTION;
+	SwordEffect.MeleeWeaponCats = default.SWORDSMAN_MELEE_WEAPON_CATS;
 	SwordEffect.BuildPersistentEffect(1, true, false);
 	SwordEffect.SetDisplayInfo(ePerkBuff_Passive, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
 	Template.AddTargetEffect(SwordEffect);
 
+	// +Mobility in missions only (a combat effect, no permanent stat, no ledger); the Armory header adds it through the UI markup, like Support's.
+	MobilityEffect = new class'X2Effect_PersistentStatChange';
+	MobilityEffect.EffectName = 'UT_Swordsman_MobilityBonus';
+	MobilityEffect.BuildPersistentEffect(1, true, false);
+	MobilityEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false,, Template.AbilitySourceName);
+	MobilityEffect.AddPersistentStatChange(eStat_Mobility, default.SWORDSMAN_MOBILITY_BONUS);
+	Template.AddTargetEffect(MobilityEffect);
+
+	Template.SetUIStatMarkup(class'XLocalizedData'.default.MobilityLabel, eStat_Mobility, default.SWORDSMAN_MOBILITY_BONUS);
+
 	return Template;
+}
+
+// The names of the three ranks for the texts (UT_TextTags): the rank name of the base game / LWOTC, or the number when the rank is out of the configured range.
+static function bool GetTextValue(string Key, out string OutString)
+{
+	local int Rank;
+
+	if (Key ~= "SWORDSMAN_PIERCE_RANK_NAME")
+		Rank = default.SWORDSMAN_PIERCE_RANK;
+	else if (Key ~= "SWORDSMAN_MIN_DAMAGE_RANK_NAME")
+		Rank = default.SWORDSMAN_MIN_DAMAGE_RANK;
+	else if (Key ~= "SWORDSMAN_DAMAGE_RANK_NAME")
+		Rank = default.SWORDSMAN_DAMAGE_RANK;
+	else
+		return false;
+
+	if (Rank >= 0 && Rank <= class'X2ExperienceConfig'.static.GetMaxRank())
+		OutString = class'X2ExperienceConfig'.static.GetRankName(Rank, '');
+	else
+		OutString = string(Rank);
+
+	return true;
 }
 
 static function OnGrant(XComGameState_Unit MutableUnit, XComGameState NewGameState)
