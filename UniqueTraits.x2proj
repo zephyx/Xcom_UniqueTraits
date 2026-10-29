@@ -138,6 +138,7 @@
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_ManiacBreakWorld.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_WeakPrimaryWeapons.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_AcrobatMalus.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_AllInArmsGrenades.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_TemporaryItem.uc" />
     <Content Include="Src\UniqueTraits\Classes\XComGameState_Effect_UT_TemporaryItem.uc" />
     <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_SmokeKeepsTurn.uc" />

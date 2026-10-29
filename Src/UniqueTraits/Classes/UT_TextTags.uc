@@ -256,6 +256,8 @@ static function bool GetValue(string Key, out string OutString)
 		return true;
 	if (class'UT_Trait_Athlete'.static.GetTextValue(Key, OutString))
 		return true;
+	if (class'UT_Trait_AllInArms'.static.GetTextValue(Key, OutString))
+		return true;
 	if (class'UT_Trait_AlwaysReady'.static.GetTextValue(Key, OutString))
 		return true;
 	if (class'UT_Trait_Swordsman'.static.GetTextValue(Key, OutString))
@@ -283,8 +285,13 @@ static function bool GetValue(string Key, out string OutString)
 		case 'PACIFIST_COOLDOWN': OutString = string(class'UT_Trait_Pacifist'.default.PACIFIST_COOLDOWN); return true;
 		case 'BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION': OutString = string(class'UT_Trait_BaseballPlayer'.default.BASEBALL_EXPLOSIVE_DAMAGE_REDUCTION); return true;
 		case 'BASEBALL_BOMBARD_RANGE': OutString = string(class'UT_Trait_BaseballPlayer'.default.BASEBALL_BOMBARD_RANGE); return true;
-		case 'ALLINARMS_THROW_RANGE': OutString = string(class'UT_Trait_AllInArms'.default.ALLINARMS_THROW_RANGE); return true;
+		case 'ALLINARMS_STAFF_RANK': OutString = string(class'UT_Trait_AllInArms'.default.ALLINARMS_STAFF_RANK); return true;
 		case 'ALLINARMS_MOBILITY': OutString = string(class'UT_Trait_AllInArms'.default.ALLINARMS_MOBILITY); return true;
+		case 'ALLINARMS_MOBILITY_STAFF': OutString = string(class'UT_Trait_AllInArms'.default.ALLINARMS_MOBILITY_STAFF); return true;
+		case 'ALLINARMS_THROW_RANGE': OutString = string(class'UT_Trait_AllInArms'.default.ALLINARMS_THROW_RANGE); return true;
+		case 'ALLINARMS_THROW_RANGE_STAFF': OutString = string(class'UT_Trait_AllInArms'.default.ALLINARMS_THROW_RANGE_STAFF); return true;
+		case 'ALLINARMS_FLASHBANG_COUNT': OutString = string(class'UT_Trait_AllInArms'.default.ALLINARMS_FLASHBANG_COUNT); return true;
+		case 'ALLINARMS_FLASHBANG_COUNT_STAFF': OutString = string(class'UT_Trait_AllInArms'.default.ALLINARMS_FLASHBANG_COUNT_STAFF); return true;
 		case 'DISCREET_DETECTION_MULT': OutString = string(Round((1.0 - class'UT_Trait_Discreet'.default.DISCREET_DETECTION_MULT) * 100.0)); return true;
 		case 'DISCREET_PRIMARY_WEAPON_DAMAGE_REDUCTION': OutString = string(class'UT_Trait_Discreet'.default.DISCREET_PRIMARY_WEAPON_DAMAGE_REDUCTION); return true;
 		case 'ACROBAT_AIM_PENALTY': OutString = string(class'UT_Trait_Acrobat'.default.ACROBAT_AIM_PENALTY); return true;

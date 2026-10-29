@@ -26,6 +26,12 @@ var bool bStackOnExisting;
 var array<name> ResearchProjectNames;
 var array<name> ResearchItemNames;
 
+// How many copies are granted: Quantity, at least 1. A subclass can count from the unit (All in arms: by rank).
+function int GetGrantCount(XComGameState_Unit UnitState)
+{
+	return Max(Quantity, 1);
+}
+
 simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffectParameters, XComGameState_BaseObject kNewTargetState, XComGameState NewGameState, XComGameState_Effect NewEffectState)
 {
 	local XComGameState_Unit UnitState;
@@ -70,7 +76,7 @@ simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffe
 		return;
 
 	AbilityManager = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
-	GrantCount = Max(Quantity, 1);
+	GrantCount = GetGrantCount(UnitState);
 	for (i = 0; i < GrantCount; ++i)
 	{
 		if (bStackOnExisting && TryStackOnExistingItem(UnitState, EquipmentTemplate, NewGameState))
