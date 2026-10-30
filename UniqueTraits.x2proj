@@ -28,7 +28,6 @@
     <Content Include="Config\XComEditor.ini" />
     <Content Include="Config\XComEngine.ini" />
     <Content Include="Config\XComGame.ini" />
-    <Content Include="Config\XComAI.ini" />
     <Content Include="Config\XComUniqueTraits.ini" />
     <Content Include="Config\XComLW_InfiltrationSettings.ini" />
     <Content Include="Config\XComLW_Overhaul.ini" />
@@ -42,9 +41,6 @@
     <Content Include="Src\UniqueTraits\Classes\UT_TraitBase.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_LWOTCHelpers.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_TextTags.uc" />
-    <Content Include="Src\UniqueTraits\Classes\UT_AIHazardFix.uc" />
-    <Content Include="Src\UniqueTraits\Classes\X2AIBT_UT_Actions.uc" />
-    <Content Include="Src\UniqueTraits\Classes\UT_XGAIBehavior.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_MecConversion.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_PromotionMarks.uc" />
     <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_PromotionMarks.uc" />

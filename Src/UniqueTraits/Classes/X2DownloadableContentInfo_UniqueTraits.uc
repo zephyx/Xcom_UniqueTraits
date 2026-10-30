@@ -46,18 +46,6 @@ static function OnPreCreateTemplates()
 	class'UniqueTraits_MCMOptions'.static.ApplyOverrides();
 }
 
-// AI hazard fix (UT_AIHazardFix, ini option AI_HAZARD_FIX_ENABLED): an exposed enemy boxed in by a poison / fire / acid cloud may go to cover through it instead of staying in the open.
-// The behavior trees are edited at the start of a mission (new or loaded into tactical), after LWOTC, if present, edited its own at the main menu.
-static event OnPreMission(XComGameState StartGameState, XComGameState_MissionSite MissionState)
-{
-	class'UT_AIHazardFix'.static.Apply();
-}
-
-static event OnLoadedSavedGameToTactical()
-{
-	class'UT_AIHazardFix'.static.Apply();
-}
-
 // Every trait of the pool that is not disabled gets to patch the templates it does not own (UT_TraitBase.OnPostTemplatesCreated). A trait taken out of the ini pool
 // is no longer patched in. The abilities of a DISABLED trait are made inert (MakeTraitInert): a soldier who still carries it is not affected.
 static event OnPostTemplatesCreated()
@@ -69,9 +57,6 @@ static event OnPostTemplatesCreated()
 
 	// The {VARIABLE} placeholders of the ability texts become the current values (ini or Mod Config Menu); UT_TextTags.PatchTemplates runs again when the Advanced page is saved.
 	class'UT_TextTags'.static.PatchTemplates();
-
-	// AI hazard fix (UT_AIHazardFix): the behavior class of the enemies, for the hazard cover move (nothing happens when the option is off).
-	class'UT_AIHazardFix'.static.UseHazardBehaviorClass();
 
 	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
 	{
@@ -738,19 +723,6 @@ static final function MigrateTraits(optional bool bReportOnly = false)
 exec function UTMigrateTraits(optional string Mode)
 {
 	MigrateTraits(Mode ~= "check");
-}
-
-// Console command: "UTHazardFix on" / "UTHazardFix off" switches the AI hazard fix (UT_AIHazardFix) in the running game, without argument it toggles. Meant for A/B tests on the
-// same scene: load the save, run the command, play the turn. Do it during XCOM's turn (the behavior table is rebuilt). It cannot turn on a fix that the ini option
-// AI_HAZARD_FIX_ENABLED disabled.
-exec function UTHazardFix(optional string Mode)
-{
-	if (Mode ~= "on")
-		class'UT_AIHazardFix'.static.SetEnabled(true);
-	else if (Mode ~= "off")
-		class'UT_AIHazardFix'.static.SetEnabled(false);
-	else
-		class'UT_AIHazardFix'.static.SetEnabled(!class'UT_AIHazardFix'.static.IsApplied());
 }
 
 // Console command: "UTPredestinedMarks behind" / "corner" (or 0 / 1) picks where the symbols of Predestined are drawn on the promotion screen (UT_PromotionMarks): behind the icon or

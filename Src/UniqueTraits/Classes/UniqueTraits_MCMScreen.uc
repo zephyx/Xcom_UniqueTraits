@@ -30,7 +30,7 @@ var localized string TabDraw, TitleDraw, GroupGeneral, GroupProbabilities;
 var localized string AssignLabel, AssignTip, DefaultLabel, DefaultTip, TraitTip, ProbabilityHelp, OptionDefault, TipModDefault, TipOn, TipOff;
 
 var localized string TabAdvanced, TitleAdvanced, GroupAdvancedInfo, AdvancedInfoLabel, AdvancedInfoTip, NoteRestart, NotePermanent, NoteStats;
-var localized string OptionDisabled, GroupAIHazardFix;
+var localized string OptionDisabled;
 
 // The Advanced page: one slider per option of UniqueTraits_MCMOptions (parallel arrays).
 var array<MCM_API_Slider> OptSliders;
@@ -181,7 +181,6 @@ simulated function ClientModCallback(MCM_API_Instance ConfigAPI, int GameMode)
 // built into the abilities when the game starts (applies at the next launch), "**" that it only changes what is done when the trait is given.
 // No mark for the flag "S" (permanent stat changes of Nerd, False Hope, Born to be chief): the tooltip says that the soldiers who already have the trait are
 // adjusted at their next promotion, mission start or month end.
-// After the traits, one more group for the options that belong to no trait (the AI hazard fix: rows whose group id is AIHazardFix).
 simulated function BuildAdvancedPage(MCM_API_Instance ConfigAPI)
 {
 	local MCM_API_SettingsPage Page;
@@ -248,20 +247,6 @@ simulated function BuildAdvancedPage(MCM_API_Instance ConfigAPI)
 
 			AddAdvancedOption(Group, Parts);
 		}
-	}
-
-	// The options that belong to no trait: the group of the AI hazard fix (its rows carry the group id AIHazardFix where a trait id would be).
-	Group = none;
-	for (r = 0; r < Rows.Length; ++r)
-	{
-		ParseStringIntoArray(Rows[r], Parts, "|", false);
-		if (name(Parts[1]) != 'AIHazardFix')
-			continue;
-
-		if (Group == none)
-			Group = Page.AddGroup('UT_A_AIHazardFix', GroupAIHazardFix);
-
-		AddAdvancedOption(Group, Parts);
 	}
 
 	Page.ShowSettings();

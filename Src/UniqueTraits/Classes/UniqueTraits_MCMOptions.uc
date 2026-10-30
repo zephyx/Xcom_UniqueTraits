@@ -216,7 +216,6 @@ static final function array<string> GetRows()
 	Rows.AddItem("SOMEONEDIFFERENT_PCT_LOW_2|UT_SomeoneDifferent|-100|0|1|1|-");
 	Rows.AddItem("SOMEONEDIFFERENT_PCT_HIGH_1|UT_SomeoneDifferent|0|100|1|1|-");
 	Rows.AddItem("SOMEONEDIFFERENT_PCT_HIGH_0|UT_SomeoneDifferent|0|100|1|1|-");
-	Rows.AddItem("AI_HAZARD_FIX_ENABLED|AIHazardFix|0|1|1|1|RB");
 	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_0_WillMalus|UT_SomeoneDifferent|0|30|1|1|-");
 	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_0_AimMalus|UT_SomeoneDifferent|0|30|1|1|-");
 	Rows.AddItem("SOMEONEDIFFERENT_STAGES_LWOTC_0_MobilityMalus|UT_SomeoneDifferent|0|30|1|1|-");
@@ -442,7 +441,6 @@ static final function int GetCurrent(name Key)
 		case 'SOMEONEDIFFERENT_PCT_LOW_2': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW.Length <= 2) return 0; return class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW[2];
 		case 'SOMEONEDIFFERENT_PCT_HIGH_1': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH.Length <= 1) return 0; return class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH[1];
 		case 'SOMEONEDIFFERENT_PCT_HIGH_0': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH.Length <= 0) return 0; return class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH[0];
-		case 'AI_HAZARD_FIX_ENABLED': if (class'UT_AIHazardFix'.default.AI_HAZARD_FIX_ENABLED) return 1; return 0;
 		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_WillMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 0, 0);
 		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_AimMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 0, 1);
 		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_MobilityMalus': return class'UT_Trait_SomeoneDifferent'.static.GetStageField(true, 0, 2);
@@ -669,7 +667,6 @@ static final function SetCurrent(name Key, int Value)
 		case 'SOMEONEDIFFERENT_PCT_LOW_2': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW.Length <= 2) break; class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_LOW[2] = Value; break;
 		case 'SOMEONEDIFFERENT_PCT_HIGH_1': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH.Length <= 1) break; class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH[1] = Value; break;
 		case 'SOMEONEDIFFERENT_PCT_HIGH_0': if (class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH.Length <= 0) break; class'UT_Trait_SomeoneDifferent'.default.SOMEONEDIFFERENT_PCT_HIGH[0] = Value; break;
-		case 'AI_HAZARD_FIX_ENABLED': class'UT_AIHazardFix'.default.AI_HAZARD_FIX_ENABLED = (Value != 0); break;
 		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_WillMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 0, 0, Value); break;
 		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_AimMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 0, 1, Value); break;
 		case 'SOMEONEDIFFERENT_STAGES_LWOTC_0_MobilityMalus': class'UT_Trait_SomeoneDifferent'.static.SetStageField(true, 0, 2, Value); break;
