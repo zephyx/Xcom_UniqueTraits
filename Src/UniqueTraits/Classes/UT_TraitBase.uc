@@ -300,6 +300,12 @@ static function OnPostMission()
 {
 }
 
+// Called by X2DownloadableContentInfo_UniqueTraits on EVERY active trait class when a campaign is loaded into the strategy layer (OnLoadedSavedGameToStrategy) and when a new one starts
+// (InstallNewCampaign, before its start state is submitted): a trait that keeps campaign data in the shared templates (the Coroner's bonuses) puts them back in step with THIS campaign.
+static function OnCampaignReady()
+{
+}
+
 // Called by X2DownloadableContentInfo_UniqueTraits.OnPostTemplatesCreated on EVERY trait class of the pool (ini order) once all the templates exist, with this mod's
 // CHDLCRunOrder RUN_LAST (so the templates other mods add or change are already there): a trait that patches templates it does not own (another ability's cost, a
 // shared effect, a to-hit calc...) does it here. The traits' patches do not depend on each other's order.

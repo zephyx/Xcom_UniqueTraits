@@ -117,6 +117,13 @@
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_AlwaysReady.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_QuickHealing.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Thief.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_Trait_Coroner.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_AutopsyItemTemplate.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_LootDropActor.uc" />
+    <Content Include="Src\UniqueTraits\Classes\XComGameState_UT_Autopsy.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UT_AutopsyBonuses.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Effect_UT_Coroner.uc" />
+    <Content Include="Src\UniqueTraits\Classes\X2Condition_UT_AutopsyLoot.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Scout.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_Hunter.uc" />
     <Content Include="Src\UniqueTraits\Classes\UT_Trait_LongRange.uc" />
@@ -143,6 +150,7 @@
     <Content Include="Src\UniqueTraits\Classes\X2Item_UniqueTraits.uc" />
     <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_LootWindow.uc" />
     <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_HackingScreen.uc" />
+    <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_BlackMarket.uc" />
     <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_RookieTrait.uc" />
     <Content Include="Src\UniqueTraits\Classes\UIScreenListener_UT_ClassChoice.uc" />
   </ItemGroup>

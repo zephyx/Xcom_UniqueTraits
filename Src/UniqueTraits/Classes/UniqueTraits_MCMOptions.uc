@@ -56,6 +56,12 @@ static final function array<string> GetRows()
 	Rows.AddItem("ALWAYSREADY_RELOAD_AMMO_FACTOR|UT_AlwaysReady|0|100|5|100|-");
 	Rows.AddItem("ALWAYSREADY_MENTAL_PROTECTION_COUNTERS|UT_AlwaysReady|0|1|1|1|B");
 	Rows.AddItem("QUICKHEALING_DAMAGE_TAKEN_MULT|UT_QuickHealing|100|300|5|100|R");
+	Rows.AddItem("CORONER_DROP_CHANCE_PCT|UT_Coroner|0|100|1|1|-");
+	Rows.AddItem("CORONER_DAMAGE_MALUS_PCT|UT_Coroner|0|50|1|1|-");
+	Rows.AddItem("CORONER_AUTOPSY_DAMAGE_MALUS_PCT|UT_Coroner|0|50|1|1|-");
+	Rows.AddItem("CORONER_BONUS_PER_AUTOPSY_PCT|UT_Coroner|0|25|1|1|R");
+	Rows.AddItem("CORONER_MAX_AUTOPSIES|UT_Coroner|1|10|1|1|R");
+	Rows.AddItem("CORONER_HEAVY_WEAPON_FACTOR_PCT|UT_Coroner|0|100|5|1|-");
 	Rows.AddItem("THIEF_STEAL_CHANCE_PCT|UT_Thief|0|100|1|1|-");
 	Rows.AddItem("SUPPORT_MOBILITY_BONUS|UT_Support|0|5|1|1|R");
 	Rows.AddItem("BRIBE_SUPPLY_BONUS|UT_Bribe|0|100|1|1|P");
@@ -281,6 +287,12 @@ static final function int GetCurrent(name Key)
 		case 'ALWAYSREADY_RELOAD_AMMO_FACTOR': return Round(class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_AMMO_FACTOR * 100.0);
 		case 'ALWAYSREADY_MENTAL_PROTECTION_COUNTERS': if (class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_MENTAL_PROTECTION_COUNTERS) return 1; return 0;
 		case 'QUICKHEALING_DAMAGE_TAKEN_MULT': return Round(class'UT_Trait_QuickHealing'.default.QUICKHEALING_DAMAGE_TAKEN_MULT * 100.0);
+		case 'CORONER_DROP_CHANCE_PCT': return class'UT_Trait_Coroner'.default.CORONER_DROP_CHANCE_PCT;
+		case 'CORONER_DAMAGE_MALUS_PCT': return class'UT_Trait_Coroner'.default.CORONER_DAMAGE_MALUS_PCT;
+		case 'CORONER_AUTOPSY_DAMAGE_MALUS_PCT': return class'UT_Trait_Coroner'.default.CORONER_AUTOPSY_DAMAGE_MALUS_PCT;
+		case 'CORONER_BONUS_PER_AUTOPSY_PCT': return class'UT_Trait_Coroner'.default.CORONER_BONUS_PER_AUTOPSY_PCT;
+		case 'CORONER_MAX_AUTOPSIES': return class'UT_Trait_Coroner'.default.CORONER_MAX_AUTOPSIES;
+		case 'CORONER_HEAVY_WEAPON_FACTOR_PCT': return class'UT_Trait_Coroner'.default.CORONER_HEAVY_WEAPON_FACTOR_PCT;
 		case 'THIEF_STEAL_CHANCE_PCT': return class'UT_Trait_Thief'.default.THIEF_STEAL_CHANCE_PCT;
 		case 'SUPPORT_MOBILITY_BONUS': return class'UT_Trait_Support'.default.SUPPORT_MOBILITY_BONUS;
 		case 'BRIBE_SUPPLY_BONUS': return class'UT_Trait_Bribe'.default.BRIBE_SUPPLY_BONUS;
@@ -507,6 +519,12 @@ static final function SetCurrent(name Key, int Value)
 		case 'ALWAYSREADY_RELOAD_AMMO_FACTOR': class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_RELOAD_AMMO_FACTOR = float(Value) / 100.0; break;
 		case 'ALWAYSREADY_MENTAL_PROTECTION_COUNTERS': class'UT_Trait_AlwaysReady'.default.ALWAYSREADY_MENTAL_PROTECTION_COUNTERS = (Value != 0); break;
 		case 'QUICKHEALING_DAMAGE_TAKEN_MULT': class'UT_Trait_QuickHealing'.default.QUICKHEALING_DAMAGE_TAKEN_MULT = float(Value) / 100.0; break;
+		case 'CORONER_DROP_CHANCE_PCT': class'UT_Trait_Coroner'.default.CORONER_DROP_CHANCE_PCT = Value; break;
+		case 'CORONER_DAMAGE_MALUS_PCT': class'UT_Trait_Coroner'.default.CORONER_DAMAGE_MALUS_PCT = Value; break;
+		case 'CORONER_AUTOPSY_DAMAGE_MALUS_PCT': class'UT_Trait_Coroner'.default.CORONER_AUTOPSY_DAMAGE_MALUS_PCT = Value; break;
+		case 'CORONER_BONUS_PER_AUTOPSY_PCT': class'UT_Trait_Coroner'.default.CORONER_BONUS_PER_AUTOPSY_PCT = Value; break;
+		case 'CORONER_MAX_AUTOPSIES': class'UT_Trait_Coroner'.default.CORONER_MAX_AUTOPSIES = Value; break;
+		case 'CORONER_HEAVY_WEAPON_FACTOR_PCT': class'UT_Trait_Coroner'.default.CORONER_HEAVY_WEAPON_FACTOR_PCT = Value; break;
 		case 'THIEF_STEAL_CHANCE_PCT': class'UT_Trait_Thief'.default.THIEF_STEAL_CHANCE_PCT = Value; break;
 		case 'SUPPORT_MOBILITY_BONUS': class'UT_Trait_Support'.default.SUPPORT_MOBILITY_BONUS = Value; break;
 		case 'BRIBE_SUPPLY_BONUS': class'UT_Trait_Bribe'.default.BRIBE_SUPPLY_BONUS = Value; break;

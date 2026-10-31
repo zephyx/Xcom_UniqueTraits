@@ -298,6 +298,12 @@ static function bool GetValue(string Key, out string OutString)
 		case 'ACROBAT_CRIT_PENALTY': OutString = string(class'UT_Trait_Acrobat'.default.ACROBAT_CRIT_PENALTY); return true;
 		case 'QUICKHEALING_DAMAGE_TAKEN_MULT': OutString = string(Round((class'UT_Trait_QuickHealing'.default.QUICKHEALING_DAMAGE_TAKEN_MULT - 1.0) * 100.0)); return true;
 		case 'THIEF_STEAL_CHANCE_PCT': OutString = string(class'UT_Trait_Thief'.default.THIEF_STEAL_CHANCE_PCT); return true;
+		case 'CORONER_DROP_CHANCE_PCT': OutString = string(class'UT_Trait_Coroner'.default.CORONER_DROP_CHANCE_PCT); return true;
+		case 'CORONER_DAMAGE_MALUS_PCT': OutString = string(class'UT_Trait_Coroner'.default.CORONER_DAMAGE_MALUS_PCT); return true;
+		case 'CORONER_AUTOPSY_DAMAGE_MALUS_PCT': OutString = string(class'UT_Trait_Coroner'.default.CORONER_AUTOPSY_DAMAGE_MALUS_PCT); return true;
+		case 'CORONER_BONUS_PER_AUTOPSY_PCT': OutString = string(class'UT_Trait_Coroner'.default.CORONER_BONUS_PER_AUTOPSY_PCT); return true;
+		case 'CORONER_MAX_AUTOPSIES': OutString = string(class'UT_Trait_Coroner'.default.CORONER_MAX_AUTOPSIES); return true;
+		case 'CORONER_HEAVY_WEAPON_FACTOR_PCT': OutString = string(class'UT_Trait_Coroner'.default.CORONER_HEAVY_WEAPON_FACTOR_PCT); return true;
 		case 'JACKOFALLTRADES_AP_BONUS': OutString = string(class'UT_Trait_JackOfAllTrades'.default.JACKOFALLTRADES_AP_BONUS); return true;
 		case 'TACTICIAN_AIM': OutString = string(class'UT_Trait_Tactician'.default.TACTICIAN_AIM); return true;
 		case 'SCOUT_SCANNER_RANGE_MULT': OutString = string(Round((class'UT_Trait_Scout'.default.SCOUT_SCANNER_RANGE_MULT - 1.0) * 100.0)); return true;

@@ -10,6 +10,7 @@ static function array<X2DataTemplate> CreateTemplates()
 	local array<X2DataTemplate> Items;
 
 	Items.AddItem(class'UT_Trait_Scout'.static.CreateScannerItem());
+	Items.AddItem(class'UT_Trait_Coroner'.static.CreateAutopsyItem());
 
 	return Items;
 }

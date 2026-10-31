@@ -14,9 +14,30 @@ class X2DownloadableContentInfo_UniqueTraits extends X2DownloadableContentInfo;
 static event OnLoadedSavedGameToStrategy()
 {
 	MigrateTraits();
+	NotifyCampaignReady();
 
 	if (class'UniqueTraits_TraitConfig'.static.ShouldAssignAtRecruitment())
 		AssignTraitsToEligibleRookies();
+}
+
+// A new campaign: the traits get to reset what they keep in the shared templates (the start state is not submitted yet, so a trait sees an empty campaign).
+static event InstallNewCampaign(XComGameState StartState)
+{
+	NotifyCampaignReady();
+}
+
+// UT_TraitBase.OnCampaignReady of every trait of the pool that is not disabled.
+static function NotifyCampaignReady()
+{
+	local int i;
+	local class<UT_TraitBase> TraitClass;
+
+	for (i = 0; i < class'UniqueTraits_TraitConfig'.default.Traits.Length; ++i)
+	{
+		TraitClass = class'UniqueTraits_TraitConfig'.static.GetActiveTraitClass(i);
+		if (TraitClass != none)
+			TraitClass.static.OnCampaignReady();
+	}
 }
 
 // CHL #419, called by X2AbilityTag.ExpandHandler for a tag the base game did not handle: our tags are written <Ability:UT_...> (the quick exit keeps the cost of the other
